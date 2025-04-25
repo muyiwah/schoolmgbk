@@ -1,0 +1,48 @@
+name: schmgtsystem
+description: A new Flutter project.
+
+publish_to: 'none' # Prevents accidental publishing to pub.dev
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.7.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  easy_sidemenu: ^0.6.1
+  flutter_timetable: ^1.1.6
+  intl:
+  fl_chart:
+  equatable: ^2.0.7
+  printing: ^5.11.0
+  pdf: ^3.10.4
+  file_picker: ^6.1.1
+  image_picker:
+  data_table_2: ^2.6.0
+  excel: ^2.0.6
+  file_saver: ^0.1.1 
+  http: 
+  fluttertoast:
+  # esys_flutter_share:
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0 # Updated to latest version
+
+flutter:
+  uses-material-design: true
+
+  # Uncomment and add your image assets here
+  # assets:
+  #   - assets/images/
+
+  # Uncomment and configure if you want to use custom fonts
+  # fonts:
+  #   - family: CustomFont
+  #     fonts:
+  #       - asset: fonts/CustomFont-Regular.ttf
