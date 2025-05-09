@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:schmgtsystem/color_pallete.dart';
 import 'package:equatable/equatable.dart';
+import 'package:schmgtsystem/widgets/screen_header.dart';
 
 
 class AddClass extends StatefulWidget {
@@ -29,20 +30,7 @@ class _AddClassState extends State<AddClass> {
         padding: EdgeInsets.all(20),
         child: Column(
           children: [
-            Row(
-              children: [
-                Text('Class', style: TextStyle(fontWeight: FontWeight.w600)),
-                Spacer(),
-                Text(
-                  'Dashboard',
-                  style: TextStyle(fontWeight: FontWeight.w500),
-                ),
-                Text(
-                  '   |  Academics',
-                  style: TextStyle(fontWeight: FontWeight.w500),
-                ),
-              ],
-            ),
+            ScreenHeader(group: 'Class',subgroup: 'Add Class',),
 SizedBox(height: 30,),
             Row(crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -288,6 +276,7 @@ SizedBox(height: 30,),
     );
   }
 }
+
 
 
 

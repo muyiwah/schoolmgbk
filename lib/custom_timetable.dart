@@ -1,12 +1,10 @@
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-// import 'package:esys_flutter_share/esys_flutter_share.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 class TimeTableApp extends StatelessWidget {
@@ -39,14 +37,15 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
     'Friday',
   ];
   final List<String> _times = [
-    '8:00-9:00',
-    '9:00-10:00',
-    '10:00-11:00',
-    '11:00-11:20', // Break period
-    '11:20-12:20',
-    '12:20-1:20',
-    '1:20-2:20',
-    '2:20-3:00',
+    '8:00-8:30', // Assembly time
+    '8:30-9:30',
+    '9:30-10:30',
+    '10:30-10:45', // Short break
+    '10:45-11:45',
+    '11:45-12:45',
+    '12:45-1:45',
+    '1:45-2:15', // Quiz time
+    '2:15-3:15',
   ];
 
   final List<String> _subjects = [
@@ -58,6 +57,8 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
     'History',
     'Geography',
     'Computer Science',
+    'Quiz Session',
+    'Assembly',
   ];
 
   final List<String> _teachers = [
@@ -69,6 +70,8 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
     'Mr. Taylor',
     'Ms. Clark',
     'Dr. White',
+    'Quiz Master',
+    'Principal',
   ];
 
   final List<Color> _subjectColors = [
@@ -80,12 +83,14 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
     Colors.teal.shade100,
     Colors.indigo.shade100,
     Colors.pink.shade100,
+    Colors.yellow.shade100, // Quiz color
+    Colors.cyan.shade100, // Assembly color
   ];
 
   late List<List<Map<String, String>>> _timetable;
   final List<List<Map<String, String>>> _favorites = [];
   bool _showTeachers = false;
-  bool _isBreak = false;
+  final GlobalKey _globalKey = GlobalKey();
 
   @override
   void initState() {
@@ -97,16 +102,37 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
     setState(() {
       _timetable = List.generate(_times.length, (timeIndex) {
         return List.generate(_days.length, (dayIndex) {
-          // Add break period
-          if (_times[timeIndex] == '11:00-11:20') {
-            return {'subject': 'BREAK', 'teacher': '', 'isBreak': 'true'};
+          // Add special periods
+          if (_times[timeIndex] == '8:00-8:30') {
+            return {
+              'subject': 'ASSEMBLY',
+              'teacher': _teachers[9],
+              'isSpecial': 'true',
+            };
+          }
+          if (_times[timeIndex] == '10:30-10:45') {
+            return {
+              'subject': 'SHORT BREAK',
+              'teacher': '',
+              'isSpecial': 'true',
+            };
+          }
+          if (_times[timeIndex] == '1:45-2:15' && dayIndex == 4) {
+            // Friday quiz
+            return {
+              'subject': 'QUIZ SESSION',
+              'teacher': _teachers[8],
+              'isSpecial': 'true',
+            };
           }
 
-          final subIndex = (timeIndex + dayIndex) % _subjects.length;
+          final subIndex =
+              (timeIndex + dayIndex) %
+              (_subjects.length - 2); // Exclude quiz and assembly
           return {
             'subject': _subjects[subIndex],
             'teacher': _teachers[subIndex],
-            'isBreak': 'false',
+            'isSpecial': 'false',
           };
         });
       });
@@ -134,7 +160,6 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
           return pw.Table(
             border: pw.TableBorder.all(),
             children: [
-              // Header
               pw.TableRow(
                 children: [
                   pw.Padding(
@@ -157,7 +182,6 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
                       .toList(),
                 ],
               ),
-              // Rows
               ..._times.asMap().entries.map((timeEntry) {
                 final timeIndex = timeEntry.key;
                 return pw.TableRow(
@@ -213,7 +237,15 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
     }
   }
 
-  final GlobalKey _globalKey = GlobalKey();
+  Color _getCellColor(Map<String, String> cell) {
+    if (cell['isSpecial'] == 'true') {
+      if (cell['subject'] == 'ASSEMBLY') return _subjectColors[9];
+      if (cell['subject'] == 'QUIZ SESSION') return _subjectColors[8];
+      return Colors.grey[100]!;
+    }
+    return _subjectColors[_subjects.indexOf(cell['subject']!) %
+        _subjectColors.length];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -246,7 +278,6 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
       ),
       body: Column(
         children: [
-          // Header Row
           SizedBox(
             height: 60,
             child: ListView(
@@ -278,27 +309,27 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
               ],
             ),
           ),
-          // Timetable Content
-         Expanded(
+          Expanded(
             child: ListView.builder(
               itemCount: _times.length,
               itemBuilder: (context, timeIndex) {
-                final isBreak = _times[timeIndex] == '11:00-11:20';
+                final isSpecialPeriod =
+                    _times[timeIndex] == '8:00-8:30' ||
+                    _times[timeIndex] == '10:30-10:45' ||
+                    (_times[timeIndex] == '1:45-2:15' &&
+                        _timetable[timeIndex][4]['subject'] == 'QUIZ SESSION');
+
                 return Container(
-                  height: isBreak ? 40 : 80, // Smaller height for break row
-                  margin: EdgeInsets.only(
-                    bottom: isBreak ? 0 : 4,
-                  ), // Adjust spacing
+                  height: isSpecialPeriod ? 50 : 80,
+                  margin: EdgeInsets.only(bottom: isSpecialPeriod ? 0 : 4),
                   child: ListView(
                     scrollDirection: Axis.horizontal,
-                    physics:
-                        const ClampingScrollPhysics(), // Prevent over-scrolling
+                    physics: const ClampingScrollPhysics(),
                     children: [
-                      // Time cell
                       Container(
                         width: 100,
                         decoration: BoxDecoration(
-                          color: isBreak ? Colors.grey[100] : null,
+                          color: isSpecialPeriod ? Colors.grey[100] : null,
                           border: Border(
                             right: BorderSide(color: Colors.grey.shade300),
                           ),
@@ -308,12 +339,14 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
                             _times[timeIndex],
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: isBreak ? Colors.red : Colors.blue,
+                              color:
+                                  isSpecialPeriod
+                                      ? Colors.blueGrey
+                                      : Colors.blue,
                             ),
                           ),
                         ),
                       ),
-                      // Subject cells
                       ..._timetable[timeIndex]
                           .map(
                             (cell) => Container(
@@ -329,24 +362,26 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
                                 ),
                               ),
                               child:
-                                  isBreak
+                                  isSpecialPeriod
                                       ? Center(
                                         child: Text(
-                                          'BREAK',
+                                          cell['subject']!,
                                           style: TextStyle(
-                                            color: Colors.red,
+                                            color:
+                                                cell['subject'] == 'SHORT BREAK'
+                                                    ? Colors.red
+                                                    : Colors.blueGrey,
                                             fontWeight: FontWeight.bold,
-                                            fontSize: 16,
+                                            fontSize:
+                                                cell['subject'] == 'SHORT BREAK'
+                                                    ? 14
+                                                    : 16,
                                           ),
                                         ),
                                       )
                                       : Card(
                                         elevation: 2,
-                                        color:
-                                            _subjectColors[_subjects.indexOf(
-                                                  cell['subject']!,
-                                                ) %
-                                                _subjectColors.length],
+                                        color: _getCellColor(cell),
                                         child: Center(
                                           child: Padding(
                                             padding: const EdgeInsets.all(8.0),
@@ -384,7 +419,6 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
               },
             ),
           ),
-          // Favorites Section
           if (_favorites.isNotEmpty)
             SizedBox(
               height: 60,

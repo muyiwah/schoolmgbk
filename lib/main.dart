@@ -1,41 +1,57 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'package:schmgtsystem/Student/all_student.dart';
 import 'package:schmgtsystem/Student/timetable.dart';
+import 'package:schmgtsystem/deepseek/deepseek2222/exammodel.dart'
+    show Exam, Option, Question;
+import 'package:schmgtsystem/deepseek/deepseek2222/examsetupscreen.dart';
+import 'package:schmgtsystem/deepseek/deepseek2222/ques_provider.dart';
+import 'package:schmgtsystem/deepseek/deepseek2222/questiondata.dart';
+import 'package:schmgtsystem/deepseek/deepseek2222/takeexam.dart';
 import 'package:schmgtsystem/home.dart';
 import 'package:schmgtsystem/custom_timetable.dart';
+import 'package:flutter_quill/flutter_quill.dart' hide Text;
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:provider/provider.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [ChangeNotifierProvider(create: (_) => QuestionProvider())],
+      child: MyApp(),
+    ),
+  );
 }
-
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  MyApp({super.key});
 
-  // This widget is the root of your application.
+  
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(debugShowCheckedModeBanner: false,
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      localizationsDelegates: const [
+        FlutterQuillLocalizations.delegate, // 👈 REQUIRED
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en'), // 👈 add any locales you support
+        Locale('fr'),
+        Locale('es'),
+        // etc...
+      ],
       title: 'Flutter Demo',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 84, 66, 248)),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color.fromARGB(255, 84, 66, 248),
+        ),
       ),
-      home: const SchoolAdminDashboard(),
-      // home: const MyHomePage(title: '',),
+      // home: const SchoolAdminDashboard(),
+      // home: TakeExamScreen(exam: examdata),
+      home: ExamSetupScreen(),
     );
   }
 }

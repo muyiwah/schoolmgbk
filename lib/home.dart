@@ -1,13 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:schmgtsystem/Student/all_student.dart';
+import 'package:schmgtsystem/Student/create_timetale.dart';
 import 'package:schmgtsystem/Student/timetable.dart';
 import 'package:schmgtsystem/Teacher/screens/Teacher.dart';
 import 'package:schmgtsystem/Teacher/screens/allparents.dart';
 import 'package:schmgtsystem/add_class.dart';
+import 'package:schmgtsystem/admin111.dart';
+import 'package:schmgtsystem/admin222.dart';
+import 'package:schmgtsystem/admin3333.dart';
 import 'package:schmgtsystem/all_students.dart';
 import 'package:schmgtsystem/color_pallete.dart';
+import 'package:schmgtsystem/create_table_testing.dart';
+import 'package:schmgtsystem/custom_timetable.dart';
 import 'package:schmgtsystem/dshboard.dart';
 import 'package:collection/collection.dart';
+import 'package:schmgtsystem/staff/add_staff.dart';
+import 'package:schmgtsystem/staff/timetable.dart';
+import 'package:schmgtsystem/teacher111.dart';
+import 'package:schmgtsystem/tesing2222.dart';
+import 'package:schmgtsystem/testing3333.dart';
+import 'package:schmgtsystem/testing4444.dart';
+import 'package:schmgtsystem/testingg5555.dart';
 
 class SchoolAdminDashboard extends StatelessWidget {
   const SchoolAdminDashboard({super.key});
@@ -36,19 +48,20 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-@override
+  @override
   void initState() {
     super.initState();
     for (int i = 0; i < menuItems.length; i++) {
       _controllers[i] = ExpansionTileController();
     }
   }
-Set<int> _builtTiles = {};
+
+  Set<int> _builtTiles = {};
 
   int selectedIndex = 0;
-final Map<int, ExpansionTileController> _controllers = {};
-final ExpansionTileController _controller = ExpansionTileController();
-// UniqueKey _tileKey = UniqueKey();
+  final Map<int, ExpansionTileController> _controllers = {};
+  final ExpansionTileController _controller = ExpansionTileController();
+  // UniqueKey _tileKey = UniqueKey();
   final List<MenuItem> menuItems = [
     MenuItem('Home', Icons.person_add, []),
     MenuItem('Class', Icons.person_add, ['Add Class', 'All Classes']),
@@ -57,12 +70,31 @@ final ExpansionTileController _controller = ExpansionTileController();
       'All Students',
       'Add Student',
       'Attendance',
+      'Time Table',
+      'Edit4',
+      'Edit5',
+      'Create Time Table',
     ]),
-    MenuItem('Fees', Icons.attach_money, ['All Fees', 'Add/Edit Fee']),
+    MenuItem('Fees', Icons.attach_money, [
+      'Teacher1',
+      'Admin1',
+      'Admin2',
+      'Admin3',
+      'All Fees',
+      'Add/Edit Fee',
+    ]),
+    MenuItem('CBT', Icons.attach_money, [
+      'Add CBT Exam',
+      'Manage Exam',
+      'Results',
+      'New',
+     
+    ]),
     MenuItem('Exams', Icons.attach_money, ['All Exams', 'Add Exam']),
     MenuItem('Staff', Icons.attach_money, [
-      'All Staff'
-          'Time Table',
+      'All Staff',
+      'Add Staff',
+      'Time Table',
       'Teacher',
       'Attendance',
     ]),
@@ -71,6 +103,7 @@ final ExpansionTileController _controller = ExpansionTileController();
     MenuItem('Library', Icons.attach_money, ['All Books', 'Add Libarian']),
     MenuItem('Chats', Icons.attach_money, []),
     MenuItem('Admissions', Icons.attach_money, []),
+    MenuItem('Promotions', Icons.attach_money, []),
     MenuItem('Accounts', Icons.attach_money, []),
   ];
   bool _isExpanded = false;
@@ -146,26 +179,12 @@ final ExpansionTileController _controller = ExpansionTileController();
                           int index = entry.key;
                           MenuItem item = entry.value;
                           bool isSelected = selectedIndex == index;
-
                           if (item.subMenu.isEmpty) {
                             return InkWell(
                               onTap: () {
                                 if (index == 0) {
                                   isSelected = false;
-                            // WidgetsBinding.instance.addPostFrameCallback((
-                            //         _,
-                            //       ) {
-                            //         for (
-                            //           int i = 0;
-                            //           i < _controllers.length;
-                            //           i++
-                            //         ) {
-                            //           if (i != index) {
-                            //             _controllers[i]?.collapse();
-                            //           }
-                            //         }
-                            //         _controllers[index]?.expand();
-                            //       });
+
                                   for (
                                     int i = 0;
                                     i < _controllers.length;
@@ -177,8 +196,8 @@ final ExpansionTileController _controller = ExpansionTileController();
                                   }
                                   setState(() {});
                                 }
-
                                 setState(() {
+                                  selectedIndex = index;
                                   tabSelected = index;
                                   selectedSubMenu = null;
                                 });
@@ -235,7 +254,7 @@ final ExpansionTileController _controller = ExpansionTileController();
                           }
 
                           return ExpansionTile(
-                           controller: _controllers[index],
+                            controller: _controllers[index],
                             iconColor: Colors.blue, // arrow color when expanded
                             collapsedIconColor: Colors.white, //
                             // trailing: Icon(
@@ -243,7 +262,7 @@ final ExpansionTileController _controller = ExpansionTileController();
                             //   size: 20, // change icon size here
                             // ),
                             onExpansionChanged: (value) {
-                               _builtTiles.add(index); 
+                              _builtTiles.add(index);
                               // print(value);
                               // value
                               //     ? setState(() {
@@ -358,9 +377,9 @@ final ExpansionTileController _controller = ExpansionTileController();
               child: Column(
                 children: [
                   Container(
-                    height: 30,
+                    height: 40,
                     color: Colors.transparent,
-                    padding: const EdgeInsets.symmetric(horizontal: 14.0),
+                    padding: const EdgeInsets.only(top: 14.0, bottom: 2),
                     alignment: Alignment.centerLeft,
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -382,7 +401,11 @@ final ExpansionTileController _controller = ExpansionTileController();
                   ),
                   Expanded(
                     child: Container(
-                      padding: const EdgeInsets.all(24.0),
+                      margin: const EdgeInsets.only(
+                        right: 10,
+                        top: 10,
+                        bottom: 20,
+                      ),
                       color: Colors.transparent,
                       child: _buildDashboardContent(),
                     ),
@@ -396,16 +419,15 @@ final ExpansionTileController _controller = ExpansionTileController();
     );
   }
 
- Widget _buildDashboardContent() {
+  Widget _buildDashboardContent() {
     // Handle submenu selections first
     if (selectedSubMenu != null) {
       switch (selectedSubMenu) {
         case 'Add Class':
-          return _buildCustomScreen('Add Class Screen', Colors.blue.shade100);
+          return AddClass();
         case 'All Classes':
-          return _buildCustomScreen(
-            'All Classes Screen',
-            Colors.green.shade100,
+          return TimeTableApp(
+        
           );
         case 'All item':
           return _buildCustomScreen(
@@ -419,6 +441,8 @@ final ExpansionTileController _controller = ExpansionTileController();
           );
         case 'All Students':
           return const AllStudents();
+        case 'Create Time Table':
+          return const CreateTimetale();
         case 'Add Student':
           return _buildCustomScreen('Add Student Screen', Colors.teal.shade100);
         case 'Attendance':
@@ -439,11 +463,26 @@ final ExpansionTileController _controller = ExpansionTileController();
             Colors.lightGreen.shade100,
           );
         case 'Add Exam':
-          return _buildCustomScreen('Add Exam Screen', Colors.cyan.shade100);
+          return ExamTimeTable();
+        // return _buildCustomScreen('Add Exam Screen', Colors.cyan.shade100);
         case 'All Staff':
           return _buildCustomScreen('All Staff Screen', Colors.brown.shade100);
+        case 'Add Staff':
+          return AddStaff();
+        case 'Teacher1':
+          return Teacher1();
+        case 'Admin1':
+          return const Admin1();
+        case 'Admin2':
+          return const Admin12();
+        case 'Admin3':
+          return const Admin3();
+        case 'Edit5':
+          return const Edit5();
+        case 'Edit4':
+          return const Edit4();
         case 'Time Table':
-          return const StudentTimetableScreen();
+          return const Timetable();
         case 'Teacher':
           return const AddTeacherScreen();
         case 'All Notes':
@@ -469,6 +508,26 @@ final ExpansionTileController _controller = ExpansionTileController();
         case 'All Books':
           return _buildCustomScreen(
             'Library Books Screen',
+            Colors.red.shade100,
+          );
+        case 'Add CBT Exam':
+          return _buildCustomScreen(
+            'Exam cbt Screen',
+            Colors.red.shade100,
+          );
+        case 'Manage Exam':
+          return _buildCustomScreen(
+            'Manage cbt Screen',
+            Colors.red.shade100,
+          );
+        case 'Results':
+          return _buildCustomScreen(
+            'Results cbt Screen',
+            Colors.red.shade100,
+          );
+        case 'New':
+          return _buildCustomScreen(
+            'New cbt Screen',
             Colors.red.shade100,
           );
         case 'Add Libarian':
@@ -530,6 +589,8 @@ final ExpansionTileController _controller = ExpansionTileController();
           Colors.lightGreen.shade200,
         );
       case 12: // Accounts
+        return _buildCustomScreen('Promotions Screen', Colors.cyan.shade200);
+      case 13: // Accounts
         return _buildCustomScreen('Accounts Screen', Colors.cyan.shade200);
       default:
         return const Center(child: Text('Select an option'));

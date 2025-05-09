@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class StudentTimetableScreen extends StatelessWidget {
-  const StudentTimetableScreen({super.key});
+class ExamTimeTable extends StatelessWidget {
+  ExamTimeTable({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -44,11 +44,7 @@ class StudentTimetableScreen extends StatelessWidget {
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        children: [
-          ..._generateTimeSlots()
-              .map((slot) => _buildTimeSlotRow(slot))
-              .toList(),
-        ],
+        children: table.map((slot) => _buildTimeSlotRow(slot)).toList(),
       ),
     );
   }
@@ -91,6 +87,50 @@ class StudentTimetableScreen extends StatelessWidget {
     );
   }
 
+  List<Map<String, String>> table = [
+    {
+      'time': '8:00 AM',
+      'duration': '8:00 AM - 8:45 AM',
+      'subject': '4A - Physics',
+      'class': 'Classroom A1',
+      'color': 'blue',
+    },
+    {
+      'time': '9:00 AM',
+      'duration': '9:00 AM - 9:45 AM',
+      'subject': '3B - Physics',
+      'class': 'Classroom B3',
+      'color': 'yellow',
+    },
+    {
+      'time': '10:00 AM',
+      'duration': '10:00 AM - 10:45 AM',
+      'subject': '2B',
+      'class': 'Classroom B2',
+      'color': 'purple',
+    },
+    {
+      'time': '11:00 AM',
+      'duration': '11:00 AM - 11:45 AM',
+      'subject': '5A - Physics',
+      'class': 'Classroom A5',
+      'color': 'pink',
+    },
+    {
+      'time': '1:00 PM',
+      'duration': '1:00 PM - 1:45 PM',
+      'subject': '6C',
+      'class': 'Classroom C6',
+      'color': 'blue',
+    },
+    {
+      'time': '2:00 PM',
+      'duration': '2:00 PM - 2:45 PM',
+      'subject': '2B - Physics',
+      'class': 'Classroom B2',
+      'color': 'yellow',
+    },
+  ];
   List<Map<String, String>> _generateTimeSlots() {
     return [
       {
