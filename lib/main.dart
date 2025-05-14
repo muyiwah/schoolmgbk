@@ -13,6 +13,8 @@ import 'package:schmgtsystem/custom_timetable.dart';
 import 'package:flutter_quill/flutter_quill.dart' hide Text;
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
+import 'package:schmgtsystem/home2.dart';
+import 'package:schmgtsystem/home3.dart';
 
 void main() {
   runApp(
@@ -49,9 +51,10 @@ class MyApp extends StatelessWidget {
           seedColor: const Color.fromARGB(255, 84, 66, 248),
         ),
       ),
+      home: const SchoolAdminDashboard3(),
       // home: const SchoolAdminDashboard(),
       // home: TakeExamScreen(exam: examdata),
-      home: ExamSetupScreen(),
+      // home: DashboardScreen(),
     );
   }
 }

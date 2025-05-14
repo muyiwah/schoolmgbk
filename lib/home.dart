@@ -11,6 +11,7 @@ import 'package:schmgtsystem/all_students.dart';
 import 'package:schmgtsystem/color_pallete.dart';
 import 'package:schmgtsystem/create_table_testing.dart';
 import 'package:schmgtsystem/custom_timetable.dart';
+import 'package:schmgtsystem/deepseek/deepseek2222/examsetupscreen.dart';
 import 'package:schmgtsystem/dshboard.dart';
 import 'package:collection/collection.dart';
 import 'package:schmgtsystem/staff/add_staff.dart';
@@ -88,7 +89,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       'Manage Exam',
       'Results',
       'New',
-     
     ]),
     MenuItem('Exams', Icons.attach_money, ['All Exams', 'Add Exam']),
     MenuItem('Staff', Icons.attach_money, [
@@ -110,6 +110,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String? selectedSubMenu;
   int tabSelected = -1;
   int subSelected = -1;
+
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -426,9 +428,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         case 'Add Class':
           return AddClass();
         case 'All Classes':
-          return TimeTableApp(
-        
-          );
+          return TimeTableApp();
         case 'All item':
           return _buildCustomScreen(
             'All Inventory Items Screen',
@@ -511,29 +511,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Colors.red.shade100,
           );
         case 'Add CBT Exam':
-          return _buildCustomScreen(
-            'Exam cbt Screen',
-            Colors.red.shade100,
-          );
+          return const ExamSetupScreen();
         case 'Manage Exam':
-          return _buildCustomScreen(
-            'Manage cbt Screen',
-            Colors.red.shade100,
-          );
+          return _buildCustomScreen('Manage cbt Screen', Colors.red.shade100);
         case 'Results':
-          return _buildCustomScreen(
-            'Results cbt Screen',
-            Colors.red.shade100,
-          );
+          return _buildCustomScreen('Results cbt Screen', Colors.red.shade100);
         case 'New':
-          return _buildCustomScreen(
-            'New cbt Screen',
-            Colors.red.shade100,
+          return _buildCustomScreen('New cbt Screen', Colors.red.shade100);
+         case 'Subaccount':
+          return subaccount(
+            onBack: () {
+              setState(() {
+                selectedSubMenu = null; // Clear sub-menu selection
+                selectedIndex = 13; // Go back to Account
+              });
+            },
           );
         case 'Add Libarian':
           return _buildCustomScreen(
             'Add Librarian Screen',
             Colors.yellow.shade100,
+          );
+          case 'AccountSettings':
+          return SettingsScreen(
+            onBack: () {
+              setState(() {
+                selectedSubMenu = null;
+                selectedIndex = 13;
+              });
+            },
           );
       }
     }
@@ -590,8 +596,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
         );
       case 12: // Accounts
         return _buildCustomScreen('Promotions Screen', Colors.cyan.shade200);
-      case 13: // Accounts
-        return _buildCustomScreen('Accounts Screen', Colors.cyan.shade200);
+     case 13:
+        return Account(
+         onNavigate: (destination) {
+            setState(() {
+              selectedSubMenu = destination;
+            });
+          },
+        );
       default:
         return const Center(child: Text('Select an option'));
     }
@@ -639,3 +651,68 @@ class FeesScreen extends StatelessWidget {
     );
   }
 }
+
+class Account extends StatelessWidget {
+   Account({super.key,this.onNavigate });
+
+  final void Function(String destination)? onNavigate;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Column(mainAxisAlignment: MainAxisAlignment.center,crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          ElevatedButton(
+            onPressed: () => onNavigate?.call('Subaccount'),
+      
+            child: const Text('ho to subaccount'),
+          ),
+       ElevatedButton(
+            onPressed: () => onNavigate?.call('AccountSettings'),
+            child: const Text('Go to Settings'),
+          ), ],
+      ),
+    );
+  }
+}
+
+
+class subaccount extends StatelessWidget {
+  const subaccount({super.key, this.onBack});
+
+  final VoidCallback? onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.amber,
+      body: Center(
+        child: ElevatedButton.icon(
+          onPressed: onBack,
+          icon: const Icon(Icons.arrow_back),
+          label: const Text('Back to Account'),
+        ),
+      ),
+    );
+  }
+}
+class SettingsScreen extends StatelessWidget {
+  const SettingsScreen({super.key, this.onBack});
+
+  final VoidCallback? onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.amber,
+      body: Center(
+        child: ElevatedButton.icon(
+          onPressed: onBack,
+          icon: const Icon(Icons.arrow_back),
+          label: const Text('Back to Account'),
+        ),
+      ),
+    );
+  }
+}
+
