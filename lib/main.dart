@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:schmgtsystem/Student/all_student.dart';
 import 'package:schmgtsystem/Student/timetable.dart';
 import 'package:schmgtsystem/deepseek/deepseek2222/exammodel.dart'
@@ -31,30 +33,36 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      localizationsDelegates: const [
-        FlutterQuillLocalizations.delegate, // 👈 REQUIRED
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const [
-        Locale('en'), // 👈 add any locales you support
-        Locale('fr'),
-        Locale('es'),
-        // etc...
-      ],
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color.fromARGB(255, 84, 66, 248),
+    return ScreenUtilInit(
+        designSize: const Size(360, 690), // Default design size (e.g., Figma/Adobe XD)
+      minTextAdapt: true, // Auto-adjust text sizes
+      splitScreenMode: true, 
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        localizationsDelegates: const [
+          FlutterQuillLocalizations.delegate, // 👈 REQUIRED
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('en'), // 👈 add any locales you support
+          Locale('fr'),
+          Locale('es'),
+          // etc...
+        ],
+        title: 'Flutter Demo',
+        theme: ThemeData(
+          //  textTheme: GoogleFonts.robotoTextTheme(),
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color.fromARGB(255, 84, 66, 248),
+          ),
         ),
+        home: const SchoolAdminDashboard3(),
+        // home: const SchoolAdminDashboard(),
+        // home: TakeExamScreen(exam: examdata),
+        // home: DashboardScreen(),
       ),
-      home: const SchoolAdminDashboard3(),
-      // home: const SchoolAdminDashboard(),
-      // home: TakeExamScreen(exam: examdata),
-      // home: DashboardScreen(),
     );
   }
 }

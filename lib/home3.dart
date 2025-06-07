@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:schmgtsystem/Student/all_parents.dart';
 import 'package:schmgtsystem/Student/create_timetale.dart';
+import 'package:schmgtsystem/Student/single_parent.dart';
 import 'package:schmgtsystem/Student/single_student.dart';
 import 'package:schmgtsystem/Student/timetable.dart';
 import 'package:schmgtsystem/Teacher/screens/Teacher.dart';
@@ -10,6 +12,7 @@ import 'package:schmgtsystem/admin222.dart';
 import 'package:schmgtsystem/admin3333.dart';
 import 'package:schmgtsystem/all_students.dart';
 import 'package:schmgtsystem/color_pallete.dart';
+import 'package:schmgtsystem/component/allstudentpanenew.dart';
 import 'package:schmgtsystem/create_table_testing.dart';
 import 'package:schmgtsystem/custom_timetable.dart';
 import 'package:schmgtsystem/deepseek/deepseek2222/examsetupscreen.dart';
@@ -83,36 +86,55 @@ class _DashboardScreenState extends State<DashboardScreen> {
       //   onNavigateToInnerRoute:
       //       () => navigateTo('student/addstudent/innerroute'),
       // ),
-      'inventory/all': const AllStudents(),
-      'inventory/edit': StudentTablePage(),
-      'student/allstudents': Container(
-        color: Colors.amber,
-        child: Center(
-          child: ElevatedButton(
-            onPressed: () {
-              navigateTo('student/addstudent/innerroute');
-            },
-            child: const Text('go'),
-          ),
-        ),
+      // 'inventory/allitem': const AllStudentsPage(),
+
+      /////timetable
+      'student/timetable': const CreateTimetale(),
+      'student/edit4': ExamTimeTable(),
+      'student/allstudents': const AddTeacherScreen(),
+      'student/parents': AllParents(
+        navigateTo: () {
+          navigateTo('student/single_parent');
+        },
       ),
-      'student/addstudent': Container(
-        color: Colors.green,
-        child: const Center(child: Text('Add Student')),
+      'student/single_parent':  SingleParent(
+          navigateBack: () {
+          navigateTo('student/parents');
+        },
       ),
-      'student/singlestudent': SingleStudent(),
+      'class/addclass': const AddClass(),
+      'class/allclasses': const TimeTableApp(),
+      'student/addstudent': const AddStaff(),
+      'student/attendance': const ExamSetupScreen(),
+      'student/edit5': const Edit5(),
+
+      // 'inventory/edititem': const StudentTablePage2(),//////undo for web
+      // 'student/allstudents': Container(
+      //   color: Colors.amber,
+      //   child: Center(
+      //     child: ElevatedButton(
+      //       onPressed: () {
+      //         navigateTo('student/addstudent/innerroute');
+      //       },
+      //       child: const Text('go'),
+      //     ),
+      //   ),
+      // ),
+      'student/singlestudent': const SingleStudent(),
       'accounts': Container(
         color: Colors.red,
         child: const Center(child: Text('Account')),
       ),
-      'student/addstudent/innerroute': InnerRoute(navigateTo: () {
-              navigateTo('student/allstudents');
-      },
+      'student/addstudent/innerroute': InnerRoute(
+        navigateTo: () {
+          navigateTo('student/allstudents');
+        },
         onNavigateToInnerRoute:
             () => navigateTo('student/addstudent/innerroute/inner'),
       ),
       'student/addstudent/innerroute/inner': Scaffold(
-        appBar: AppBar(backgroundColor: Colors.amber,
+        appBar: AppBar(
+          backgroundColor: Colors.amber,
           title: ElevatedButton(
             onPressed: () {
               navigateTo('student/addstudent/innerroute');
@@ -142,6 +164,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       'Single Student',
       'Attendance',
       'Time Table',
+      'Parents',
       'Edit4',
       'Edit5',
       'Create Time Table',
@@ -237,9 +260,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print('build run');
     return Scaffold(
-      appBar: AppBar(title: _buildBreadcrumbs()),
+      // appBar: AppBar(title: _buildBreadcrumbs()),
       // backgroundColor: Colors.white,
       body: Container(
         width: double.infinity,
@@ -324,14 +346,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                         index,
                                         subItem,
                                       ) {
-                                        bool isSelected =
-                                            selectedIndex == index;
-                                        // return ListTile(
-                                        //   title: Text(subItem),
-                                        //   onTap: () {
-                                        //     print(subItem);
-                                        //   },
-                                        // );
                                         return InkWell(
                                           onTap: () {
                                             print('hi');
@@ -344,8 +358,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                             navigateTo(
                                               '${menu.title.toLowerCase()}/${subItem.toLowerCase().replaceAll(" ", "")}',
                                             );
-                                            // print(selectedIndex);
-                                            // print(selectedSubMenu);
                                           },
                                           child: Container(
                                             // padding: const EdgeInsets.symmetric(
@@ -466,7 +478,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-
   Widget _buildCustomScreen(String title, Color color) {
     return Container(
       decoration: BoxDecoration(
@@ -576,7 +587,6 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 }
-
 
 class InnerRoute extends StatelessWidget {
   final VoidCallback? onNavigateToInnerRoute;

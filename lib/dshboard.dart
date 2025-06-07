@@ -40,61 +40,7 @@ class MetricScreen extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 32),
-            const Text(
-              'Attendance Trend',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            AspectRatio(
-              aspectRatio: 1.7,
-              child: LineChart(
-                LineChartData(
-                  gridData: FlGridData(show: false),
-                  titlesData: FlTitlesData(
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: true),
-                    ),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        getTitlesWidget: (value, _) {
-                          switch (value.toInt()) {
-                            case 0:
-                              return const Text('Mon');
-                            case 1:
-                              return const Text('Tue');
-                            case 2:
-                              return const Text('Wed');
-                            case 3:
-                              return const Text('Thu');
-                            case 4:
-                              return const Text('Fri');
-                          }
-                          return const Text('');
-                        },
-                      ),
-                    ),
-                  ),
-                  borderData: FlBorderData(show: false),
-                  lineBarsData: [
-                    LineChartBarData(
-                      spots: [
-                        const FlSpot(0, 85),
-                        const FlSpot(1, 90),
-                        const FlSpot(2, 88),
-                        const FlSpot(3, 95),
-                        const FlSpot(4, 92),
-                      ],
-                      isCurved: true,
-                      color: Colors.green,
-                      barWidth: 3,
-                      dotData: FlDotData(show: false),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            
           ],
         ),
       ),

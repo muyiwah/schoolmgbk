@@ -170,13 +170,13 @@
 //   int get selectedRowCount => _selected.length;
 // }
 
-// class StudentTablePage extends StatefulWidget {
-//   const StudentTablePage({super.key});
+// class StudentTablePage2 extends StatefulWidget {
+//   const StudentTablePage2({super.key});
 //   @override
-//   State<StudentTablePage> createState() => _StudentTablePageState();
+//   State<StudentTablePage2> createState() => _StudentTablePageState();
 // }
 
-// class _StudentTablePageState extends State<StudentTablePage> {
+// class _StudentTablePageState extends State<StudentTablePage2> {
 //   late StudentDataSource _dataSource;
 //   int _rowsPerPage = PaginatedDataTable.defaultRowsPerPage;
 //   int? _sortColumnIndex;

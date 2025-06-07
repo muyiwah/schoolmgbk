@@ -91,6 +91,30 @@
 //       profilePictureUrl:
 //           'https://ik.imagekit.io/dp750urb0/featured1.jpeg?updatedAt=1742563965798',
 //     ),
+//     MyDataRowModel(
+//       className: "Primary 2",
+//       section: "B",
+//       student: "Jane Smith",
+//       number: 2,
+//       profilePictureUrl:
+//           'https://ik.imagekit.io/dp750urb0/featured1.jpeg?updatedAt=1742563965798',
+//     ),
+//     MyDataRowModel(
+//       className: "Primary 2",
+//       section: "B",
+//       student: "Jane Smith",
+//       number: 2,
+//       profilePictureUrl:
+//           'https://ik.imagekit.io/dp750urb0/featured1.jpeg?updatedAt=1742563965798',
+//     ),
+//     MyDataRowModel(
+//       className: "Primary 2",
+//       section: "B",
+//       student: "Jane Smith",
+//       number: 2,
+//       profilePictureUrl:
+//           'https://ik.imagekit.io/dp750urb0/featured1.jpeg?updatedAt=1742563965798',
+//     ),
 //   ];
 
 //   List<MyDataRowModel> get filteredData {
@@ -1090,22 +1114,22 @@
 
 
 
-import 'package:flutter/material.dart';
+// // import 'package:flutter/material.dart';
 
-class AllStudents extends StatelessWidget {
-  const AllStudents({super.key});
+// // class AllStudents extends StatelessWidget {
+// //   const AllStudents({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return const Placeholder();
-  }
-}
+// //   @override
+// //   Widget build(BuildContext context) {
+// //     return const Placeholder();
+// //   }
+// // }
 
-class StudentTablePage extends StatelessWidget {
-  const StudentTablePage({super.key});
+// // class StudentTablePage extends StatelessWidget {
+// //   const StudentTablePage({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return const Placeholder();
-  }
-}
+// //   @override
+// //   Widget build(BuildContext context) {
+// //     return const Placeholder();
+// //   }
+// // }

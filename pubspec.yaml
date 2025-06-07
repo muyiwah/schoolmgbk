@@ -27,11 +27,16 @@ dependencies:
   file_saver: ^0.1.1
   http:
   fluttertoast:
+  google_fonts: ^6.2.1
+  flutter_screenutil: ^5.9.3
+  flutter_animate: ^4.2.0+1
+
   flutter_localization: ^0.3.2
 
   syncfusion_flutter_charts:
   url_launcher:
   provider:
+  # charts_flutter:
 
   path_provider: ^2.0.15
   uuid: ^3.0.7
@@ -49,8 +54,8 @@ flutter:
   uses-material-design: true
 
   # Uncomment and add your image assets here
-  # assets:
-  #   - assets/images/
+  assets:
+    - assets/images/
 
   # Uncomment and configure if you want to use custom fonts
   # fonts:
