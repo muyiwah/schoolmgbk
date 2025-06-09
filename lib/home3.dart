@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:schmgtsystem/Class/classes.dart';
+import 'package:schmgtsystem/Class/single_class.dart';
 import 'package:schmgtsystem/Student/all_parents.dart';
 import 'package:schmgtsystem/Student/create_timetale.dart';
 import 'package:schmgtsystem/Student/single_parent.dart';
@@ -6,10 +8,12 @@ import 'package:schmgtsystem/Student/single_student.dart';
 import 'package:schmgtsystem/Student/timetable.dart';
 import 'package:schmgtsystem/Teacher/screens/Teacher.dart';
 import 'package:schmgtsystem/Teacher/screens/allparents.dart';
+import 'package:schmgtsystem/accunts/accounts.dart';
 import 'package:schmgtsystem/add_class.dart';
 import 'package:schmgtsystem/admin111.dart';
 import 'package:schmgtsystem/admin222.dart';
 import 'package:schmgtsystem/admin3333.dart';
+import 'package:schmgtsystem/admissions/admission_screen.dart';
 import 'package:schmgtsystem/all_students.dart';
 import 'package:schmgtsystem/color_pallete.dart';
 import 'package:schmgtsystem/component/allstudentpanenew.dart';
@@ -18,8 +22,15 @@ import 'package:schmgtsystem/custom_timetable.dart';
 import 'package:schmgtsystem/deepseek/deepseek2222/examsetupscreen.dart';
 import 'package:schmgtsystem/dshboard.dart';
 import 'package:collection/collection.dart';
+import 'package:schmgtsystem/exams/add_exams.dart';
+import 'package:schmgtsystem/exams/all_exams.dart';
+import 'package:schmgtsystem/exams/exam_schedule.dart';
+import 'package:schmgtsystem/exams/examination_overview.dart';
+import 'package:schmgtsystem/exams/overview2.dart';
 import 'package:schmgtsystem/home2.dart';
+import 'package:schmgtsystem/promotions/manage_promotion.dart';
 import 'package:schmgtsystem/staff/add_staff.dart';
+import 'package:schmgtsystem/staff/teachers.dart';
 import 'package:schmgtsystem/staff/timetable.dart';
 import 'package:schmgtsystem/teacher111.dart';
 import 'package:schmgtsystem/tesing2222.dart';
@@ -102,11 +113,44 @@ class _DashboardScreenState extends State<DashboardScreen> {
           navigateTo('student/parents');
         },
       ),
-      'class/addclass': const AddClass(),
-      'class/allclasses': const TimeTableApp(),
+
+
+      ///classssess
+      'class/addclass': const TimeTableApp(),
+      'class/allclasses': const SchoolClasses(),
+      'class/singleclass': const ClassDetailsScreen(),
+
+
+
+
+      
       'student/addstudent': const AddStaff(),
       'student/attendance': const ExamSetupScreen(),
       'student/edit5': const Edit5(),
+      
+      ///examssss
+    'exams/allexams': ExaminationOverviewScreenTwo(),
+    'exams/overview':const ExaminationOverviewPage(),
+    'exams/examschedule':const ExamSchedule(),
+
+
+
+    ////admissions
+   'admissions/alladmissions':const AdmissionsOverviewPage(),
+
+
+
+
+   ///staff
+   'staff/teacher':const AssignTeacher(),
+
+
+////promotions
+'promotions/managepromotion':StudentPromotionManager(),
+
+
+////accounts
+      'accounts/income': const FinancialOverviewScreen(),
 
       // 'inventory/edititem': const StudentTablePage2(),//////undo for web
       // 'student/allstudents': Container(
@@ -156,8 +200,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // UniqueKey _tileKey = UniqueKey();
   final List<MenuItem> menuItems = [
     MenuItem('Home', Icons.person_add, []),
-    MenuItem('Class', Icons.person_add, ['Add Class', 'All Classes']),
-    MenuItem('Inventory', Icons.person_add, ['All item', 'Edit item']),
+    MenuItem('Class', Icons.person_add, ['Add Class', 'All Classes','Single class']),
+    // MenuItem('Inventory', Icons.person_add, ['All item', 'Edit item']),
     MenuItem('Student', Icons.calendar_today, [
       'All Students',
       'Add Student',
@@ -177,13 +221,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       'All Fees',
       'Add/Edit Fee',
     ]),
-    MenuItem('CBT', Icons.attach_money, [
-      'Add CBT Exam',
-      'Manage Exam',
-      'Results',
-      'New',
-    ]),
-    MenuItem('Exams', Icons.attach_money, ['All Exams', 'Add Exam']),
+    // MenuItem('CBT', Icons.attach_money, [
+    //   'Add CBT Exam',
+    //   'Manage Exam',
+    //   'Results',
+    //   'New',
+    // ]),
+    MenuItem('Exams', Icons.attach_money, ['All Exams', 'Exam Schedule','Overview',]),
     MenuItem('Staff', Icons.attach_money, [
       'All Staff',
       'Add Staff',
@@ -191,13 +235,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       'Teacher',
       'Attendance',
     ]),
-    MenuItem('Lesson Notes', Icons.attach_money, ['All Notes', 'Add New Note']),
-    MenuItem('Inventory', Icons.attach_money, ['All Inventory', 'Add New']),
-    MenuItem('Library', Icons.attach_money, ['All Books', 'Add Libarian']),
-    MenuItem('Chats', Icons.attach_money, []),
-    MenuItem('Admissions', Icons.attach_money, []),
-    MenuItem('Promotions', Icons.attach_money, []),
-    MenuItem('Accounts', Icons.attach_money, []),
+    // MenuItem('Lesson Notes', Icons.attach_money, ['All Notes', 'Add New Note']),
+    // MenuItem('Inventory', Icons.attach_money, ['All Inventory', 'Add New']),
+    // MenuItem('Library', Icons.attach_money, ['All Books', 'Add Libarian']),
+    // MenuItem('Chats', Icons.attach_money, []),
+    MenuItem('Admissions', Icons.attach_money, ['All Admissions']),
+    MenuItem('Promotions', Icons.attach_money, ['Manage Promotion']),
+    MenuItem('Accounts', Icons.attach_money, ['Income']),
   ];
   bool _isExpanded = false;
   String? selectedSubMenu;

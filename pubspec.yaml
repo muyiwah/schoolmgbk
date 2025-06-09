@@ -16,6 +16,7 @@ dependencies:
   easy_sidemenu: ^0.6.1
   flutter_timetable: ^1.1.6
   intl:
+  iconsax:
   fl_chart:
   equatable: ^2.0.7
   printing: ^5.11.0
