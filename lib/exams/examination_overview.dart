@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
+import 'package:schmgtsystem/constants/appcolor.dart';
+
 
 class ExaminationOverviewPage extends StatefulWidget {
   const ExaminationOverviewPage({super.key});
@@ -137,7 +139,7 @@ class _ExaminationOverviewPageState extends State<ExaminationOverviewPage> {
                             label: const Text('Create New Exam'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.white,
-                              foregroundColor: const Color(0xFF6366F1),
+                              foregroundColor: AppColors.secondary,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 20,
                                 vertical: 12,

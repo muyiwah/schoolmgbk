@@ -61,7 +61,7 @@ class FinancialOverviewScreen extends StatelessWidget {
                 Expanded(
                   child: _buildStatCard(
                     'Total Income This Term',
-                    '₦12,400,000',
+                    '£12,400,000',
                     '+12%',
                     Colors.green,
                     Icons.trending_up,
@@ -71,7 +71,7 @@ class FinancialOverviewScreen extends StatelessWidget {
                 Expanded(
                   child: _buildStatCard(
                     'Total Income This Year',
-                    '₦34,780,000',
+                    '£34,780,000',
                     '+8%',
                     Colors.blue,
                     Icons.bar_chart,
@@ -81,7 +81,7 @@ class FinancialOverviewScreen extends StatelessWidget {
                 Expanded(
                   child: _buildStatCard(
                     'Outstanding Payments',
-                    '₦2,100,000',
+                    '£2,100,000',
                     '-5%',
                     Colors.red,
                     Icons.warning,
@@ -123,7 +123,7 @@ class FinancialOverviewScreen extends StatelessWidget {
                 Expanded(
                   child: _buildClassCard(
                     'Grade 6 Blue',
-                    '₦1,850,000',
+                    '£1,850,000',
                     '18/20',
                     2,
                     90,
@@ -133,7 +133,7 @@ class FinancialOverviewScreen extends StatelessWidget {
                 Expanded(
                   child: _buildClassCard(
                     'Grade 5 Red',
-                    '₦1,650,000',
+                    '£1,650,000',
                     '16/22',
                     6,
                     73,
@@ -143,7 +143,7 @@ class FinancialOverviewScreen extends StatelessWidget {
                 Expanded(
                   child: _buildClassCard(
                     'Grade 4 Green',
-                    '₦1,420,000',
+                    '£1,420,000',
                     '19/25',
                     6,
                     76,
@@ -467,7 +467,7 @@ class FinancialOverviewScreen extends StatelessWidget {
           _buildTransactionItem(
             'John Adebayo',
             'Grade 6 Blue • Bank Transfer',
-            '₦85,000',
+            '£85,000',
             'Today',
             Icons.check_circle,
             Colors.green,
@@ -475,7 +475,7 @@ class FinancialOverviewScreen extends StatelessWidget {
           _buildTransactionItem(
             'Sarah Okafor',
             'Grade 5 Red • Online Payment',
-            '₦75,000',
+            '£75,000',
             'Yesterday',
             Icons.credit_card,
             Colors.blue,
@@ -574,7 +574,7 @@ class FinancialOverviewScreen extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           const Text(
-            '₦13.8M of ₦15M target',
+            '£13.8M of £15M target',
             style: TextStyle(color: Colors.grey, fontSize: 12),
           ),
           const Text(

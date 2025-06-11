@@ -117,7 +117,7 @@ class AllParents extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
-          color: screenBackground,
+          color: screenBackground.withOpacity(.01),
         ),
         child: Column(
           children: [

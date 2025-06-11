@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-
-
+import 'package:schmgtsystem/constants/appcolor.dart';
 
 class ExaminationOverviewScreenTwo extends StatefulWidget {
-  const ExaminationOverviewScreenTwo({super.key});
+  final Function navigateTo;
+
+  const ExaminationOverviewScreenTwo({super.key, required this.navigateTo});
 
   @override
   State<ExaminationOverviewScreenTwo> createState() =>
       _ExaminationOverviewScreenState();
 }
 
-class _ExaminationOverviewScreenState extends State<ExaminationOverviewScreenTwo> {
+class _ExaminationOverviewScreenState
+    extends State<ExaminationOverviewScreenTwo> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -47,11 +49,13 @@ class _ExaminationOverviewScreenState extends State<ExaminationOverviewScreenTwo
                   Row(
                     children: [
                       ElevatedButton.icon(
-                        onPressed: () {},
+                        onPressed: () {
+                          widget.navigateTo();
+                        },
                         icon: const Icon(Icons.add, size: 18),
                         label: const Text('Create New Exam'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF6366F1),
+                          backgroundColor: AppColors.secondary,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 20,
@@ -245,7 +249,19 @@ class _ExaminationOverviewScreenState extends State<ExaminationOverviewScreenTwo
                                                 text = 'Jun';
                                                 break;
                                             }
-                                            return SideTitleWidget(meta: TitleMeta(min: 2, max: 6, parentAxisSize: 3, axisPosition: 2, appliedInterval: 33, sideTitles: SideTitles(), formattedValue: 'formattedValue', axisSide: AxisSide.left, rotationQuarterTurns: 4),
+                                            return SideTitleWidget(
+                                              meta: TitleMeta(
+                                                min: 2,
+                                                max: 6,
+                                                parentAxisSize: 3,
+                                                axisPosition: 2,
+                                                appliedInterval: 33,
+                                                sideTitles: SideTitles(),
+                                                formattedValue:
+                                                    'formattedValue',
+                                                axisSide: AxisSide.left,
+                                                rotationQuarterTurns: 4,
+                                              ),
                                               // axisSide: meta.axisSide,
                                               child: Text(text, style: style),
                                             );

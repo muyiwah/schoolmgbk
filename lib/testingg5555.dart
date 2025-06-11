@@ -544,8 +544,8 @@ class _TimeTableCreatorScreenState extends State<TimeTableCreatorScreen> {
 
     return DefaultTabController(
       length: 2,
-      child: Scaffold(
-        appBar: AppBar(
+      child: Scaffold(backgroundColor: Colors.white,
+        appBar: AppBar(backgroundColor: Colors.white,
           title: Text(_timetableName),
           actions: [
             IconButton(
@@ -809,7 +809,7 @@ class _TimeTableCreatorScreenState extends State<TimeTableCreatorScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildSectionHeader('Period Presets'),
-            Card(
+            Card(color: Colors.white,
               elevation: 2,
               child: Padding(
                 padding: const EdgeInsets.all(16.0),

@@ -10,7 +10,7 @@ class ExamTimeTable extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        title: const Text('Schedule', style: TextStyle(color: Colors.black)),
+        title: const Text('Exam Schedule', style: TextStyle(color: Colors.black)),
         actions: [
           Row(
             children: [

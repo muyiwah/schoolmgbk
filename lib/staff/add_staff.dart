@@ -45,7 +45,7 @@ class _AddStaffState extends State<AddStaff>
         height: double.infinity,
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: screenBackground,
+       
           borderRadius: BorderRadius.circular(14),
         ),
         child: Column(
@@ -73,7 +73,7 @@ class _AddStaffState extends State<AddStaff>
                         ),
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: homeColor.withOpacity(.5),
+                            backgroundColor: homeColor,
                             // minimumSize: const Size(1, 50),
                             shape: BeveledRectangleBorder(
                               borderRadius: BorderRadius.circular(4),

@@ -43,6 +43,7 @@ dependencies:
   uuid: ^3.0.7
   flutter_quill: ^11.4.0
   flutter_quill_extensions:
+  toastification: 
 
 dev_dependencies:
   flutter_test:

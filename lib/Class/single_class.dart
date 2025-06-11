@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-
+import 'package:schmgtsystem/constants/appcolor.dart';
+import 'package:schmgtsystem/widgets/prompt.dart';
 
 class ClassDetailsScreen extends StatefulWidget {
-  const ClassDetailsScreen({super.key});
+  final Function navigateTo;
+  ClassDetailsScreen({super.key, required this.navigateTo});
 
   @override
   State<ClassDetailsScreen> createState() => _ClassDetailsScreenState();
@@ -18,7 +20,11 @@ class _ClassDetailsScreenState extends State<ClassDetailsScreen> {
       body: Column(
         children: [
           // _buildHeader(),
-          _buildClassOverview(),
+          _buildClassOverview(
+            navigateBack: () {
+              widget.navigateTo();
+            },
+          ),
           Expanded(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -66,72 +72,87 @@ class _ClassDetailsScreenState extends State<ClassDetailsScreen> {
     );
   }
 
-  Widget _buildClassOverview() {
-    return Container(
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
-      ),
-      padding: const EdgeInsets.all(24),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Class Details – Grade 5 Blue',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Comprehensive view of class assignments, performance, and student information',
-                  style: TextStyle(fontSize: 14, color: Colors.white70),
-                ),
-                const SizedBox(height: 24),
-                Row(
+  Widget _buildClassOverview({required Null Function() navigateBack}) {
+    return Stack(
+      children: [
+        Container(
+          width: double.infinity,
+          decoration:  BoxDecoration(borderRadius: BorderRadius.circular(16),
+            gradient: LinearGradient(
+              colors: [AppColors.secondary, Color(0xFF8B5CF6)],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+            ),
+          ),
+          padding: const EdgeInsets.all(24),
+          child: Row(
+            children: [SizedBox(width: 20,),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const CircleAvatar(
-                      radius: 24,
-                      backgroundImage: NetworkImage(
-                        'https://via.placeholder.com/48',
+                    const Text(
+                      'Class Details – Grade 5 Blue',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Comprehensive view of class assignments, performance, and student information',
+                      style: TextStyle(fontSize: 14, color: Colors.white70),
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
                       children: [
-                        const Text(
-                          'Mrs. Sarah Johnson',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
+                        const CircleAvatar(
+                          radius: 24,
+                          backgroundImage: NetworkImage(
+                            'https://via.placeholder.com/48',
                           ),
                         ),
-                        const Text(
-                          'Mathematics & Science',
-                          style: TextStyle(fontSize: 12, color: Colors.white70),
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
+                        const SizedBox(width: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(Icons.phone, size: 14, color: Colors.white70),
-                            const SizedBox(width: 4),
-                            Icon(Icons.email, size: 14, color: Colors.white70),
-                            const SizedBox(width: 4),
-                            Icon(
-                              Icons.message,
-                              size: 14,
-                              color: Colors.white70,
+                            const Text(
+                              'Mrs. Sarah Johnson',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const Text(
+                              'Mathematics & Science',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.white70,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.phone,
+                                  size: 14,
+                                  color: Colors.white70,
+                                ),
+                                const SizedBox(width: 4),
+                                Icon(
+                                  Icons.email,
+                                  size: 14,
+                                  color: Colors.white70,
+                                ),
+                                const SizedBox(width: 4),
+                                Icon(
+                                  Icons.message,
+                                  size: 14,
+                                  color: Colors.white70,
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -139,82 +160,92 @@ class _ClassDetailsScreenState extends State<ClassDetailsScreen> {
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 24),
-          Column(
-            children: [
-              const Text(
-                '22',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+              ),
+              const SizedBox(width: 24),
+              Column(
+                children: [
+                  const Text(
+                    '22',
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const Text(
+                    'Total Students',
+                    style: TextStyle(fontSize: 12, color: Colors.white70),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      _buildGenderIcon('👨', '12'),
+                      const SizedBox(width: 8),
+                      _buildGenderIcon('👩', '10'),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(width: 24),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  children: [
+                    const Text(
+                      '87%',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const Text(
+                      'Average Attendance',
+                      style: TextStyle(fontSize: 12, color: Colors.white70),
+                    ),
+                  ],
                 ),
               ),
-              const Text(
-                'Total Students',
-                style: TextStyle(fontSize: 12, color: Colors.white70),
-              ),
-              const SizedBox(height: 8),
-              Row(
+              const SizedBox(width: 16),
+              Column(
                 children: [
-                  _buildGenderIcon('👨', '12'),
-                  const SizedBox(width: 8),
-                  _buildGenderIcon('👩', '10'),
+                  _buildActionButton(
+                    '📧 Message Class Teacher',
+                    Colors.white,
+                    const Color(0xFF6366F1),
+                  ),
+                  const SizedBox(height: 8),
+                  _buildActionButton(
+                    '👤 Add Student',
+                    const Color(0xFF06B6D4),
+                    Colors.white,
+                  ),
+                  const SizedBox(height: 8),
+                  _buildActionButton(
+                    '✏️ Edit Class Info',
+                    const Color(0xFF8B5CF6),
+                    Colors.white,
+                  ),
                 ],
               ),
             ],
           ),
-          const SizedBox(width: 24),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              children: [
-                const Text(
-                  '87%',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const Text(
-                  'Average Attendance',
-                  style: TextStyle(fontSize: 12, color: Colors.white70),
-                ),
-              ],
-            ),
+        ),
+        Positioned(
+          top: 20,
+          left: 0,
+          child: IconButton(
+            onPressed: () {
+              navigateBack();
+            },
+            icon: Icon(Icons.arrow_back_ios_new, color: Colors.white),
           ),
-          const SizedBox(width: 16),
-          Column(
-            children: [
-              _buildActionButton(
-                '📧 Message Class Teacher',
-                Colors.white,
-                const Color(0xFF6366F1),
-              ),
-              const SizedBox(height: 8),
-              _buildActionButton(
-                '👤 Add Student',
-                const Color(0xFF06B6D4),
-                Colors.white,
-              ),
-              const SizedBox(height: 8),
-              _buildActionButton(
-                '✏️ Edit Class Info',
-                const Color(0xFF8B5CF6),
-                Colors.white,
-              ),
-            ],
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -245,7 +276,8 @@ class _ClassDetailsScreenState extends State<ClassDetailsScreen> {
 
   Widget _buildActionButton(String text, Color bgColor, Color textColor) {
     return ElevatedButton(
-      onPressed: () {},
+      onPressed: () {
+      },
       style: ElevatedButton.styleFrom(
         backgroundColor: bgColor,
         foregroundColor: textColor,
@@ -482,8 +514,8 @@ class _ClassDetailsScreenState extends State<ClassDetailsScreen> {
   Widget _buildSidebar() {
     return Container(
       margin: const EdgeInsets.only(top: 16, right: 16, bottom: 16),
-      child: 
-      Container(height: double.infinity,
+      child: Container(
+        height: double.infinity,
         child: ListView(
           children: [
             _buildQuickMetrics(),

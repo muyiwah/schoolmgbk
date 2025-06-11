@@ -1,32 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:schmgtsystem/constants/appcolor.dart';
+import 'package:schmgtsystem/widgets/prompt.dart';
 
-
-class SchoolClasses extends StatelessWidget {
-  const SchoolClasses({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'SchoolHub Admin',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        fontFamily: 'Roboto',
-        scaffoldBackgroundColor: const Color(0xFFF8F9FA),
-      ),
-      home: const ClassOverviewScreen(),
-      debugShowCheckedModeBanner: false,
-    );
-  }
-}
-
-class ClassOverviewScreen extends StatefulWidget {
-  const ClassOverviewScreen({super.key});
+class SchoolClasses extends StatefulWidget {
+  final Function navigateTo;
+  final Function navigateTo2;
+  SchoolClasses({
+    super.key,
+    required this.navigateTo,
+    required this.navigateTo2,
+  });
 
   @override
-  State<ClassOverviewScreen> createState() => _ClassOverviewScreenState();
+  State<SchoolClasses> createState() => _SchoolClassesState();
 }
 
-class _ClassOverviewScreenState extends State<ClassOverviewScreen> {
+class _SchoolClassesState extends State<SchoolClasses> {
   String selectedLevel = 'All Levels';
   String sortBy = 'Sort by Alphabetical';
   bool isGridView = true;
@@ -44,11 +33,17 @@ class _ClassOverviewScreenState extends State<ClassOverviewScreen> {
     'Sort by Attendance',
   ];
 
+  prompt(context) {
+    CustomDialog(message:'Do you want to download report?',context: context);
+  }
+
+ 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-      appBar: _buildAppBar(),
+
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Column(
@@ -56,7 +51,11 @@ class _ClassOverviewScreenState extends State<ClassOverviewScreen> {
           children: [
             _buildHeader(),
             const SizedBox(height: 32),
-            _buildActionButtons(),
+            _buildActionButtons(
+              navigate: () {
+                widget.navigateTo();
+              },
+            ),
             const SizedBox(height: 40),
             _buildStatsCards(),
             const SizedBox(height: 40),
@@ -66,58 +65,6 @@ class _ClassOverviewScreenState extends State<ClassOverviewScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  AppBar _buildAppBar() {
-    return AppBar(
-      backgroundColor: Colors.white,
-      elevation: 0,
-      title: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: const Color(0xFF6366F1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(Icons.school, color: Colors.white, size: 20),
-          ),
-          const SizedBox(width: 12),
-          const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'SchoolHub Admin',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              Text(
-                'Class Management',
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.notifications_outlined, color: Colors.grey),
-          onPressed: () {},
-        ),
-        const CircleAvatar(
-          backgroundImage: NetworkImage('https://via.placeholder.com/32'),
-          radius: 16,
-        ),
-        const SizedBox(width: 16),
-      ],
     );
   }
 
@@ -142,7 +89,7 @@ class _ClassOverviewScreenState extends State<ClassOverviewScreen> {
     );
   }
 
-  Widget _buildActionButtons() {
+  Widget _buildActionButtons({required navigate}) {
     return Row(
       children: [
         ElevatedButton.icon(
@@ -150,7 +97,7 @@ class _ClassOverviewScreenState extends State<ClassOverviewScreen> {
           icon: const Icon(Icons.add, size: 20),
           label: const Text('Add New Class'),
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF6366F1),
+            backgroundColor: AppColors.secondary,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             shape: RoundedRectangleBorder(
@@ -160,11 +107,13 @@ class _ClassOverviewScreenState extends State<ClassOverviewScreen> {
         ),
         const SizedBox(width: 12),
         OutlinedButton.icon(
-          onPressed: () {},
+          onPressed: () {
+            navigate();
+          },
           icon: const Icon(Icons.schedule, size: 20),
           label: const Text('View Timetables'),
           style: OutlinedButton.styleFrom(
-            foregroundColor: const Color(0xFF6366F1),
+            foregroundColor: AppColors.secondary,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
@@ -173,7 +122,9 @@ class _ClassOverviewScreenState extends State<ClassOverviewScreen> {
         ),
         const SizedBox(width: 12),
         ElevatedButton.icon(
-          onPressed: () {},
+          onPressed: () {
+            prompt(context);
+          },
           icon: const Icon(Icons.download, size: 20),
           label: const Text('Download Report'),
           style: ElevatedButton.styleFrom(
@@ -401,12 +352,20 @@ class _ClassOverviewScreenState extends State<ClassOverviewScreen> {
       ),
       itemCount: classes.length,
       itemBuilder: (context, index) {
-        return _buildClassCard(classes[index]);
+        return _buildClassCard(
+          classes[index],
+          navigateTo2: () {
+            widget.navigateTo2();
+          },
+        );
       },
     );
   }
 
-  Widget _buildClassCard(ClassData classData) {
+  Widget _buildClassCard(
+    ClassData classData, {
+    required Null Function() navigateTo2,
+  }) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -506,12 +465,14 @@ class _ClassOverviewScreenState extends State<ClassOverviewScreen> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                navigateTo2();
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor:
                     classData.isAssignTeacher
-                        ? Colors.red
-                        : const Color(0xFF6366F1),
+                        ? Colors.red:
+                        AppColors.secondary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(

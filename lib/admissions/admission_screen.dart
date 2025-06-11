@@ -47,7 +47,7 @@ class _AdmissionsOverviewPageState extends State<AdmissionsOverviewPage> {
       body: SafeArea(
         child: Column(
           children: [
-            _buildHeader(),
+            // _buildHeader(),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
@@ -569,14 +569,14 @@ class _AdmissionsOverviewPageState extends State<AdmissionsOverviewPage> {
                     size: 18,
                   ),
                 ),
-                IconButton(
-                  onPressed: () {},
-                  icon: const Icon(
-                    Icons.edit,
-                    color: Color(0xFF10B981),
-                    size: 18,
-                  ),
-                ),
+                // IconButton(
+                //   onPressed: () {},
+                //   icon: const Icon(
+                //     Icons.edit,
+                //     color: Color(0xFF10B981),
+                //     size: 18,
+                //   ),
+                // ),
                 IconButton(
                   onPressed: () {},
                   icon: const Icon(

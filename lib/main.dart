@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:schmgtsystem/Student/all_student.dart';
 import 'package:schmgtsystem/Student/timetable.dart';
+import 'package:schmgtsystem/constants/appcolor.dart';
 import 'package:schmgtsystem/deepseek/deepseek2222/exammodel.dart'
     show Exam, Option, Question;
 import 'package:schmgtsystem/deepseek/deepseek2222/examsetupscreen.dart';
@@ -17,6 +18,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:schmgtsystem/home2.dart';
 import 'package:schmgtsystem/home3.dart';
+import 'package:schmgtsystem/login_screen.dart';
+
 
 void main() {
   runApp(
@@ -55,10 +58,11 @@ class MyApp extends StatelessWidget {
         theme: ThemeData(
           //  textTheme: GoogleFonts.robotoTextTheme(),
           colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color.fromARGB(255, 84, 66, 248),
+            seedColor: AppColors.secondary,
           ),
         ),
-        home: const SchoolAdminDashboard3(),
+        home: const OakwoodLoginScreen(),
+        // home: const SchoolAdminDashboard3(),
         // home: const SchoolAdminDashboard(),
         // home: TakeExamScreen(exam: examdata),
         // home: DashboardScreen(),

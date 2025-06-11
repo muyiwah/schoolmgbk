@@ -12,7 +12,7 @@ class SingleStudent extends StatelessWidget {
         padding: EdgeInsets.all(20),
         child: Column(
           children: [
-            ScreenHeader(group: 'Student', subgroup: 'single student'),
+            // ScreenHeader(group: 'Student', subgroup: 'single student'),
             Row(
               children: [
                 Expanded(

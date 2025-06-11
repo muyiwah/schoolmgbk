@@ -1,5 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:schmgtsystem/constants/appcolor.dart';
+import 'package:schmgtsystem/widgets/add_teacher.dart';
 
 class AssignTeacher extends StatefulWidget {
   const AssignTeacher({super.key});
@@ -16,38 +19,26 @@ class _AssignTeacherState extends State<AssignTeacher> {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              _buildHeader(),
-              const SizedBox(height: 32),
+          child: SingleChildScrollView(
+            child: Column(
+              // crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // // Header
+                // _buildHeader(),
+                // const SizedBox(height: 32),
 
-              // Stats Cards Row
-              _buildStatsCards(),
-              const SizedBox(height: 32),
+                // Stats Cards Row
+                _buildStatsCards(),
+                const SizedBox(height: 32),
 
-              // Search and Filters
-              _buildSearchAndFilters(),
-              const SizedBox(height: 24),
+                // Search and Filters
+                _buildSearchAndFilters(),
+                const SizedBox(height: 24),
 
-              // Teachers List and Recently Added
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Teachers List
-                      Expanded(flex: 2, child: _buildTeachersList()),
-                      const SizedBox(width: 24),
-
-                      // Recently Added Panel
-                      Expanded(flex: 1, child: _buildRecentlyAddedPanel()),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+                // Teachers List and Recently Added
+                _buildTeachersList(),
+              ],
+            ),
           ),
         ),
       ),
@@ -64,7 +55,7 @@ class _AssignTeacherState extends State<AssignTeacher> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: const Color(0xFF6366F1),
+                color: AppColors.secondary,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(Icons.school, color: Colors.white, size: 24),
@@ -170,11 +161,16 @@ class _AssignTeacherState extends State<AssignTeacher> {
               ],
             ),
             ElevatedButton.icon(
-              onPressed: () {},
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => AssignNewTeacherDialog(),
+                );
+              },
               icon: const Icon(Icons.add, size: 20),
               label: const Text('Add New Teacher'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF6366F1),
+                backgroundColor: AppColors.secondary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 20,
@@ -196,7 +192,7 @@ class _AssignTeacherState extends State<AssignTeacher> {
             children: [
               // Teacher Distribution Chart
               SizedBox(
-                width: MediaQuery.of(context).size.width * 0.3,
+                width: MediaQuery.of(context).size.width * 0.2,
                 child: _buildChartCard(
                   'Teacher Distribution',
                   _buildPieChart(),
@@ -213,8 +209,13 @@ class _AssignTeacherState extends State<AssignTeacher> {
 
               // Vacancy Alerts
               SizedBox(
-                width: MediaQuery.of(context).size.width * 0.3,
+                width: MediaQuery.of(context).size.width * 0.2,
                 child: _buildVacancyAlertsCard(),
+              ),
+              const SizedBox(width: 24),
+              SizedBox(
+                width: MediaQuery.of(context).size.width * 0.2,
+                child: _buildRecentlyAddedPanel(),
               ),
             ],
           ),
@@ -245,7 +246,7 @@ class _AssignTeacherState extends State<AssignTeacher> {
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF1F2937),
+              color: AppColors.secondary,
             ),
           ),
           const SizedBox(height: 24),
@@ -262,7 +263,7 @@ class _AssignTeacherState extends State<AssignTeacher> {
         centerSpaceRadius: 60,
         sections: [
           PieChartSectionData(
-            color: const Color(0xFF6366F1),
+            color: AppColors.secondary,
             value: 35,
             title: '',
             radius: 30,
@@ -346,7 +347,7 @@ class _AssignTeacherState extends State<AssignTeacher> {
             barRods: [
               BarChartRodData(
                 toY: 4.2,
-                color: const Color(0xFF6366F1),
+                color: AppColors.secondary,
                 width: 32,
               ),
             ],
@@ -356,7 +357,7 @@ class _AssignTeacherState extends State<AssignTeacher> {
             barRods: [
               BarChartRodData(
                 toY: 3.1,
-                color: const Color(0xFF6366F1),
+                color: AppColors.secondary,
                 width: 32,
               ),
             ],
@@ -366,7 +367,7 @@ class _AssignTeacherState extends State<AssignTeacher> {
             barRods: [
               BarChartRodData(
                 toY: 4.8,
-                color: const Color(0xFF6366F1),
+                color: AppColors.secondary,
                 width: 32,
               ),
             ],
@@ -376,7 +377,7 @@ class _AssignTeacherState extends State<AssignTeacher> {
             barRods: [
               BarChartRodData(
                 toY: 2.0,
-                color: const Color(0xFF6366F1),
+                color: AppColors.secondary,
                 width: 32,
               ),
             ],
@@ -386,7 +387,7 @@ class _AssignTeacherState extends State<AssignTeacher> {
             barRods: [
               BarChartRodData(
                 toY: 3.2,
-                color: const Color(0xFF6366F1),
+                color: AppColors.secondary,
                 width: 32,
               ),
             ],
@@ -545,7 +546,57 @@ class _AssignTeacherState extends State<AssignTeacher> {
           name: 'Michael Chen',
           email: 'michael.chen@school.com',
           status: 'Part-Time',
-          statusColor: const Color(0xFF6366F1),
+          statusColor: AppColors.secondary,
+          classes: 'JSS2 Blue, JSS3 Red',
+          subjects: 'English Literature',
+          avatar: 'https://avatar.iran.liara.run/public/43',
+        ),
+        const SizedBox(height: 16),
+        _buildTeacherCard(
+          name: 'Michael Chen',
+          email: 'michael.chen@school.com',
+          status: 'Part-Time',
+          statusColor: AppColors.secondary,
+          classes: 'JSS2 Blue, JSS3 Red',
+          subjects: 'English Literature',
+          avatar: 'https://avatar.iran.liara.run/public/43',
+        ),
+        const SizedBox(height: 16),
+        _buildTeacherCard(
+          name: 'Michael Chen',
+          email: 'michael.chen@school.com',
+          status: 'Part-Time',
+          statusColor: AppColors.secondary,
+          classes: 'JSS2 Blue, JSS3 Red',
+          subjects: 'English Literature',
+          avatar: 'https://avatar.iran.liara.run/public/43',
+        ),
+        const SizedBox(height: 16),
+        _buildTeacherCard(
+          name: 'Michael Chen',
+          email: 'michael.chen@school.com',
+          status: 'Part-Time',
+          statusColor: AppColors.secondary,
+          classes: 'JSS2 Blue, JSS3 Red',
+          subjects: 'English Literature',
+          avatar: 'https://avatar.iran.liara.run/public/43',
+        ),
+        const SizedBox(height: 16),
+        _buildTeacherCard(
+          name: 'Michael Chen',
+          email: 'michael.chen@school.com',
+          status: 'Part-Time',
+          statusColor: AppColors.secondary,
+          classes: 'JSS2 Blue, JSS3 Red',
+          subjects: 'English Literature',
+          avatar: 'https://avatar.iran.liara.run/public/43',
+        ),
+        const SizedBox(height: 16),
+        _buildTeacherCard(
+          name: 'Michael Chen',
+          email: 'michael.chen@school.com',
+          status: 'Part-Time',
+          statusColor: AppColors.secondary,
           classes: 'JSS2 Blue, JSS3 Red',
           subjects: 'English Literature',
           avatar: 'https://avatar.iran.liara.run/public/43',
@@ -679,7 +730,7 @@ class _AssignTeacherState extends State<AssignTeacher> {
               ElevatedButton(
                 onPressed: () {},
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6366F1),
+                  backgroundColor: AppColors.secondary,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 20,
@@ -709,7 +760,7 @@ class _AssignTeacherState extends State<AssignTeacher> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: const Color(0xFF6366F1),
+        color: AppColors.secondary,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -728,6 +779,12 @@ class _AssignTeacherState extends State<AssignTeacher> {
             name: 'David Wilson',
             timeAgo: 'Added 2 days ago',
             avatar: 'https://avatar.iran.liara.run/public/44',
+          ),
+          const SizedBox(height: 20),
+          _buildRecentlyAddedItem(
+            name: 'Emma Davis',
+            timeAgo: 'Added 5 days ago',
+            avatar: 'https://avatar.iran.liara.run/public/41',
           ),
           const SizedBox(height: 20),
           _buildRecentlyAddedItem(

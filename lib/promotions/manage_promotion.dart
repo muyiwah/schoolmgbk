@@ -73,40 +73,7 @@ class _StudentPromotionManagerState extends State<StudentPromotionManager> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Color(0xFFF8F9FA),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: Container(
-          margin: EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Color(0xFF6366F1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(Icons.school, color: Colors.white),
-        ),
-        title: Text(
-          'SchoolAdmin Pro',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.w600,
-            fontSize: 18,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.notifications_outlined, color: Colors.grey[600]),
-            onPressed: () {},
-          ),
-          Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: CircleAvatar(
-              radius: 16,
-              backgroundColor: Colors.grey[300],
-              child: Icon(Icons.person, size: 20, color: Colors.grey[600]),
-            ),
-          ),
-        ],
-      ),
+     
       body: Container(height: double.infinity,
         child: ListView(
           children: [

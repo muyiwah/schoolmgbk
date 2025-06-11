@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:schmgtsystem/constants/appcolor.dart';
 
 class ExamSchedule extends StatelessWidget {
   const ExamSchedule({super.key});
@@ -34,60 +35,7 @@ class _ExaminationTimetablePageState extends State<ExaminationTimetablePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: const Icon(Icons.school, color: Color(0xFF6366F1)),
-        title: const Row(
-          children: [
-            Text(
-              'SchoolAdmin',
-              style: TextStyle(
-                color: Colors.black,
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-              ),
-            ),
-            SizedBox(width: 32),
-            Text(
-              'Dashboard',
-              style: TextStyle(color: Colors.grey, fontSize: 16),
-            ),
-            SizedBox(width: 24),
-            Text(
-              'Timetables',
-              style: TextStyle(color: Colors.grey, fontSize: 16),
-            ),
-            SizedBox(width: 24),
-            Text(
-              'Students',
-              style: TextStyle(color: Colors.grey, fontSize: 16),
-            ),
-            SizedBox(width: 24),
-            Text(
-              'Teachers',
-              style: TextStyle(color: Colors.grey, fontSize: 16),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined, color: Colors.grey),
-            onPressed: () {},
-          ),
-          const Padding(
-            padding: EdgeInsets.only(right: 16.0),
-            child: CircleAvatar(
-              radius: 18,
-              backgroundColor: Colors.orange,
-              child: Text(
-                'SJ',
-                style: TextStyle(color: Colors.white, fontSize: 12),
-              ),
-            ),
-          ),
-        ],
-      ),
+    
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
@@ -125,7 +73,7 @@ class _ExaminationTimetablePageState extends State<ExaminationTimetablePage> {
                         style: TextStyle(color: Colors.white),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6366F1),
+                        backgroundColor:AppColors.secondary,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 20,
                           vertical: 12,
