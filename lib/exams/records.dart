@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:schmgtsystem/widgets/exam_record_dialog.dart';
 
 class ExamRecordsScreen extends StatefulWidget {
   const ExamRecordsScreen({Key? key}) : super(key: key);
@@ -669,7 +670,15 @@ class _ExamRecordsScreenState extends State<ExamRecordsScreen> {
           const Spacer(),
           
           ElevatedButton.icon(
-            onPressed: () {},
+            onPressed: () {
+               showDialog(
+                context: context,
+                barrierDismissible: true,
+                barrierColor: Colors.black.withOpacity(0.5),
+                builder:
+                    (context) => ExamRecordDialog(),
+              );
+            },
             icon: const Icon(Icons.add, size: 16),
             label: const Text('Add New Record'),
             style: ElevatedButton.styleFrom(

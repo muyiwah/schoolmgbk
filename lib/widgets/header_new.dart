@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:schmgtsystem/constants/appcolor.dart';
 import 'package:schmgtsystem/login_screen.dart';
+import 'package:schmgtsystem/providers/user_provider.dart';
 
 AppBar buildAppBar(context) {
   return AppBar(toolbarHeight: 70,
@@ -29,7 +31,7 @@ AppBar buildAppBar(context) {
               ),
             ),
             Text(
-              'Class Management',
+              'School Management',
               style: TextStyle(
                 color: Colors.grey,
                 fontSize: 12,
@@ -41,6 +43,10 @@ AppBar buildAppBar(context) {
       ],
     ),
     actions: [
+      Text(Provider.of<UserProvider>(
+      listen: true,
+      context,
+    ).userRole.toString()),
       IconButton(
         icon: const Icon(Icons.notifications_outlined, color: Colors.grey),
         onPressed: () {

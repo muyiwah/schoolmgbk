@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:schmgtsystem/constants/appcolor.dart';
+import 'package:schmgtsystem/widgets/message_popup.dart';
 import 'package:schmgtsystem/widgets/success_snack.dart';
 
 class SingleParent extends StatelessWidget {
@@ -7,6 +8,43 @@ class SingleParent extends StatelessWidget {
   final Function navigateTo2;
   SingleParent({Key? key, required this.navigateTo, required this.navigateTo2})
     : super(key: key);
+
+  void _showMessagePopup(BuildContext context,title) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black.withOpacity(0.5),
+      builder: (context) =>  MessagePopup(title: title),
+    );
+  }
+
+  Widget _buildTextField({
+    required String label,
+    required IconData icon,
+    required FormFieldValidator<String> validator,
+    required FormFieldSetter<String> onSaved,
+    int maxLines = 1,
+  }) {
+    return TextFormField(
+      maxLines: maxLines,
+      decoration: InputDecoration(
+        prefixIcon: Icon(icon),
+        labelText: label,
+        filled: true,
+        fillColor: Colors.grey.shade100,
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 14,
+          horizontal: 16,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+      ),
+      validator: validator,
+      onSaved: onSaved,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,10 +100,11 @@ class SingleParent extends StatelessWidget {
                         children: [
                           ElevatedButton.icon(
                             onPressed: () {
+                              _showMessagePopup(context,'Messgae');
                               showSnackbar(context, 'Message sent');
                             },
                             icon: const Icon(Icons.send, size: 16),
-                            label: const Text('Send Message'),
+                            label:  Text('Send Message'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.secondary,
                               foregroundColor: Colors.white,
@@ -80,9 +119,11 @@ class SingleParent extends StatelessWidget {
                           ),
                           const SizedBox(width: 12),
                           OutlinedButton.icon(
-                            onPressed: () {},
+                            onPressed: () {
+                              _showMessagePopup(context,'Push Notification');
+                            },
                             icon: const Icon(Icons.note_add, size: 16),
-                            label: const Text('Add Note'),
+                            label: const Text('Push Notification'),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: Colors.grey[700],
                               padding: const EdgeInsets.symmetric(
@@ -438,11 +479,11 @@ class SingleParent extends StatelessWidget {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        backgroundColor: AppColors.secondary,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
+      // floatingActionButton: FloatingActionButton(
+      //   onPressed: () {},
+      //   backgroundColor: AppColors.secondary,
+      //   child: const Icon(Icons.add, color: Colors.white),
+      // ),
     );
   }
 

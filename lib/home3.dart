@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:schmgtsystem/Class/all_table.dart';
+import 'package:schmgtsystem/Class/assign_student.dart';
 import 'package:schmgtsystem/Class/classes.dart';
 import 'package:schmgtsystem/Class/single_class.dart';
+import 'package:schmgtsystem/RoleHome/teacher.dart';
 import 'package:schmgtsystem/Student/add_student.dart';
 import 'package:schmgtsystem/Student/all_parents.dart';
 import 'package:schmgtsystem/Student/all_student.dart';
@@ -12,7 +15,10 @@ import 'package:schmgtsystem/Student/single_student.dart';
 import 'package:schmgtsystem/Student/timetable.dart';
 import 'package:schmgtsystem/Teacher/screens/Teacher.dart';
 import 'package:schmgtsystem/Teacher/screens/allparents.dart';
+import 'package:schmgtsystem/accunts/account_home.dart';
 import 'package:schmgtsystem/accunts/accounts.dart';
+import 'package:schmgtsystem/accunts/expenditure.dart';
+import 'package:schmgtsystem/accunts/expenditure_manager.dart';
 import 'package:schmgtsystem/add_class.dart';
 import 'package:schmgtsystem/admin111.dart';
 import 'package:schmgtsystem/admin222.dart';
@@ -36,6 +42,7 @@ import 'package:schmgtsystem/exams/examination_overview.dart';
 import 'package:schmgtsystem/exams/overview2.dart';
 import 'package:schmgtsystem/home2.dart';
 import 'package:schmgtsystem/promotions/manage_promotion.dart';
+import 'package:schmgtsystem/providers/user_provider.dart';
 import 'package:schmgtsystem/staff/add_staff.dart';
 import 'package:schmgtsystem/staff/all_staff.dart';
 import 'package:schmgtsystem/staff/teachers.dart';
@@ -80,28 +87,43 @@ class DashboardScreen extends StatefulWidget {
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
+String roleRoute = '';
 
 class _DashboardScreenState extends State<DashboardScreen> {
   late final Map<String, Widget> internalRoutes = _createRoutes();
-
   String currentRoute = 'home';
   List<String> breadcrumbs = ['home'];
   @override
   void initState() {
     super.initState();
+    applyRole();
+
     // for (int i = 0; i < menuItems.length; i++) {
     //   _controllers[i] = ExpansionTileController();
     // }
   }
 
+  applyRole() {
+    Provider.of<UserProvider>(context, listen: false).userRole == 'Teacher'
+        ? currentRoute = 'teacherhome'
+        : Provider.of<UserProvider>(context, listen: false).userRole == 'Admin'
+        ? currentRoute = 'home'
+        : currentRoute = 'accounthome';
+    roleRoute = currentRoute;
+    setState(() {});
+  }
+
   Set<int> _builtTiles = {};
   Map<String, Widget> _createRoutes() {
     return {
-      'home':  MetricScreen(
-         navigateTo: () {
+      'home': MetricScreen(
+        navigateTo: () {
           navigateTo('home/dashboard_details');
         },
       ),
+
+      'teacherhome': TeacherDashboardApp(),
+      'accounthome': AccountHome(),
       // 'class/add': AddClassScreen(
       //   onNavigateToInnerRoute:
       //       () => navigateTo('student/addstudent/innerroute'),
@@ -115,11 +137,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
       /////students
       ///
       'student/singlestudent': const SingleStudent(),
-      
+
       'student/timetable': const CreateTimetale(),
       'student/examschedule': ExamTimeTable(),
       'student/registration': StudentRegistrationPage(
-         navigateTo: () {
+        navigateTo: () {
           navigateTo('student/allstudents');
         },
       ),
@@ -153,7 +175,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         navigateTo2: () {
           navigateTo('student/parent_all_transactions');
         },
-
       ),
       'home/dashboard_details': DashboardDetails(
         navigateBack: () {
@@ -163,21 +184,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       ///classssess
       'class/timetable': const TimeTableApp(),
-      'class/allclasses':  SchoolClasses(
-         navigateTo: () {
+      'class/assignstudent': const AssignStudentsScreen(),
+      'class/allclasses': SchoolClasses(
+        navigateTo: () {
           navigateTo('class/alltables');
         },
-         navigateTo2: () {
+        navigateTo2: () {
           navigateTo2('class/singleclass');
         },
+        navigateTo3: () {
+          navigateTo('class/assignstudent');
+        },
       ),
-      'class/singleclass':  ClassDetailsScreen(
-          navigateTo: () {
+      'class/singleclass': ClassDetailsScreen(
+        navigateTo: () {
           navigateTo('class/allclasses');
         },
       ),
-      'class/alltables':  AllTables(
-          navigateBack: () {
+      'class/alltables': AllTables(
+        navigateBack: () {
           navigateTo('class/allclasses');
         },
       ),
@@ -188,15 +213,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       ///examssss
       'exams/allexams': ExaminationOverviewScreenTwo(
-             navigateTo: () {
+        navigateTo: () {
           navigateTo('exams/addexam');
         },
       ),
       // 'exams/overview': const ExaminationOverviewPage(),
       'exams/examschedule': const ExamSchedule(),
       'exams/records': const ExamRecordsScreen(),
-      'exams/addexam':  CreateNewExamScreen(
-          navigateBack: () {
+      'exams/addexam': CreateNewExamScreen(
+        navigateBack: () {
           navigateTo('exams/allexams');
         },
       ),
@@ -212,6 +237,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       ////accounts
       'accounts/income': const FinancialOverviewScreen(),
+      'accounts/expenditure': ExpenditureScreen(),
+      'accounts/expendituremanager': ExpenditureManger(),
 
       // 'inventory/edititem': const StudentTablePage2(),//////undo for web
       // 'student/allstudents': Container(
@@ -259,10 +286,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final ExpansionTileController _controller = ExpansionTileController();
   // UniqueKey _tileKey = UniqueKey();
   final List<MenuItem> menuItems = [
-    MenuItem('Home', Icons.person_add, []),
+    MenuItem('home', Icons.person_add, []),
     MenuItem('Class', Icons.person_add, [
       'All Classes',
       'Single class',
+      'Assign Student',
       'Time Table',
     ]),
     // MenuItem('Inventory', Icons.person_add, ['All item', 'Edit item']),
@@ -294,14 +322,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     MenuItem('Exams', Icons.attach_money, [
       'All Exams',
       'Exam Schedule',
-      'Records'
+      'Records',
       // 'Overview',
     ]),
     MenuItem('Staff', Icons.attach_money, [
       'All Staff',
       'Add Staff',
       'Assign Teacher',
-      'Create Timetable'
+      'Create Timetable',
     ]),
     // MenuItem('Lesson Notes', Icons.attach_money, ['All Notes', 'Add New Note']),
     // MenuItem('Inventory', Icons.attach_money, ['All Inventory', 'Add New']),
@@ -309,7 +337,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     // MenuItem('Chats', Icons.attach_money, []),
     MenuItem('Admissions', Icons.attach_money, ['All Admissions']),
     MenuItem('Promotions', Icons.attach_money, ['Manage Promotion']),
-    MenuItem('Accounts', Icons.attach_money, ['Income']),
+    MenuItem('Accounts', Icons.attach_money, [
+      'Income',
+      'Expenditure',
+      'Expenditure Manager',
+    ]),
   ];
   bool _isExpanded = false;
   String? selectedSubMenu;
@@ -324,6 +356,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }
     });
   }
+
   void navigateTo2(String route) {
     print(route);
     setState(() {
@@ -382,7 +415,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // appBar: AppBar(title: _buildBreadcrumbs()),
+      // appBar: AppBar(title: Text(roleRoute)),
       // backgroundColor: Colors.white,
       body: Container(
         width: double.infinity,
@@ -425,7 +458,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   const SizedBox(height: 20),
                   const Padding(
                     padding: EdgeInsets.all(8.0),
-                    child: Icon(Icons.attach_money, color: Colors.white),
+                    child: Icon(Icons.home, color: Colors.white),
                   ),
                   const Padding(
                     padding: EdgeInsets.all(10.0),
@@ -442,10 +475,66 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ],
                     ),
                   ),
+                  const SizedBox(height: 40),
+
                   Expanded(
                     child: ListView(
                       children:
                           menuItems.mapIndexed((index, menu) {
+                            if (menu.subMenuItems.isEmpty) {
+                            
+                              return GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    tabSelected = -1;
+                                  });
+                                  print(menu.title);
+                                  navigateTo(roleRoute);
+                                },
+                                child: Container(
+                                  margin: EdgeInsets.only(
+                                    left: 10,
+                                    right: 20,
+                                    bottom: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    color:
+                                        tabSelected == -1
+                                            ? Color.fromARGB(
+                                              115,
+                                              226,
+                                              239,
+                                              248,
+                                            ).withOpacity(.4)
+                                            : Colors.transparent,
+                                  ),
+                                  padding: const EdgeInsets.only(
+                                    left: 6.0,
+                                    top: 8,
+                                    bottom: 8,
+                                    right: 16,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        menu.icon,
+                                        color: Colors.white,
+                                        size: 14,
+                                      ),
+                                      SizedBox(width: 20),
+                                      Text(
+                                        menu.title,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }
                             return ExpansionTile(
                               iconColor: Colors.blue,
                               collapsedIconColor: Colors.white,
@@ -493,7 +582,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                                   (tabSelected == index &&
                                                           selectedSubMenu ==
                                                               subItem)
-                                                      ? const Color.fromARGB(115, 226, 239, 248).withOpacity(.4)
+                                                      ? const Color.fromARGB(
+                                                        115,
+                                                        226,
+                                                        239,
+                                                        248,
+                                                      ).withOpacity(.4)
                                                       : Colors.transparent,
                                             ),
                                             margin: const EdgeInsets.symmetric(

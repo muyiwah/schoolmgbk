@@ -603,7 +603,7 @@ import 'package:flutter_quill/quill_delta.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'exammodel.dart';
-import 'ques_provider.dart';
+import '../../providers/ques_provider.dart';
 
 class TakeExamScreen extends StatefulWidget {
   final String subject;

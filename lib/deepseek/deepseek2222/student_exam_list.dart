@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'exammodel.dart';
 import 'exam_result.dart';
-import 'ques_provider.dart';
+import '../../providers/ques_provider.dart';
 import 'takeexam.dart';
 
 class ExamListScreen extends StatefulWidget {

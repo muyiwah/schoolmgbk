@@ -229,7 +229,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:schmgtsystem/deepseek/deepseek2222/exanlist.dart';
 import 'exammodel.dart';
-import 'ques_provider.dart';
+import '../../providers/ques_provider.dart';
 import 'questionsetup.dart';
 
 class ExamSetupScreen extends StatefulWidget {

@@ -168,7 +168,7 @@ class _AssignTeacherState extends State<AssignTeacher> {
                 );
               },
               icon: const Icon(Icons.add, size: 20),
-              label: const Text('Add New Teacher'),
+              label: const Text('Assign New Teacher'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.secondary,
                 foregroundColor: Colors.white,

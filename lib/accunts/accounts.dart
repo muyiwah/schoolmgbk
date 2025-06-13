@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:schmgtsystem/widgets/class_payment_report.dart';
 
 
-class FinancialOverviewScreen extends StatelessWidget {
+class FinancialOverviewScreen extends StatefulWidget {
   const FinancialOverviewScreen({super.key});
 
+  @override
+  State<FinancialOverviewScreen> createState() => _FinancialOverviewScreenState();
+}
+
+class _FinancialOverviewScreenState extends State<FinancialOverviewScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -435,7 +441,17 @@ class FinancialOverviewScreen extends StatelessWidget {
             style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
-          TextButton(onPressed: () {}, child: const Text('View Class Report')),
+          TextButton(onPressed: () {
+
+            showDialog(
+                context: context,
+                barrierDismissible: true,
+                barrierColor: Colors.black.withOpacity(0.5),
+                builder:
+                    (context) =>
+                        ClassPaymentReportPopup(),
+              );
+          }, child: const Text('View Class Report')),
         ],
       ),
     );

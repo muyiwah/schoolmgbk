@@ -49,27 +49,20 @@ class _DashboardDetailsState extends State<DashboardDetails>
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(14),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(16),
         gradient: LinearGradient(
           colors: [AppColors.secondary, Color(0xFF8B7CF6)],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
       ),
-      padding: EdgeInsets.all(25),
+      padding: EdgeInsets.all(32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              IconButton(
-                color: Colors.white,
-                onPressed: () {
-                  widget.navigateBack();
-                },
-                icon: Icon(Icons.arrow_back_ios_new),
-              ),
-           
+            
               Text(
                 'School Performance Dashboard',
                 style: TextStyle(
@@ -82,7 +75,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
           ),
           SizedBox(height: 8),
           Text(
-            '          Detailed insights into student, staff, academic, and financial data',
+            'Detailed insights into student, staff, academic, and financial data',
             style: TextStyle(
               color: Colors.white.withOpacity(0.9),
               fontSize: 16,
@@ -91,20 +84,21 @@ class _DashboardDetailsState extends State<DashboardDetails>
           SizedBox(height: 24),
           Row(
             mainAxisAlignment: MainAxisAlignment.start,
-            children: [SizedBox(width: 50,),
+            children: [
+              _buildHeaderButton(
+                'Back to Home',
+                Icons.home,
+                Colors.transparent,
+                Colors.white,
+                hasBorder: true,
+              ),
+              SizedBox(width: 16),
+
               _buildHeaderButton(
                 'Export Report',
                 Icons.download,
                 Colors.white,
                 Color(0xFF6C5CE7),
-              ),
-              SizedBox(width: 16),
-              _buildHeaderButton(
-                'Customize View',
-                Icons.settings,
-                Colors.transparent,
-                Colors.white,
-                hasBorder: true,
               ),
             ],
           ),
@@ -121,7 +115,10 @@ class _DashboardDetailsState extends State<DashboardDetails>
     bool hasBorder = false,
   }) {
     return ElevatedButton.icon(
-      onPressed: () {},
+      onPressed: () {
+                  widget.navigateBack();
+
+      },
       icon: Icon(icon, color: textColor, size: 18),
       label: Text(
         text,

@@ -33,7 +33,7 @@
 // }
 
 import 'package:flutter/material.dart';
-import 'exammodel.dart';
+import '../deepseek/deepseek2222/exammodel.dart';
 
 class QuestionProvider extends ChangeNotifier {
   Exam _selectedExam = Exam(

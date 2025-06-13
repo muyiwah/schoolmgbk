@@ -8,7 +8,7 @@ import 'package:schmgtsystem/constants/appcolor.dart';
 import 'package:schmgtsystem/deepseek/deepseek2222/exammodel.dart'
     show Exam, Option, Question;
 import 'package:schmgtsystem/deepseek/deepseek2222/examsetupscreen.dart';
-import 'package:schmgtsystem/deepseek/deepseek2222/ques_provider.dart';
+import 'package:schmgtsystem/providers/ques_provider.dart';
 import 'package:schmgtsystem/deepseek/deepseek2222/questiondata.dart';
 import 'package:schmgtsystem/deepseek/deepseek2222/takeexam.dart';
 import 'package:schmgtsystem/home.dart';
@@ -19,27 +19,32 @@ import 'package:provider/provider.dart';
 import 'package:schmgtsystem/home2.dart';
 import 'package:schmgtsystem/home3.dart';
 import 'package:schmgtsystem/login_screen.dart';
-
+import 'package:schmgtsystem/providers/user_provider.dart';
 
 void main() {
   runApp(
     MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => QuestionProvider())],
+      providers: [
+        ChangeNotifierProvider(create: (_) => QuestionProvider(),),
+        ChangeNotifierProvider(create: (_) => UserProvider(),),
+        ],
       child: MyApp(),
     ),
   );
 }
+
 class MyApp extends StatelessWidget {
   MyApp({super.key});
-
-  
 
   @override
   Widget build(BuildContext context) {
     return ScreenUtilInit(
-        designSize: const Size(360, 690), // Default design size (e.g., Figma/Adobe XD)
+      designSize: const Size(
+        360,
+        690,
+      ), // Default design size (e.g., Figma/Adobe XD)
       minTextAdapt: true, // Auto-adjust text sizes
-      splitScreenMode: true, 
+      splitScreenMode: true,
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         localizationsDelegates: const [
@@ -57,9 +62,7 @@ class MyApp extends StatelessWidget {
         title: 'Flutter Demo',
         theme: ThemeData(
           //  textTheme: GoogleFonts.robotoTextTheme(),
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: AppColors.secondary,
-          ),
+          colorScheme: ColorScheme.fromSeed(seedColor: AppColors.secondary),
         ),
         home: const OakwoodLoginScreen(),
         // home: const SchoolAdminDashboard3(),

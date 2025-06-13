@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:schmgtsystem/constants/appcolor.dart';
+import 'package:schmgtsystem/widgets/select_staffrole_popup.dart';
+import 'package:schmgtsystem/widgets/staff_dialog.dart';
 
 class AllStaff extends StatelessWidget {
   const AllStaff({Key? key, required Null Function() navigateTo})
@@ -146,15 +148,18 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
         ),
         Row(
           children: [
-            IconButton(
-              onPressed: () {},
-              icon: const Icon(Icons.dark_mode_outlined),
-            ),
-            const SizedBox(width: 16),
+          
             ElevatedButton.icon(
-              onPressed: () {},
+              onPressed: () {
+                 showDialog(
+                  context: context,
+                  barrierDismissible: true,
+                  barrierColor: Colors.black.withOpacity(0.5),
+                  builder: (context) => StaffRoleAssignmentPopup(),
+                );
+              },
               icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text('Add Staff Member'),
+              label: const Text('Assign Staff Role'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.secondary,
                 foregroundColor: Colors.white,
@@ -543,7 +548,16 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
         IconButton(
           padding: EdgeInsets.all(0),
 
-          onPressed: () {},
+          onPressed: () {
+            showDialog(
+              context: context,
+              barrierDismissible: true,
+              barrierColor: Colors.black.withOpacity(0.5),
+              builder:
+                  (context) => StaffDialog(),
+            );
+
+          },
           icon: const Icon(Icons.visibility, color: Color(0xFF4F46E5)),
           iconSize: 18,
           constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -558,7 +572,9 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
         IconButton(
           padding: EdgeInsets.all(0),
 
-          onPressed: () {},
+          onPressed: () {
+           
+          },
           icon: const Icon(Icons.delete, color: Colors.red),
           iconSize: 18,
           constraints: const BoxConstraints(minWidth: 32, minHeight: 32),

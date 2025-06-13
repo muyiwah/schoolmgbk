@@ -431,7 +431,7 @@ import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 import 'package:provider/provider.dart';
 
 import 'package:schmgtsystem/deepseek/deepseek2222/exammodel.dart';
-import 'package:schmgtsystem/deepseek/deepseek2222/ques_provider.dart';
+import 'package:schmgtsystem/providers/ques_provider.dart';
 
 class QuestionSetupScreen extends StatefulWidget {
   final String examType;

@@ -377,7 +377,7 @@ import 'package:flutter_quill/flutter_quill.dart' hide Text;
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 import 'package:provider/provider.dart';
 import 'exammodel.dart';
-import 'ques_provider.dart';
+import '../../providers/ques_provider.dart';
 
 class EditExamQuestionsScreen extends StatefulWidget {
   final Exam exam;

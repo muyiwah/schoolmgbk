@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:schmgtsystem/constants/appcolor.dart';
+import 'package:schmgtsystem/widgets/add_class.dart';
 import 'package:schmgtsystem/widgets/prompt.dart';
 
 class SchoolClasses extends StatefulWidget {
   final Function navigateTo;
   final Function navigateTo2;
+  final Function navigateTo3;
   SchoolClasses({
     super.key,
     required this.navigateTo,
     required this.navigateTo2,
+    required this.navigateTo3,
   });
 
   @override
@@ -34,10 +37,8 @@ class _SchoolClassesState extends State<SchoolClasses> {
   ];
 
   prompt(context) {
-    CustomDialog(message:'Do you want to download report?',context: context);
+    CustomDialog(message: 'Do you want to download report?', context: context);
   }
-
- 
 
   @override
   Widget build(BuildContext context) {
@@ -93,7 +94,15 @@ class _SchoolClassesState extends State<SchoolClasses> {
     return Row(
       children: [
         ElevatedButton.icon(
-          onPressed: () {},
+          onPressed: () {
+             showDialog(
+              context: context,
+              barrierDismissible: true,
+              barrierColor: Colors.black.withOpacity(0.5),
+              builder:
+                  (context) => AddClassDialog(),
+            );
+          },
           icon: const Icon(Icons.add, size: 20),
           label: const Text('Add New Class'),
           style: ElevatedButton.styleFrom(
@@ -121,6 +130,23 @@ class _SchoolClassesState extends State<SchoolClasses> {
           ),
         ),
         const SizedBox(width: 12),
+        ElevatedButton.icon(
+          onPressed: () {
+            widget.navigateTo3();
+          },
+          icon: const Icon(Icons.download, size: 20),
+          label: const Text('Assign Student'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.tertiary3,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+
         ElevatedButton.icon(
           onPressed: () {
             prompt(context);
@@ -471,8 +497,8 @@ class _SchoolClassesState extends State<SchoolClasses> {
               style: ElevatedButton.styleFrom(
                 backgroundColor:
                     classData.isAssignTeacher
-                        ? Colors.red:
-                        AppColors.secondary,
+                        ? Colors.red
+                        : AppColors.secondary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:schmgtsystem/constants/appcolor.dart';
+import 'package:schmgtsystem/widgets/message_popup.dart';
 import 'package:schmgtsystem/widgets/prompt.dart';
 
 class ClassDetailsScreen extends StatefulWidget {
@@ -77,7 +78,8 @@ class _ClassDetailsScreenState extends State<ClassDetailsScreen> {
       children: [
         Container(
           width: double.infinity,
-          decoration:  BoxDecoration(borderRadius: BorderRadius.circular(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
             gradient: LinearGradient(
               colors: [AppColors.secondary, Color(0xFF8B5CF6)],
               begin: Alignment.centerLeft,
@@ -86,7 +88,8 @@ class _ClassDetailsScreenState extends State<ClassDetailsScreen> {
           ),
           padding: const EdgeInsets.all(24),
           child: Row(
-            children: [SizedBox(width: 20,),
+            children: [
+              SizedBox(width: 20),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -219,15 +222,16 @@ class _ClassDetailsScreenState extends State<ClassDetailsScreen> {
                     const Color(0xFF6366F1),
                   ),
                   const SizedBox(height: 8),
+                
                   _buildActionButton(
-                    '👤 Add Student',
-                    const Color(0xFF06B6D4),
+                    '✏️ Message Single Parent',
+                   AppColors.tertiary3,
                     Colors.white,
                   ),
                   const SizedBox(height: 8),
-                  _buildActionButton(
-                    '✏️ Edit Class Info',
-                    const Color(0xFF8B5CF6),
+                    _buildActionButton(
+                    '👤 Message All Parents',
+                    const Color(0xFF06B6D4),
                     Colors.white,
                   ),
                 ],
@@ -277,6 +281,33 @@ class _ClassDetailsScreenState extends State<ClassDetailsScreen> {
   Widget _buildActionButton(String text, Color bgColor, Color textColor) {
     return ElevatedButton(
       onPressed: () {
+        if (text.contains('Message Class Teacher')) {
+          showDialog(
+            context: context,
+            barrierDismissible: true,
+            barrierColor: Colors.black.withOpacity(0.5),
+            builder:
+                (context) => MessagePopup(title: 'Message to Class Teacher'),
+          );
+        }
+        if (text.contains('Single')) {
+          showDialog(
+            context: context,
+            barrierDismissible: true,
+            barrierColor: Colors.black.withOpacity(0.5),
+            builder:
+                (context) => MessagePopup(title: 'Message to a Parent'),
+          );
+        }
+        if (text.contains('All')) {
+          showDialog(
+            context: context,
+            barrierDismissible: true,
+            barrierColor: Colors.black.withOpacity(0.5),
+            builder:
+                (context) => MessagePopup(title: 'Message to all Parents'),
+          );
+        }
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: bgColor,
@@ -307,13 +338,21 @@ class _ClassDetailsScreenState extends State<ClassDetailsScreen> {
         ],
       ),
       child: Column(
-        children: [_buildTabBar(), Expanded(child: _buildStudentsList())],
+        children: [
+          _buildTabBar(),
+          Expanded(
+            child:
+                selectedTabIndex == 1
+                    ? _buildStudentsListAttendance()
+                    : _buildStudentsList(),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildTabBar() {
-    final tabs = ['Students List', 'Attendance', 'Performance', 'Activities'];
+    final tabs = ['Students List', 'Attendance'];
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -446,6 +485,91 @@ class _ClassDetailsScreenState extends State<ClassDetailsScreen> {
     );
   }
 
+  Widget _buildStudentsListAttendance() {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.grey[50],
+            border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
+          ),
+          child: const Row(
+            children: [
+              Expanded(
+                flex: 2,
+                child: Text(
+                  'Student',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  'Admission No.',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  'Class',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+              // Expanded(
+              //   child: Text(
+              //     'Fee Status',
+              //     style: TextStyle(fontWeight: FontWeight.w600),
+              //   ),
+              // ),
+              // Expanded(
+              //   child: Text(
+              //     'Attendance',
+              //     style: TextStyle(fontWeight: FontWeight.w600),
+              //   ),
+              // ),
+              Expanded(
+                child: Text(
+                  'Attendance',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: ListView(
+            children: [
+              _buildStudentRowAttendance(
+                'Emma Watson',
+                'ST001',
+                'John Watson',
+                'Paid',
+                '95%',
+                Colors.green,
+              ),
+              _buildStudentRowAttendance(
+                'James Smith',
+                'ST002',
+                'Mary Smith',
+                'Partial',
+                '89%',
+                Colors.orange,
+              ),
+              _buildStudentRowAttendance(
+                'Sophia Brown',
+                'ST003',
+                'David Brown',
+                'Paid',
+                '92%',
+                Colors.green,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildStudentRow(
     String name,
     String admissionNo,
@@ -503,6 +627,74 @@ class _ClassDetailsScreenState extends State<ClassDetailsScreen> {
               child: const Text(
                 'View Profile',
                 style: TextStyle(color: Color(0xFF6366F1)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStudentRowAttendance(
+    String name,
+    String admissionNo,
+    String parent,
+    String feeStatus,
+    String attendance,
+    Color statusColor,
+  ) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 16,
+                  backgroundColor: Colors.grey[300],
+                  backgroundImage: NetworkImage(
+                    'https://via.placeholder.com/32',
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(name, style: const TextStyle(fontWeight: FontWeight.w500)),
+              ],
+            ),
+          ),
+          Expanded(child: Text(admissionNo)),
+          Expanded(child: Text(parent)),
+          // Expanded(
+          //   child: Container(
+          //     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          //     decoration: BoxDecoration(
+          //       color: statusColor.withOpacity(0.1),
+          //       borderRadius: BorderRadius.circular(12),
+          //     ),
+          //     child: Text(
+          //       feeStatus,
+          //       style: TextStyle(
+          //         color: statusColor,
+          //         fontSize: 12,
+          //         fontWeight: FontWeight.w500,
+          //       ),
+          //     ),
+          //   ),
+          // ),
+          // Expanded(child: Text(attendance)),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(right: 10.0),
+              child: TextButton(
+                onPressed: () {},
+                child: const Text(
+                  'Mark Attendance',
+                  style: TextStyle(color: Color(0xFF6366F1)),
+                ),
               ),
             ),
           ),

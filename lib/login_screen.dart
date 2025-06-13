@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:schmgtsystem/constants/appcolor.dart';
 import 'package:schmgtsystem/home3.dart';
+import 'package:schmgtsystem/providers/user_provider.dart';
 import 'package:schmgtsystem/widgets/success_snack.dart';
+
+enum userRole { Admin, Parent, Teacher }
 
 class OakwoodLoginScreen extends StatefulWidget {
   const OakwoodLoginScreen({Key? key}) : super(key: key);
@@ -72,7 +76,7 @@ class _OakwoodLoginScreenState extends State<OakwoodLoginScreen> {
                 color: AppColors.tertiary2.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child:  Icon(
+              child: Icon(
                 Icons.nightlight_round,
                 color: AppColors.tertiary2,
                 size: 20,
@@ -120,7 +124,8 @@ class _OakwoodLoginScreenState extends State<OakwoodLoginScreen> {
   }
 
   Widget _buildLoginForm() {
-    return Container(width: MediaQuery.sizeOf(context).width *.4,
+    return Container(
+      width: MediaQuery.sizeOf(context).width * .4,
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
         color: const Color(0xFF1F2937).withOpacity(0.5),
@@ -413,7 +418,10 @@ class _OakwoodLoginScreenState extends State<OakwoodLoginScreen> {
     print('Role: $_selectedRole');
     print('Email: ${_emailController.text}');
     print('Remember me: $_rememberMe');
-
+    Provider.of<UserProvider>(
+      listen: false,
+      context,
+    ).setUserRole(_selectedRole);
     // You would typically call an authentication service here
     showSnackbar(context, 'Logging in as $_selectedRole...');
   }
