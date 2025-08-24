@@ -24,7 +24,19 @@ class _MessagePopupState extends State<MessagePopup>
   bool _emailFocused = false;
   bool _subjectFocused = false;
   bool _messageFocused = false;
+  bool _parentDropdownFocused = false;
 
+  // List of parents (you can fetch this from your database)
+  final List<Map<String, String>> _parentsList = [
+    {'name': 'John Smith', 'email': 'john.smith@example.com'},
+    {'name': 'Sarah Johnson', 'email': 'sarah.j@example.com'},
+    {'name': 'Michael Brown', 'email': 'michael.b@example.com'},
+    {'name': 'Emily Davis', 'email': 'emily.d@example.com'},
+    {'name': 'David Wilson', 'email': 'david.w@example.com'},
+    {'name': 'All Parents', 'email': 'allw@example.com'},
+  ];
+  String? _selectedParent;
+  String? _selectedParentEmail;
   @override
   void initState() {
     super.initState();
@@ -187,8 +199,10 @@ class _MessagePopupState extends State<MessagePopup>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildEmailField(),
+              _buildParentDropdown(),
             const SizedBox(height: 20),
+            // _buildEmailField(),
+            // const SizedBox(height: 20),
             _buildSubjectField(),
             const SizedBox(height: 20),
             _buildMessageField(),
@@ -199,7 +213,101 @@ class _MessagePopupState extends State<MessagePopup>
       ),
     );
   }
-
+  Widget _buildParentDropdown() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Recipient ',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF374151),
+          ),
+        ),
+        const SizedBox(height: 8),
+        AnimatedContainer(alignment: Alignment.center,
+          duration: const Duration(milliseconds: 200),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color:
+                  _parentDropdownFocused
+                      ? const Color(0xFF6366F1)
+                      : const Color(0xFFE5E7EB),
+              width: _parentDropdownFocused ? 2 : 1,
+            ),
+            boxShadow:
+                _parentDropdownFocused
+                    ? [
+                      BoxShadow(
+                        color: const Color(0xFF6366F1).withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                    : null,
+          ),
+          child:
+           DropdownButtonFormField<String>(
+            dropdownColor: Colors.white,
+            value: _selectedParent,
+            hint: const Text('test@test.com'),
+            icon: Icon(
+              Icons.arrow_drop_down,
+              color:
+                  _parentDropdownFocused
+                      ? const Color(0xFF6366F1)
+                      : const Color(0xFF9CA3AF),
+            ),
+            decoration: InputDecoration(
+              prefixIcon: Icon(
+                Icons.person_outline,
+                color:
+                    _parentDropdownFocused
+                        ? const Color(0xFF6366F1)
+                        : const Color(0xFF9CA3AF),
+              ),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16,vertical: 12),
+              isDense: true,
+            ),
+            items:
+                _parentsList.map((parent) {
+                  return DropdownMenuItem<String>(
+                    value: parent['name'],
+                    child: Text(parent['name']!),
+                    onTap: () {
+                      _selectedParentEmail = parent['email'];
+                    },
+                  );
+                }).toList(),
+            onChanged: (value) {
+              setState(() {
+                _selectedParent = value;
+              });
+            },
+            onTap: () {
+              setState(() => _parentDropdownFocused = true);
+            },
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please select a parent';
+              }
+              return null;
+            },
+          ),
+        ),
+        if (_selectedParentEmail != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            'Email: $_selectedParentEmail',
+            style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+          ),
+        ],
+      ],
+    );
+  }
   Widget _buildEmailField() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

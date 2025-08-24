@@ -23,7 +23,7 @@ AppBar buildAppBar(context) {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'LoveSpring Admin',
+              'Admin',
               style: TextStyle(
                 color: Colors.black,
                 fontSize: 18,

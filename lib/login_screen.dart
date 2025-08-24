@@ -102,7 +102,7 @@ class _OakwoodLoginScreenState extends State<OakwoodLoginScreen> {
 
         // Title and Subtitle
         const Text(
-          'Welcome to LOVESPRING',
+          'Welcome to SCHOOL MANAGENGENT',
           textAlign: TextAlign.center,
           style: TextStyle(
             color: Colors.white,

@@ -1,56 +1,60 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:schmgtsystem/Class/all_table.dart';
-import 'package:schmgtsystem/Class/assign_student.dart';
-import 'package:schmgtsystem/Class/classes.dart';
-import 'package:schmgtsystem/Class/single_class.dart';
+import 'package:schmgtsystem/screens/Class/all_table.dart';
+import 'package:schmgtsystem/screens/Class/assign_student.dart';
+import 'package:schmgtsystem/screens/Class/classes.dart';
+import 'package:schmgtsystem/screens/Class/single_class.dart';
+import 'package:schmgtsystem/screens/Inventory/inventory_screen.dart';
 import 'package:schmgtsystem/RoleHome/teacher.dart';
-import 'package:schmgtsystem/Student/add_student.dart';
-import 'package:schmgtsystem/Student/all_parents.dart';
-import 'package:schmgtsystem/Student/all_student.dart';
-import 'package:schmgtsystem/Student/create_timetale.dart';
-import 'package:schmgtsystem/Student/parent_all_transactions.dart';
-import 'package:schmgtsystem/Student/single_parent.dart';
-import 'package:schmgtsystem/Student/single_student.dart';
-import 'package:schmgtsystem/Student/timetable.dart';
-import 'package:schmgtsystem/Teacher/screens/Teacher.dart';
-import 'package:schmgtsystem/Teacher/screens/allparents.dart';
-import 'package:schmgtsystem/accunts/account_home.dart';
-import 'package:schmgtsystem/accunts/accounts.dart';
-import 'package:schmgtsystem/accunts/expenditure.dart';
-import 'package:schmgtsystem/accunts/expenditure_manager.dart';
-import 'package:schmgtsystem/add_class.dart';
-import 'package:schmgtsystem/admin111.dart';
-import 'package:schmgtsystem/admin222.dart';
-import 'package:schmgtsystem/admin3333.dart';
-import 'package:schmgtsystem/admissions/admission_screen.dart';
-import 'package:schmgtsystem/all_students.dart';
-import 'package:schmgtsystem/color_pallete.dart';
-import 'package:schmgtsystem/component/allstudentpanenew.dart';
+import 'package:schmgtsystem/screens/Student/add_student.dart';
+import 'package:schmgtsystem/screens/Student/all_parents.dart';
+import 'package:schmgtsystem/screens/Student/all_student.dart';
+import 'package:schmgtsystem/screens/Student/create_timetale.dart';
+import 'package:schmgtsystem/screens/Student/parent_all_transactions.dart';
+import 'package:schmgtsystem/screens/Student/single_parent.dart';
+import 'package:schmgtsystem/screens/Student/single_student.dart';
+import 'package:schmgtsystem/screens/Student/timetable.dart';
+
+
+import 'package:schmgtsystem/screens/accunts/account_home.dart';
+import 'package:schmgtsystem/screens/accunts/accounts.dart';
+import 'package:schmgtsystem/screens/accunts/expenditure.dart';
+import 'package:schmgtsystem/screens/accunts/expenditure_manager.dart';
+
+import 'package:schmgtsystem/screens/admissions/admission_screen.dart';
+
+import 'package:schmgtsystem/screens/cbt/cbt_crateexam_teacher.dart';
+import 'package:schmgtsystem/screens/cbt/cbt_question_bank.dart';
+import 'package:schmgtsystem/screens/cbt/cbt_result.dart';
+import 'package:schmgtsystem/screens/cbt/cbt_result_students.dart';
+import 'package:schmgtsystem/screens/cbt/cbt_score_parent.dart';
+import 'package:schmgtsystem/screens/cbt/cbt_take_exam.dart';
+
+import 'package:schmgtsystem/screens/communication/new_communication.dart';
+
 import 'package:schmgtsystem/constants/appcolor.dart';
-import 'package:schmgtsystem/create_table_testing.dart';
+
 import 'package:schmgtsystem/custom_timetable.dart';
 import 'package:schmgtsystem/deepseek/deepseek2222/examsetupscreen.dart';
-import 'package:schmgtsystem/exams/records.dart';
-import 'package:schmgtsystem/home/dashboar_details.dart';
-import 'package:schmgtsystem/home/dshboard.dart';
+import 'package:schmgtsystem/screens/exams/records.dart';
+import 'package:schmgtsystem/screens/home/dashboar_details.dart';
+import 'package:schmgtsystem/screens/home/dshboard.dart';
 import 'package:collection/collection.dart';
-import 'package:schmgtsystem/exams/add_exams.dart';
-import 'package:schmgtsystem/exams/all_exams.dart';
-import 'package:schmgtsystem/exams/exam_schedule.dart';
-import 'package:schmgtsystem/exams/examination_overview.dart';
-import 'package:schmgtsystem/exams/overview2.dart';
-import 'package:schmgtsystem/home2.dart';
-import 'package:schmgtsystem/promotions/manage_promotion.dart';
+import 'package:schmgtsystem/screens/exams/add_exams.dart';
+
+import 'package:schmgtsystem/screens/exams/exam_schedule.dart';
+
+import 'package:schmgtsystem/screens/exams/overview2.dart';
+
+import 'package:schmgtsystem/screens/promotions/manage_promotion.dart';
+import 'package:schmgtsystem/screens/promotions/report_card.dart';
+import 'package:schmgtsystem/screens/promotions/student_list_reportcard.dart';
 import 'package:schmgtsystem/providers/user_provider.dart';
-import 'package:schmgtsystem/staff/add_staff.dart';
-import 'package:schmgtsystem/staff/all_staff.dart';
-import 'package:schmgtsystem/staff/teachers.dart';
-import 'package:schmgtsystem/staff/timetable.dart';
-import 'package:schmgtsystem/teacher111.dart';
-import 'package:schmgtsystem/tesing2222.dart';
-import 'package:schmgtsystem/testing3333.dart';
-import 'package:schmgtsystem/testing4444.dart';
+import 'package:schmgtsystem/schoolfees_monitor.dart';
+import 'package:schmgtsystem/screens/staff/add_staff.dart';
+import 'package:schmgtsystem/screens/staff/all_staff.dart';
+import 'package:schmgtsystem/screens/staff/teachers.dart';
+
 import 'package:schmgtsystem/testingg5555.dart';
 import 'package:schmgtsystem/widgets/header_new.dart';
 
@@ -139,7 +143,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       'student/singlestudent': const SingleStudent(),
 
       'student/timetable': const CreateTimetale(),
-      'student/examschedule': ExamTimeTable(),
       'student/registration': StudentRegistrationPage(
         navigateTo: () {
           navigateTo('student/allstudents');
@@ -185,6 +188,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ///classssess
       'class/timetable': const TimeTableApp(),
       'class/assignstudent': const AssignStudentsScreen(),
+      'class/examschedule': ExamTimeTable(),
       'class/allclasses': SchoolClasses(
         navigateTo: () {
           navigateTo('class/alltables');
@@ -217,6 +221,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
           navigateTo('exams/addexam');
         },
       ),
+
+
+
+      ///cbt
+      'cbt/createexam': PageView(children: [
+        CBTExamCreatorPage(),
+        QuestionBankScreen(),
+        ExamScreen(),
+        CBTResultsScreen(),
+        CbtExamResultsDashboard(),
+        CbtParentDashboard(),
+
+
+
+
+
+      ],),
       // 'exams/overview': const ExaminationOverviewPage(),
       'exams/examschedule': const ExamSchedule(),
       'exams/records': const ExamRecordsScreen(),
@@ -234,11 +255,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       ////promotions
       'promotions/managepromotion': StudentPromotionManager(),
+      'promotions/reportcard': ReportCardStudentList(
+          navigateTo: () {
+          navigateTo('promotions/singlereport');
+        },
+      ),
+      'promotions/singlereport': ReportCardScreen(
+          navigateTo: () {
+          navigateTo('promotions/reportcard');
+        },
+      ),
+
+
+
+
+
+      ////notifications
+      'notifications/newnotification': const AdminMessagingCenter(),
+
+
+
+
+      ////inventory
+      'inventory/inventory': const InventoryScreen(),
+
+
+
+
 
       ////accounts
       'accounts/income': const FinancialOverviewScreen(),
       'accounts/expenditure': ExpenditureScreen(),
       'accounts/expendituremanager': ExpenditureManger(),
+      'accounts/fees': SchoolFeesDashboard(),
 
       // 'inventory/edititem': const StudentTablePage2(),//////undo for web
       // 'student/allstudents': Container(
@@ -292,6 +341,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       'Single class',
       'Assign Student',
       'Time Table',
+      'Exam Schedule',
+
     ]),
     // MenuItem('Inventory', Icons.person_add, ['All item', 'Edit item']),
     MenuItem('Student', Icons.calendar_today, [
@@ -301,7 +352,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       // 'Attendance',
       // 'Time Table',
       'Parents',
-      'Exam Schedule',
 
       // 'Create Time Table',
     ]),
@@ -319,6 +369,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     //   'Results',
     //   'New',
     // ]),
+    MenuItem('Cbt', Icons.attach_money, [
+      'Create Exam',
+    
+    ]),
+    MenuItem('Inventory', Icons.attach_money, [
+      'Inventory',
+    
+    ]),
     MenuItem('Exams', Icons.attach_money, [
       'All Exams',
       'Exam Schedule',
@@ -336,11 +394,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     // MenuItem('Library', Icons.attach_money, ['All Books', 'Add Libarian']),
     // MenuItem('Chats', Icons.attach_money, []),
     MenuItem('Admissions', Icons.attach_money, ['All Admissions']),
-    MenuItem('Promotions', Icons.attach_money, ['Manage Promotion']),
+    MenuItem('Notifications', Icons.attach_money, ['New Notification']),
+    MenuItem('Promotions', Icons.attach_money, ['Manage Promotion','Report Card']),
     MenuItem('Accounts', Icons.attach_money, [
       'Income',
       'Expenditure',
       'Expenditure Manager',
+      'fees'
     ]),
   ];
   bool _isExpanded = false;

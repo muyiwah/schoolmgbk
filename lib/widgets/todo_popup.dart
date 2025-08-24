@@ -374,6 +374,7 @@ class _TeacherTodoPopupState extends State<TeacherTodoPopup>
                                   color: const Color(0xFFF9FAFB),
                                 ),
                                 child: DropdownButtonFormField<String>(
+                                  dropdownColor: Colors.white,
                                   value: _selectedPriority,
                                   decoration: const InputDecoration(
                                     border: InputBorder.none,

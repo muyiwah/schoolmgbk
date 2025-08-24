@@ -315,6 +315,7 @@ class _StaffRoleAssignmentPopupState extends State<StaffRoleAssignmentPopup>
 
           // Staff dropdown
           DropdownButtonFormField<Map<String, dynamic>>(
+            dropdownColor: Colors.white,
             isExpanded: true,
             decoration: InputDecoration(
               border: OutlineInputBorder(
@@ -432,13 +433,14 @@ class _StaffRoleAssignmentPopupState extends State<StaffRoleAssignmentPopup>
           const SizedBox(height: 12),
 
           DropdownButtonFormField<Map<String, dynamic>>(
+            dropdownColor: Colors.white,
             isExpanded: true,
             decoration: InputDecoration(
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
               filled: true,
-              fillColor: Colors.grey.shade50,
+              fillColor: Colors.white,
               contentPadding: const EdgeInsets.symmetric(horizontal: 12),
             ),
             hint: const Text('Choose role to assign'),
@@ -691,7 +693,7 @@ class _StaffRoleAssignmentPopupState extends State<StaffRoleAssignmentPopup>
     showDialog(
       context: context,
       builder:
-          (context) => AlertDialog(
+          (context) => AlertDialog(backgroundColor: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),

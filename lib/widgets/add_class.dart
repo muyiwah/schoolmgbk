@@ -201,6 +201,7 @@ class _AddClassDialogState extends State<AddClassDialog> {
                         children: [
                           Expanded(
                             child: DropdownButtonFormField<String>(
+                              dropdownColor: Colors.white,
                               value: selectedClass,
                               decoration: InputDecoration(
                                 labelText: 'Grade Level',
@@ -234,6 +235,7 @@ class _AddClassDialogState extends State<AddClassDialog> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: DropdownButtonFormField<String>(
+                              dropdownColor: Colors.white,
                               value: selectedSection,
                               decoration: InputDecoration(
                                 labelText: 'Section',
@@ -264,6 +266,7 @@ class _AddClassDialogState extends State<AddClassDialog> {
 
                       // Class Teacher
                       DropdownButtonFormField<String>(
+                        dropdownColor: Colors.white,
                         value: selectedTeacher,
                         decoration: InputDecoration(
                           labelText: 'Class Teacher',
@@ -412,6 +415,7 @@ class _AddClassDialogState extends State<AddClassDialog> {
 
                       // Building
                       DropdownButtonFormField<String>(
+                        dropdownColor: Colors.white,
                         value: selectedBuilding,
                         decoration: InputDecoration(
                           labelText: 'Building',

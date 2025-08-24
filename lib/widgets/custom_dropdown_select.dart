@@ -29,7 +29,7 @@ class _CustomDropdownState extends State<CustomDropdown> {
 
     return SizedBox(
       width: 200,
-      child: DropdownButtonFormField<String>(
+      child: DropdownButtonFormField<String>(dropdownColor: Colors.white,
         value: _localSelectedValue,
         decoration: InputDecoration(
           filled: true,

@@ -303,6 +303,7 @@ class _ExamRecordDialogState extends State<ExamRecordDialog> {
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
+          dropdownColor: Colors.white,
           value: value,
           decoration: InputDecoration(
             prefixIcon: Icon(icon, color: Colors.grey.shade600, size: 20),

@@ -334,6 +334,7 @@ class _AssignmentPopupState extends State<AssignmentPopup>
             border: Border.all(color: Color(0xFFE2E8F0)),
           ),
           child: DropdownButtonFormField<String>(
+            dropdownColor: Colors.white,
             value: selectedValue,
             decoration: InputDecoration(
               prefixIcon: Icon(icon, color: Color(0xFF667eea)),
