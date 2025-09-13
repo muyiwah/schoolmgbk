@@ -9,7 +9,7 @@ class AuthRepo {
   Future<HTTPResponseModel> login(Map<String, dynamic> body) async {
     return await _httpService.runApi(
       type: ApiRequestType.post,
-      url: "login",
+      url: "/auth/login",
       body: body,
     );
   }
@@ -119,13 +119,7 @@ class AuthRepo {
     );
   }
 
-  Future<HTTPResponseModel> withdrawRequest(Map<String, dynamic> body) async {
-    return await _httpService.runApi(
-      type: ApiRequestType.post,
-      url: "wallet/withdraw",
-      body: body,
-    );
-  }
+ 
 
   Future<HTTPResponseModel> userProfile(Map<String, dynamic> body) async {
     return await _httpService.runApi(

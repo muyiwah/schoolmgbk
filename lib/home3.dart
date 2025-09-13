@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:schmgtsystem/RoleHome/teacher_attendance.dart';
+import 'package:schmgtsystem/RoleHome/teacher_lessons.dart';
+import 'package:schmgtsystem/providers/provider.dart';
 import 'package:schmgtsystem/screens/Class/all_table.dart';
 import 'package:schmgtsystem/screens/Class/assign_student.dart';
 import 'package:schmgtsystem/screens/Class/classes.dart';
@@ -14,7 +17,6 @@ import 'package:schmgtsystem/screens/Student/parent_all_transactions.dart';
 import 'package:schmgtsystem/screens/Student/single_parent.dart';
 import 'package:schmgtsystem/screens/Student/single_student.dart';
 import 'package:schmgtsystem/screens/Student/timetable.dart';
-
 
 import 'package:schmgtsystem/screens/accunts/account_home.dart';
 import 'package:schmgtsystem/screens/accunts/accounts.dart';
@@ -37,8 +39,8 @@ import 'package:schmgtsystem/constants/appcolor.dart';
 import 'package:schmgtsystem/custom_timetable.dart';
 import 'package:schmgtsystem/deepseek/deepseek2222/examsetupscreen.dart';
 import 'package:schmgtsystem/screens/exams/records.dart';
-import 'package:schmgtsystem/screens/home/dashboar_details.dart';
-import 'package:schmgtsystem/screens/home/dshboard.dart';
+import 'package:schmgtsystem/screens/adminhome/dashboar_details.dart';
+import 'package:schmgtsystem/screens/adminhome/dshboard.dart';
 import 'package:collection/collection.dart';
 import 'package:schmgtsystem/screens/exams/add_exams.dart';
 
@@ -49,7 +51,6 @@ import 'package:schmgtsystem/screens/exams/overview2.dart';
 import 'package:schmgtsystem/screens/promotions/manage_promotion.dart';
 import 'package:schmgtsystem/screens/promotions/report_card.dart';
 import 'package:schmgtsystem/screens/promotions/student_list_reportcard.dart';
-import 'package:schmgtsystem/providers/user_provider.dart';
 import 'package:schmgtsystem/schoolfees_monitor.dart';
 import 'package:schmgtsystem/screens/staff/add_staff.dart';
 import 'package:schmgtsystem/screens/staff/all_staff.dart';
@@ -66,40 +67,23 @@ class MenuItem {
   MenuItem(this.title, this.icon, this.subMenuItems);
 }
 
-class SchoolAdminDashboard3 extends StatelessWidget {
-  const SchoolAdminDashboard3({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'School Admin Dashboard',
-      theme: ThemeData.light().copyWith(
-        primaryColor: Colors.indigoAccent,
-        scaffoldBackgroundColor: const Color(0xFFF5F6FA),
-        textTheme: ThemeData.light().textTheme.apply(bodyColor: Colors.black),
-        iconTheme: const IconThemeData(color: Colors.black),
-      ),
-      home: const DashboardScreen(),
-      debugShowCheckedModeBanner: false,
-    );
-  }
-}
-
-class DashboardScreen extends StatefulWidget {
+class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
 
   @override
-  State<DashboardScreen> createState() => _DashboardScreenState();
+  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
 }
+
 String roleRoute = '';
 
-class _DashboardScreenState extends State<DashboardScreen> {
+class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   late final Map<String, Widget> internalRoutes = _createRoutes();
   String currentRoute = 'home';
   List<String> breadcrumbs = ['home'];
   @override
   void initState() {
     super.initState();
+    getMetrics();
     applyRole();
 
     // for (int i = 0; i < menuItems.length; i++) {
@@ -107,13 +91,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
     // }
   }
 
+  getMetrics() async {
+    // ref.read(provider)
+  }
+
   applyRole() {
-    Provider.of<UserProvider>(context, listen: false).userRole == 'Teacher'
-        ? currentRoute = 'teacherhome'
-        : Provider.of<UserProvider>(context, listen: false).userRole == 'Admin'
-        ? currentRoute = 'home'
+    ref.read(RiverpodProvider.profileProvider).user?.role=='teacher'?
+         currentRoute = 'teacherhome'
+        :  ref.read(RiverpodProvider.profileProvider).user?.role=='admin'?
+        currentRoute = 'home'
         : currentRoute = 'accounthome';
-    roleRoute = currentRoute;
+   
+    // roleRoute = 'home';
     setState(() {});
   }
 
@@ -126,8 +115,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
         },
       ),
 
-      'teacherhome': TeacherDashboardApp(),
+
+
+///teacherssss
+      'teacherhome': TeacherDashboardApp(
+navigateTo: () {
+          navigateTo('teacherattendance');
+        },
+
+navigateTo2: () {
+          navigateTo('homeworkmanagementscreen');
+        },
+      ),
+      'teacherattendance': TeacherAttendance(),
+      'homeworkmanagementscreen': HomeworkManagementScreen(),
+
+
+
+
+
+
       'accounthome': AccountHome(),
+
+
       // 'class/add': AddClassScreen(
       //   onNavigateToInnerRoute:
       //       () => navigateTo('student/addstudent/innerroute'),
@@ -193,7 +203,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         navigateTo: () {
           navigateTo('class/alltables');
         },
-        navigateTo2: () {
+        navigateTo2: () async{
           navigateTo2('class/singleclass');
         },
         navigateTo3: () {
@@ -222,22 +232,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
         },
       ),
 
-
-
       ///cbt
-      'cbt/createexam': PageView(children: [
-        CBTExamCreatorPage(),
-        QuestionBankScreen(),
-        ExamScreen(),
-        CBTResultsScreen(),
-        CbtExamResultsDashboard(),
-        CbtParentDashboard(),
-
-
-
-
-
-      ],),
+      'cbt/createexam': PageView(
+        children: [
+          CBTExamCreatorPage(),
+          QuestionBankScreen(),
+          ExamScreen(),
+          CBTResultsScreen(),
+          CbtExamResultsDashboard(),
+          CbtParentDashboard(),
+        ],
+      ),
       // 'exams/overview': const ExaminationOverviewPage(),
       'exams/examschedule': const ExamSchedule(),
       'exams/records': const ExamRecordsScreen(),
@@ -256,32 +261,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ////promotions
       'promotions/managepromotion': StudentPromotionManager(),
       'promotions/reportcard': ReportCardStudentList(
-          navigateTo: () {
+        navigateTo: () {
           navigateTo('promotions/singlereport');
         },
       ),
       'promotions/singlereport': ReportCardScreen(
-          navigateTo: () {
+        navigateTo: () {
           navigateTo('promotions/reportcard');
         },
       ),
 
-
-
-
-
       ////notifications
       'notifications/newnotification': const AdminMessagingCenter(),
 
-
-
-
       ////inventory
       'inventory/inventory': const InventoryScreen(),
-
-
-
-
 
       ////accounts
       'accounts/income': const FinancialOverviewScreen(),
@@ -342,7 +336,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       'Assign Student',
       'Time Table',
       'Exam Schedule',
-
     ]),
     // MenuItem('Inventory', Icons.person_add, ['All item', 'Edit item']),
     MenuItem('Student', Icons.calendar_today, [
@@ -369,14 +362,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     //   'Results',
     //   'New',
     // ]),
-    MenuItem('Cbt', Icons.attach_money, [
-      'Create Exam',
-    
-    ]),
-    MenuItem('Inventory', Icons.attach_money, [
-      'Inventory',
-    
-    ]),
+    MenuItem('Cbt', Icons.attach_money, ['Create Exam']),
+    MenuItem('Inventory', Icons.attach_money, ['Inventory']),
     MenuItem('Exams', Icons.attach_money, [
       'All Exams',
       'Exam Schedule',
@@ -395,12 +382,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
     // MenuItem('Chats', Icons.attach_money, []),
     MenuItem('Admissions', Icons.attach_money, ['All Admissions']),
     MenuItem('Notifications', Icons.attach_money, ['New Notification']),
-    MenuItem('Promotions', Icons.attach_money, ['Manage Promotion','Report Card']),
+    MenuItem('Promotions', Icons.attach_money, [
+      'Manage Promotion',
+      'Report Card',
+    ]),
     MenuItem('Accounts', Icons.attach_money, [
       'Income',
       'Expenditure',
       'Expenditure Manager',
-      'fees'
+      'fees',
     ]),
   ];
   bool _isExpanded = false;
@@ -542,7 +532,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       children:
                           menuItems.mapIndexed((index, menu) {
                             if (menu.subMenuItems.isEmpty) {
-                            
                               return GestureDetector(
                                 onTap: () {
                                   setState(() {
@@ -704,7 +693,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             Expanded(
               child: Scaffold(
-                appBar: buildAppBar(context),
+                appBar: buildAppBar(context, ref),
                 body: Column(
                   children: [
                     // Container(

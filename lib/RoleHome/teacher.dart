@@ -4,7 +4,13 @@ import 'package:schmgtsystem/widgets/message_popup.dart';
 import 'package:schmgtsystem/widgets/todo_popup.dart';
 
 class TeacherDashboardApp extends StatefulWidget {
-  const TeacherDashboardApp({super.key});
+  Null Function() navigateTo;
+  Null Function() navigateTo2;
+  TeacherDashboardApp({
+    super.key,
+    required this.navigateTo,
+    required this.navigateTo2,
+  });
 
   @override
   State<TeacherDashboardApp> createState() => _TeacherDashboardAppState();

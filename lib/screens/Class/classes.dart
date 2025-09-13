@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:schmgtsystem/constants/appcolor.dart';
+import 'package:schmgtsystem/models/class_metrics_model.dart';
+import 'package:schmgtsystem/models/class_model.dart';
+import 'package:schmgtsystem/models/teacher_model.dart';
+import 'package:schmgtsystem/providers/provider.dart';
 import 'package:schmgtsystem/widgets/add_class.dart';
 import 'package:schmgtsystem/widgets/add_teacher.dart';
 import 'package:schmgtsystem/widgets/prompt.dart';
+// import '../../models/class_metrics_model.dart'
+//     show Class, Teacher, Student, Attendance; // Import only what you need
 
-class SchoolClasses extends StatefulWidget {
+class SchoolClasses extends ConsumerStatefulWidget {
   final Function navigateTo;
-  final Function navigateTo2;
+  final Future<dynamic> Function() navigateTo2;
   final Function navigateTo3;
   SchoolClasses({
     super.key,
@@ -16,10 +23,30 @@ class SchoolClasses extends StatefulWidget {
   });
 
   @override
-  State<SchoolClasses> createState() => _SchoolClassesState();
+  ConsumerState<SchoolClasses> createState() => _SchoolClassesState();
 }
 
-class _SchoolClassesState extends State<SchoolClasses> {
+class _SchoolClassesState extends ConsumerState<SchoolClasses> {
+  @override
+  initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      loadClassesData();
+    });
+  }
+
+  ClassMetricModel classData = ClassMetricModel();
+  TeacherListModel teacherData = TeacherListModel();
+  loadClassesData() async {
+    classData = await ref
+        .read(RiverpodProvider.classProvider)
+        .getAllClassesWithMetric(context);
+    teacherData = await ref
+        .read(RiverpodProvider.teachersProvider)
+        .getAllTeachers(context);
+    setState(() {});
+  }
+
   String selectedLevel = 'All Levels';
   String sortBy = 'Sort by Alphabetical';
   bool isGridView = true;
@@ -37,6 +64,7 @@ class _SchoolClassesState extends State<SchoolClasses> {
     'Sort by Attendance',
   ];
 
+  Class? _selectedClass;
   prompt(context) {
     CustomDialog(message: 'Do you want to download report?', context: context);
   }
@@ -96,12 +124,15 @@ class _SchoolClassesState extends State<SchoolClasses> {
       children: [
         ElevatedButton.icon(
           onPressed: () {
-             showDialog(
+            showDialog(
               context: context,
               barrierDismissible: true,
               barrierColor: Colors.black.withOpacity(0.5),
               builder:
-                  (context) => AddClassDialog(),
+                  (context) => AddClassDialog(
+                    academicYear: '2025/2026',
+                    teacherData: teacherData,
+                  ),
             );
           },
           icon: const Icon(Icons.add, size: 20),
@@ -173,7 +204,7 @@ class _SchoolClassesState extends State<SchoolClasses> {
         Expanded(
           child: _buildStatCard(
             'Total Classes',
-            '24',
+            classData.classes?.length.toString() ?? '',
             Icons.class_,
             const Color(0xFF6366F1),
           ),
@@ -182,7 +213,7 @@ class _SchoolClassesState extends State<SchoolClasses> {
         Expanded(
           child: _buildStatCard(
             'Total Students',
-            '648',
+            classData.overallStats?.totalStudents.toString() ?? '',
             Icons.people,
             const Color(0xFF8B5CF6),
           ),
@@ -200,7 +231,7 @@ class _SchoolClassesState extends State<SchoolClasses> {
         Expanded(
           child: _buildStatCard(
             'Missing Teachers',
-            '3',
+            '',
             Icons.warning,
             const Color(0xFFF59E0B),
             isWarning: true,
@@ -366,7 +397,7 @@ class _SchoolClassesState extends State<SchoolClasses> {
   }
 
   Widget _buildClassesList() {
-    final classes = _getClassData();
+    // final classes = _getClassData();
 
     return GridView.builder(
       shrinkWrap: true,
@@ -377,10 +408,11 @@ class _SchoolClassesState extends State<SchoolClasses> {
         mainAxisSpacing: 16,
         childAspectRatio: 0.85,
       ),
-      itemCount: classes.length,
+      itemCount: classData.classes?.length ?? 0,
       itemBuilder: (context, index) {
+        final singleClass = classData.classes?[index] as Class;
         return _buildClassCard(
-          classes[index],
+          singleClass,
           navigateTo2: () {
             widget.navigateTo2();
           },
@@ -390,7 +422,7 @@ class _SchoolClassesState extends State<SchoolClasses> {
   }
 
   Widget _buildClassCard(
-    ClassData classData, {
+    Class classData, {
     required Null Function() navigateTo2,
   }) {
     return Container(
@@ -413,7 +445,7 @@ class _SchoolClassesState extends State<SchoolClasses> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                classData.name,
+                classData.name ?? '',
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
@@ -423,13 +455,15 @@ class _SchoolClassesState extends State<SchoolClasses> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: classData.levelColor.withOpacity(0.1),
+                  color: Colors.pink.withOpacity(0.1),
+                  // color: classData.levelColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  classData.level,
+                  classData.level ?? '',
                   style: TextStyle(
-                    color: classData.levelColor,
+                    color: Colors.blue,
+                    // color: classData.levelColor,
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
@@ -442,7 +476,7 @@ class _SchoolClassesState extends State<SchoolClasses> {
             children: [
               CircleAvatar(
                 radius: 16,
-                backgroundImage: NetworkImage(classData.teacherImage),
+                // backgroundImage: NetworkImage(classData.teacherImage),
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -450,7 +484,7 @@ class _SchoolClassesState extends State<SchoolClasses> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      classData.teacherName,
+                      '${classData.classTeacher?.personalInfo?.firstName} ${classData.classTeacher?.personalInfo?.lastName}  ',
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
@@ -458,7 +492,7 @@ class _SchoolClassesState extends State<SchoolClasses> {
                       ),
                     ),
                     Text(
-                      classData.teacherRole,
+                      'class teacher',
                       style: const TextStyle(
                         fontSize: 12,
                         color: Color(0xFF6B7280),
@@ -472,42 +506,46 @@ class _SchoolClassesState extends State<SchoolClasses> {
           // const SizedBox(height: 16),
           _buildClassStats(classData),
           const SizedBox(height: 16),
-          if (classData.nextEvent.isNotEmpty)
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: classData.eventColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                classData.nextEvent,
-                style: TextStyle(
-                  color: classData.eventColor,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
+          // if (classData.nextEvent.isNotEmpty)
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.green.withOpacity(0.1),
+              // color: classData.eventColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              'Class Event',
+              style: TextStyle(
+                color: Colors.green,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
               ),
             ),
+          ),
           const SizedBox(height: 10),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () {
-                    classData.isAssignTeacher
-      ?    showDialog(
-              context: context,
-              barrierDismissible: true,
-              barrierColor: Colors.black.withOpacity(0.5),
-              builder:
-                  (context) => AssignNewTeacherDialog(),
-            ):
-
-                // AssignNewTeacherDialog
-                navigateTo2();
+              onPressed: () async {
+                if (classData.classTeacher?.id == null) {
+                  showDialog(
+                    context: context,
+                    barrierDismissible: true,
+                    barrierColor: Colors.black.withOpacity(0.5),
+                    builder: (context) => AssignNewTeacherDialog(),
+                  );
+                } else {
+                  // Store the selected class and call navigateTo2
+                  _selectedClass = classData;
+                  final result = await widget.navigateTo2();
+                  // You can handle the returned result here if needed
+                  print('Navigation completed with result: $result');
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor:
-                    classData.isAssignTeacher
+                    classData.classTeacher?.id == null
                         ? Colors.red
                         : AppColors.secondary,
                 foregroundColor: Colors.white,
@@ -517,7 +555,7 @@ class _SchoolClassesState extends State<SchoolClasses> {
                 ),
               ),
               child: Text(
-                classData.isAssignTeacher
+                classData.classTeacher?.id == null
                     ? 'Assign Teacher'
                     : 'View Class Details',
                 style: const TextStyle(
@@ -532,7 +570,7 @@ class _SchoolClassesState extends State<SchoolClasses> {
     );
   }
 
-  Widget _buildClassStats(ClassData classData) {
+  Widget _buildClassStats(Class classData) {
     return Column(
       children: [
         Row(
@@ -543,7 +581,7 @@ class _SchoolClassesState extends State<SchoolClasses> {
               style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
             Text(
-              '${classData.totalStudents}',
+              '${classData.students?.length}',
               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
             ),
           ],
@@ -596,12 +634,12 @@ class _SchoolClassesState extends State<SchoolClasses> {
         ),
         const SizedBox(height: 4),
         LinearProgressIndicator(
-          value: classData.attendance / 100,
+          value: (classData.attendance?.present ?? 1) / 100,
           backgroundColor: Colors.grey[200],
           valueColor: AlwaysStoppedAnimation<Color>(
-            classData.attendance >= 90
+            (classData.attendance?.present ?? 1) >= 90
                 ? Colors.green
-                : classData.attendance >= 80
+                : (classData.attendance?.present ?? 1) >= 80
                 ? Colors.orange
                 : Colors.red,
           ),
@@ -615,7 +653,7 @@ class _SchoolClassesState extends State<SchoolClasses> {
               style: TextStyle(fontSize: 12, color: Colors.grey),
             ),
             Text(
-              '${classData.avgScore}%',
+              '${classData.averagePerformance}%',
               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
             ),
           ],
@@ -623,107 +661,4 @@ class _SchoolClassesState extends State<SchoolClasses> {
       ],
     );
   }
-
-  List<ClassData> _getClassData() {
-    return [
-      ClassData(
-        name: 'Grade 5 - Blue',
-        level: 'Primary',
-        levelColor: const Color(0xFF6366F1),
-        teacherName: 'Mrs. Sarah Johnson',
-        teacherRole: 'Class Teacher',
-        teacherImage: 'https://via.placeholder.com/32',
-        totalStudents: 28,
-        maleStudents: 15,
-        femaleStudents: 13,
-        attendance: 92,
-        avgScore: 85,
-        nextEvent: 'Next: Math Quiz - Dec 15',
-        eventColor: const Color(0xFF3B82F6),
-        isAssignTeacher: false,
-      ),
-      ClassData(
-        name: 'Grade 10 - A',
-        level: 'JSS',
-        levelColor: const Color(0xFF8B5CF6),
-        teacherName: 'Mr. David Wilson',
-        teacherRole: 'Class Teacher',
-        teacherImage: 'https://via.placeholder.com/32',
-        totalStudents: 32,
-        maleStudents: 18,
-        femaleStudents: 14,
-        attendance: 88,
-        avgScore: 78,
-        nextEvent: 'Next: Science Exam - Dec 18',
-        eventColor: const Color(0xFF3B82F6),
-        isAssignTeacher: false,
-      ),
-      ClassData(
-        name: 'Nursery 2',
-        level: 'Nursery',
-        levelColor: const Color(0xFF06B6D4),
-        teacherName: 'Miss Emily Davis',
-        teacherRole: 'Class Teacher',
-        teacherImage: 'https://via.placeholder.com/32',
-        totalStudents: 20,
-        maleStudents: 12,
-        femaleStudents: 8,
-        attendance: 95,
-        avgScore: 90,
-        nextEvent: 'Next: Art Activity - Dec 16',
-        eventColor: const Color(0xFF10B981),
-        isAssignTeacher: false,
-      ),
-      ClassData(
-        name: 'Grade 12 - Science',
-        level: 'SSS',
-        levelColor: const Color(0xFF8B5CF6),
-        teacherName: 'No Teacher Assigned',
-        teacherRole: 'Requires Assignment',
-        teacherImage: 'https://via.placeholder.com/32',
-        totalStudents: 25,
-        maleStudents: 14,
-        femaleStudents: 11,
-        attendance: 75,
-        avgScore: 70,
-        nextEvent: 'Urgent: Assign Teacher',
-        eventColor: const Color(0xFFEF4444),
-        isAssignTeacher: true,
-      ),
-    ];
-  }
-}
-
-class ClassData {
-  final String name;
-  final String level;
-  final Color levelColor;
-  final String teacherName;
-  final String teacherRole;
-  final String teacherImage;
-  final int totalStudents;
-  final int maleStudents;
-  final int femaleStudents;
-  final int attendance;
-  final int avgScore;
-  final String nextEvent;
-  final Color eventColor;
-  final bool isAssignTeacher;
-
-  ClassData({
-    required this.name,
-    required this.level,
-    required this.levelColor,
-    required this.teacherName,
-    required this.teacherRole,
-    required this.teacherImage,
-    required this.totalStudents,
-    required this.maleStudents,
-    required this.femaleStudents,
-    required this.attendance,
-    required this.avgScore,
-    required this.nextEvent,
-    required this.eventColor,
-    required this.isAssignTeacher,
-  });
 }

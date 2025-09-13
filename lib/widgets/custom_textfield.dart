@@ -9,7 +9,8 @@ class CustomInput extends StatelessWidget {
     Key? key,
     required this.title,
     required this.controller,
-     this.showError=false,
+    this.showError = false,
+    String? Function(dynamic value)? validator,
   }) : super(key: key);
 
   @override

@@ -1,30 +1,44 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:schmgtsystem/constants/appcolor.dart';
+import 'package:schmgtsystem/models/teacher_model.dart';
+import 'package:schmgtsystem/providers/provider.dart';
+import 'package:schmgtsystem/services/http_service.dart';
+import 'package:schmgtsystem/utils/enums.dart';
+import 'package:schmgtsystem/utils/locator.dart';
 
-class AddClassDialog extends StatefulWidget {
-  const AddClassDialog({Key? key}) : super(key: key);
+class AddClassDialog extends ConsumerStatefulWidget {
+  final String academicYear;
+  final TeacherListModel teacherData;
+  const AddClassDialog({
+    Key? key,
+    required this.academicYear,
+    required this.teacherData,
+  }) : super(key: key);
 
   @override
-  State<AddClassDialog> createState() => _AddClassDialogState();
+  ConsumerState<AddClassDialog> createState() => _AddClassDialogState();
 }
 
-class _AddClassDialogState extends State<AddClassDialog> {
+class _AddClassDialogState extends ConsumerState<AddClassDialog> {
   final _formKey = GlobalKey<FormState>();
   final _classNameController = TextEditingController();
   final _capacityController = TextEditingController();
   final _roomNumberController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _baseFeeController = TextEditingController();
 
-  String? selectedClass;
-  String? selectedTeacher;
-  Color? selectedColor;
+  final HttpService _httpService = locator<HttpService>();
+
+  String? selectedLevel;
+  String? selectedClassTeacher;
+  String? selectedClassTeacherId;
   String? selectedSection;
-  String? selectedBuilding;
-  TimeOfDay? startTime;
-  TimeOfDay? endTime;
+  String? selectedTerm;
+  bool _isLoading = false;
 
   // Dummy data for dropdowns
-  final List<String> classes = [
+  final List<String> levels = [
     'Grade 1',
     'Grade 2',
     'Grade 3',
@@ -54,28 +68,8 @@ class _AddClassDialogState extends State<AddClassDialog> {
     'Ms. Rachel White',
   ];
 
-  final List<Color> classColors = [
-    Colors.blue,
-    Colors.green,
-    Colors.orange,
-    Colors.purple,
-    Colors.red,
-    Colors.teal,
-    Colors.pink,
-    Colors.indigo,
-    Colors.amber,
-    Colors.cyan,
-  ];
-
   final List<String> sections = ['A', 'B', 'C', 'D', 'E'];
-
-  final List<String> buildings = [
-    'Main Building',
-    'Science Block',
-    'Arts Building',
-    'Sports Complex',
-    'Library Wing',
-  ];
+  final List<String> terms = ['First', 'Second', 'Third'];
 
   @override
   void dispose() {
@@ -83,36 +77,43 @@ class _AddClassDialogState extends State<AddClassDialog> {
     _capacityController.dispose();
     _roomNumberController.dispose();
     _descriptionController.dispose();
+    _baseFeeController.dispose();
     super.dispose();
   }
 
-  Future<void> _selectTime(BuildContext context, bool isStartTime) async {
-    final TimeOfDay? picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-    );
-    if (picked != null) {
-      setState(() {
-        if (isStartTime) {
-          startTime = picked;
-        } else {
-          endTime = picked;
-        }
-      });
-    }
-  }
-
-  void _saveClass() {
+  Future<void> _saveClass() async {
     if (_formKey.currentState!.validate()) {
-      // Here you would typically save the class data
-      // For now, we'll just show a success message and close the dialog
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Class added successfully!'),
-          backgroundColor: Colors.green,
-        ),
-      );
-      Navigator.of(context).pop();
+      try {
+        final Map<String, dynamic> requestBody = {
+          "name": _classNameController.text.trim(),
+          "level": selectedLevel,
+          "section": selectedSection,
+          "academicYear": widget.academicYear,
+          "classTeacher": selectedClassTeacherId,
+          "capacity": int.tryParse(_capacityController.text) ?? 30,
+          "classroom": _roomNumberController.text.trim(),
+          "description": _descriptionController.text.trim(),
+        };
+
+        // Add fee structure if base fee is provided
+        if (_baseFeeController.text.isNotEmpty) {
+          final baseFee = double.tryParse(_baseFeeController.text);
+          if (baseFee != null && baseFee > 0) {
+            requestBody["feeStructure"] = {
+              "term": selectedTerm ?? terms.first,
+              "year": widget.academicYear,
+              "baseFee": baseFee,
+              "addOns": [],
+            };
+            requestBody["setAsActive"] = true;
+          }
+        }
+        await ref
+            .read(RiverpodProvider.classProvider)
+            .createClass(context, requestBody);
+        Navigator.pop(context);
+        print(requestBody);
+      } catch (e) {}
     }
   }
 
@@ -121,10 +122,11 @@ class _AddClassDialogState extends State<AddClassDialog> {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       elevation: 16,
-      child: Container(decoration: BoxDecoration(
-        color:Colors.white,
-        borderRadius: BorderRadius.circular(20)
-      ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+        ),
         width: MediaQuery.of(context).size.width * 0.5,
         constraints: const BoxConstraints(maxHeight: 700),
         child: Column(
@@ -158,7 +160,8 @@ class _AddClassDialogState extends State<AddClassDialog> {
                   ),
                   const Spacer(),
                   IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed:
+                        _isLoading ? null : () => Navigator.of(context).pop(),
                     icon: const Icon(Icons.close, color: Colors.white),
                   ),
                 ],
@@ -174,12 +177,28 @@ class _AddClassDialogState extends State<AddClassDialog> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Academic Year (read-only)
+                      TextFormField(
+                        initialValue: widget.academicYear,
+                        decoration: InputDecoration(
+                          labelText: 'Academic Year',
+                          prefixIcon: const Icon(Icons.calendar_today),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey.shade100,
+                        ),
+                        readOnly: true,
+                      ),
+                      const SizedBox(height: 16),
+
                       // Class Name
                       TextFormField(
                         controller: _classNameController,
                         decoration: InputDecoration(
-                          labelText: 'Class Name',
-                          hintText: 'Enter class name',
+                          labelText: 'Class Name*',
+                          hintText: 'Enter class name (e.g., Grade 1A)',
                           prefixIcon: const Icon(Icons.class_),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -196,15 +215,15 @@ class _AddClassDialogState extends State<AddClassDialog> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Grade Level and Section Row
+                      // Level and Section Row
                       Row(
                         children: [
                           Expanded(
                             child: DropdownButtonFormField<String>(
                               dropdownColor: Colors.white,
-                              value: selectedClass,
+                              value: selectedLevel,
                               decoration: InputDecoration(
-                                labelText: 'Grade Level',
+                                labelText: 'Grade Level*',
                                 prefixIcon: const Icon(Icons.grade),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
@@ -213,20 +232,20 @@ class _AddClassDialogState extends State<AddClassDialog> {
                                 fillColor: Colors.grey.shade50,
                               ),
                               items:
-                                  classes.map((String grade) {
+                                  levels.map((String level) {
                                     return DropdownMenuItem<String>(
-                                      value: grade,
-                                      child: Text(grade),
+                                      value: level,
+                                      child: Text(level),
                                     );
                                   }).toList(),
                               onChanged: (String? newValue) {
                                 setState(() {
-                                  selectedClass = newValue;
+                                  selectedLevel = newValue;
                                 });
                               },
                               validator: (value) {
                                 if (value == null) {
-                                  return 'Please select a grade';
+                                  return 'Please select a grade level';
                                 }
                                 return null;
                               },
@@ -238,7 +257,7 @@ class _AddClassDialogState extends State<AddClassDialog> {
                               dropdownColor: Colors.white,
                               value: selectedSection,
                               decoration: InputDecoration(
-                                labelText: 'Section',
+                                labelText: 'Section*',
                                 prefixIcon: const Icon(Icons.segment),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
@@ -258,6 +277,12 @@ class _AddClassDialogState extends State<AddClassDialog> {
                                   selectedSection = newValue;
                                 });
                               },
+                              validator: (value) {
+                                if (value == null) {
+                                  return 'Please select a section';
+                                }
+                                return null;
+                              },
                             ),
                           ),
                         ],
@@ -267,9 +292,9 @@ class _AddClassDialogState extends State<AddClassDialog> {
                       // Class Teacher
                       DropdownButtonFormField<String>(
                         dropdownColor: Colors.white,
-                        value: selectedTeacher,
+                        value: selectedClassTeacher,
                         decoration: InputDecoration(
-                          labelText: 'Class Teacher',
+                          labelText: 'Class Teacher*',
                           prefixIcon: const Icon(Icons.person),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -278,90 +303,28 @@ class _AddClassDialogState extends State<AddClassDialog> {
                           fillColor: Colors.grey.shade50,
                         ),
                         items:
-                            teachers.map((String teacher) {
+                            (widget.teacherData.teachers??[]).map((teacher) {
                               return DropdownMenuItem<String>(
-                                value: teacher,
-                                child: Text(teacher),
+                                onTap: () {
+                                  selectedClassTeacherId = teacher.id;
+                                },
+                                value:
+                                    '${teacher.fullName} ${teacher.teachingInfo?.classTeacherClasses?.isNotEmpty == true ? teacher.teachingInfo?.classTeacherClasses?.first?.name ?? '' : ''} ',
+                                child: Text(teacher.fullName.toString()),
                               );
                             }).toList(),
                         onChanged: (String? newValue) {
                           setState(() {
-                            selectedTeacher = newValue;
+                            selectedClassTeacher = newValue;
                           });
                         },
+
                         validator: (value) {
                           if (value == null) {
-                            return 'Please select a teacher';
+                            return 'Please select a class teacher';
                           }
                           return null;
                         },
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Class Color
-                      Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade400),
-                          borderRadius: BorderRadius.circular(12),
-                          color: Colors.grey.shade50,
-                        ),
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                const Icon(Icons.palette, color: Colors.grey),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Class Color',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.grey.shade700,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children:
-                                  classColors.map((Color color) {
-                                    return GestureDetector(
-                                      onTap: () {
-                                        setState(() {
-                                          selectedColor = color;
-                                        });
-                                      },
-                                      child: Container(
-                                        width: 40,
-                                        height: 40,
-                                        decoration: BoxDecoration(
-                                          color: color,
-                                          shape: BoxShape.circle,
-                                          border: Border.all(
-                                            color:
-                                                selectedColor == color
-                                                    ? Colors.black
-                                                    : Colors.transparent,
-                                            width: 3,
-                                          ),
-                                        ),
-                                        child:
-                                            selectedColor == color
-                                                ? const Icon(
-                                                  Icons.check,
-                                                  color: Colors.white,
-                                                  size: 20,
-                                                )
-                                                : null,
-                                      ),
-                                    );
-                                  }).toList(),
-                            ),
-                          ],
-                        ),
                       ),
                       const SizedBox(height: 16),
 
@@ -372,7 +335,7 @@ class _AddClassDialogState extends State<AddClassDialog> {
                             child: TextFormField(
                               controller: _roomNumberController,
                               decoration: InputDecoration(
-                                labelText: 'Room Number',
+                                labelText: 'Room Number*',
                                 hintText: 'e.g., A-101',
                                 prefixIcon: const Icon(Icons.room),
                                 border: OutlineInputBorder(
@@ -381,6 +344,12 @@ class _AddClassDialogState extends State<AddClassDialog> {
                                 filled: true,
                                 fillColor: Colors.grey.shade50,
                               ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter room number';
+                                }
+                                return null;
+                              },
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -389,7 +358,7 @@ class _AddClassDialogState extends State<AddClassDialog> {
                               controller: _capacityController,
                               keyboardType: TextInputType.number,
                               decoration: InputDecoration(
-                                labelText: 'Capacity',
+                                labelText: 'Capacity*',
                                 hintText: 'Max students',
                                 prefixIcon: const Icon(Icons.groups),
                                 border: OutlineInputBorder(
@@ -399,11 +368,12 @@ class _AddClassDialogState extends State<AddClassDialog> {
                                 fillColor: Colors.grey.shade50,
                               ),
                               validator: (value) {
-                                if (value != null && value.isNotEmpty) {
-                                  final capacity = int.tryParse(value);
-                                  if (capacity == null || capacity <= 0) {
-                                    return 'Enter valid number';
-                                  }
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter capacity';
+                                }
+                                final capacity = int.tryParse(value);
+                                if (capacity == null || capacity <= 0) {
+                                  return 'Enter valid number';
                                 }
                                 return null;
                               },
@@ -413,123 +383,87 @@ class _AddClassDialogState extends State<AddClassDialog> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Building
-                      DropdownButtonFormField<String>(
-                        dropdownColor: Colors.white,
-                        value: selectedBuilding,
-                        decoration: InputDecoration(
-                          labelText: 'Building',
-                          prefixIcon: const Icon(Icons.business),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          filled: true,
-                          fillColor: Colors.grey.shade50,
+                      // Fee Structure Section
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(12),
+                          color: Colors.grey.shade50,
                         ),
-                        items:
-                            buildings.map((String building) {
-                              return DropdownMenuItem<String>(
-                                value: building,
-                                child: Text(building),
-                              );
-                            }).toList(),
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            selectedBuilding = newValue;
-                          });
-                        },
-                      ),
-                      const SizedBox(height: 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Fee Structure (Optional)',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'You can add fee structure now or later',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
 
-                      // Time Schedule Row
-                      Row(
-                        children: [
-                          Expanded(
-                            child: InkWell(
-                              onTap: () => _selectTime(context, true),
-                              child: Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: Colors.grey.shade400,
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: DropdownButtonFormField<String>(
+                                    dropdownColor: Colors.white,
+                                    value: selectedTerm,
+                                    decoration: InputDecoration(
+                                      labelText: 'Term',
+                                      prefixIcon: const Icon(Icons.schedule),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      filled: true,
+                                      fillColor: Colors.white,
+                                    ),
+                                    items:
+                                        terms.map((String term) {
+                                          return DropdownMenuItem<String>(
+                                            value: term,
+                                            child: Text(term),
+                                          );
+                                        }).toList(),
+                                    onChanged: (String? newValue) {
+                                      setState(() {
+                                        selectedTerm = newValue;
+                                      });
+                                    },
                                   ),
-                                  borderRadius: BorderRadius.circular(12),
-                                  color: Colors.grey.shade50,
                                 ),
-                                child: Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.access_time,
-                                      color: Colors.grey,
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: _baseFeeController,
+                                    keyboardType: TextInputType.number,
+                                    decoration: InputDecoration(
+                                      labelText: 'Base Fee',
+                                      hintText: 'e.g., 5000',
+                                      prefixIcon: const Icon(
+                                        Icons.attach_money,
+                                      ),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      filled: true,
+                                      fillColor: Colors.white,
                                     ),
-                                    const SizedBox(width: 8),
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Start Time',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey.shade600,
-                                          ),
-                                        ),
-                                        Text(
-                                          startTime?.format(context) ??
-                                              'Select time',
-                                          style: const TextStyle(fontSize: 16),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: InkWell(
-                              onTap: () => _selectTime(context, false),
-                              child: Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: Colors.grey.shade400,
                                   ),
-                                  borderRadius: BorderRadius.circular(12),
-                                  color: Colors.grey.shade50,
                                 ),
-                                child: Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.access_time,
-                                      color: Colors.grey,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'End Time',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey.shade600,
-                                          ),
-                                        ),
-                                        Text(
-                                          endTime?.format(context) ??
-                                              'Select time',
-                                          style: const TextStyle(fontSize: 16),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
+                              ],
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 16),
 
@@ -568,7 +502,8 @@ class _AddClassDialogState extends State<AddClassDialog> {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () => Navigator.of(context).pop(),
+                      onPressed:
+                          _isLoading ? null : () => Navigator.of(context).pop(),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
@@ -584,7 +519,7 @@ class _AddClassDialogState extends State<AddClassDialog> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: _saveClass,
+                      onPressed: _isLoading ? null : _saveClass,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue.shade600,
                         foregroundColor: Colors.white,
@@ -594,13 +529,18 @@ class _AddClassDialogState extends State<AddClassDialog> {
                         ),
                         elevation: 2,
                       ),
-                      child: const Text(
-                        'Add Class',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      child:
+                          _isLoading
+                              ? const CircularProgressIndicator(
+                                color: Colors.white,
+                              )
+                              : const Text(
+                                'Add Class',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                     ),
                   ),
                 ],
@@ -612,12 +552,3 @@ class _AddClassDialogState extends State<AddClassDialog> {
     );
   }
 }
-
-// Usage example:
-// To show the dialog, use:
-// showDialog(
-//   context: context,
-//   builder: (BuildContext context) {
-//     return const AddClassDialog();
-//   },
-// );

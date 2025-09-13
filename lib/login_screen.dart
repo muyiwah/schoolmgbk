@@ -1,20 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:provider/provider.dart';
 import 'package:schmgtsystem/constants/appcolor.dart';
 import 'package:schmgtsystem/home3.dart';
-import 'package:schmgtsystem/providers/user_provider.dart';
+import 'package:schmgtsystem/providers/provider.dart';
 import 'package:schmgtsystem/widgets/success_snack.dart';
 
 enum userRole { Admin, Parent, Teacher }
 
-class OakwoodLoginScreen extends StatefulWidget {
-  const OakwoodLoginScreen({Key? key}) : super(key: key);
+class LoginScreen extends ConsumerStatefulWidget {
+  const LoginScreen({Key? key}) : super(key: key);
 
   @override
-  State<OakwoodLoginScreen> createState() => _OakwoodLoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _OakwoodLoginScreenState extends State<OakwoodLoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -363,28 +364,38 @@ class _OakwoodLoginScreenState extends State<OakwoodLoginScreen> {
   }
 
   Widget _buildLoginButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 52,
-      child: ElevatedButton(
-        onPressed: () {
-          if (_formKey.currentState!.validate()) {
-            // Handle login
-            _handleLogin();
-          }
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.secondary,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          elevation: 0,
-        ),
-        child: const Text(
-          'Login',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-        ),
-      ),
-    );
+ 
+        return SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: ElevatedButton(
+            onPressed: () async{
+              if (_formKey.currentState!.validate()) {
+                // Handle login
+               Map<String, String> body = {
+              'email': _emailController.text,
+            
+              'password': _passwordController.text
+            };
+                  ref.read(RiverpodProvider.authProvider).login(context, 
+                  ref.read(RiverpodProvider.profileProvider),body: body);
+                
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.secondary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              elevation: 0,
+            ),
+            child: const Text(
+              'Login',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+          ),
+        );
+      
+    
   }
 
   Widget _buildSupportLink() {
@@ -408,24 +419,21 @@ class _OakwoodLoginScreenState extends State<OakwoodLoginScreen> {
     );
   }
 
-  void _handleLogin() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => SchoolAdminDashboard3()),
-    );
+  void _handleLogin()async {
+
+
+
+    
+                                    }
+    // Navigator.push(
+    //   context,
+    //   MaterialPageRoute(builder: (_) => SchoolAdminDashboard3()),
+    // );
     // Implement login logic here
-    print('Login attempt:');
-    print('Role: $_selectedRole');
-    print('Email: ${_emailController.text}');
-    print('Remember me: $_rememberMe');
-    Provider.of<UserProvider>(
-      listen: false,
-      context,
-    ).setUserRole(_selectedRole);
+    
     // You would typically call an authentication service here
-    showSnackbar(context, 'Logging in as $_selectedRole...');
   }
-}
+
 
 // Example usage in main.dart
 class MyApp extends StatelessWidget {
@@ -434,12 +442,12 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Oakwood Academy',
+      title: 'Academy',
       theme: ThemeData(
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: const OakwoodLoginScreen(),
+      home: const LoginScreen(),
       debugShowCheckedModeBanner: false,
     );
   }

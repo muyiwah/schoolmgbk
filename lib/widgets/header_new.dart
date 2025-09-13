@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/src/consumer.dart';
 import 'package:provider/provider.dart';
 import 'package:schmgtsystem/constants/appcolor.dart';
 import 'package:schmgtsystem/login_screen.dart';
-import 'package:schmgtsystem/providers/user_provider.dart';
+import 'package:schmgtsystem/providers/auth_provider.dart';
+import 'package:schmgtsystem/providers/provider.dart';
+import 'package:schmgtsystem/utils/helpers.dart';
 
-AppBar buildAppBar(context) {
-  return AppBar(toolbarHeight: 70,
+AppBar buildAppBar(context, WidgetRef ref) {
+  final user = ref.read(RiverpodProvider.profileProvider);
+  return AppBar(
+    toolbarHeight: 70,
     backgroundColor: Colors.white,
     elevation: 0,
     title: Row(
@@ -19,11 +24,11 @@ AppBar buildAppBar(context) {
           child: const Icon(Icons.school, color: Colors.white, size: 20),
         ),
         const SizedBox(width: 12),
-        const Column(
+        Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Admin',
+                  user.user?.role.toString().capitalize() ?? '',
               style: TextStyle(
                 color: Colors.black,
                 fontSize: 18,
@@ -31,7 +36,7 @@ AppBar buildAppBar(context) {
               ),
             ),
             Text(
-              'School Management',
+           user.user?.fullName ?? '',
               style: TextStyle(
                 color: Colors.grey,
                 fontSize: 12,
@@ -43,32 +48,24 @@ AppBar buildAppBar(context) {
       ],
     ),
     actions: [
-      Text(Provider.of<UserProvider>(
-      listen: true,
-      context,
-    ).userRole.toString()),
+      Text('Admin'),
       IconButton(
         icon: const Icon(Icons.notifications_outlined, color: Colors.grey),
         onPressed: () {
-
-  Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => OakwoodLoginScreen()));
-
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => LoginScreen()),
+          );
         },
       ),
       GestureDetector(
         onTap: () {
-          
-            Navigator.push(
+          Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => OakwoodLoginScreen()),
+            MaterialPageRoute(builder: (_) => LoginScreen()),
           );
         },
-        child: const CircleAvatar(
-          backgroundImage: NetworkImage('https://via.placeholder.com/32'),
-          radius: 16,
-        ),
+        child: const CircleAvatar(radius: 16),
       ),
       const SizedBox(width: 16),
     ],

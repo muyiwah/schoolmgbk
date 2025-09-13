@@ -1,5 +1,8 @@
 class AppConstants {
-  static const String kBaseUrl = 'https://api.getmovva.com/v1/';
+
+
+  // static const String kBaseUrl = 'http://10.255.18.138:3000/api';
+  static const String kBaseUrl = 'http://localhost:3000/api';
   static const String appType = 'mover';
 
   static String token = 'token';

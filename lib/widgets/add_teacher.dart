@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:schmgtsystem/widgets/subject_dropdown.dart';
+
+import '../models/subject_model.dart';
 
 class AssignNewTeacherDialog extends StatefulWidget {
   const AssignNewTeacherDialog({Key? key}) : super(key: key);
@@ -224,6 +227,16 @@ class _AssignNewTeacherDialogState extends State<AssignNewTeacherDialog> {
                       ),
                     ],
                   ),
+                  // In your teacher assignment screen
+SubjectDropdown(
+  onSubjectSelected: (Subject? subject) {
+    if (subject != null) {
+      // Assign this subject to the teacher
+      // _selectedSubjectId = subject.id;
+    }
+  },
+  departmentFilter: 'Science', // Optional filter
+),
                   const SizedBox(height: 16),
                   _buildSubjectCheckboxes(),
                   const SizedBox(height: 24),

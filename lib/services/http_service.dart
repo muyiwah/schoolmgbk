@@ -1,4 +1,3 @@
-import 'dart:developer';
 import 'package:dio/dio.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:schmgtsystem/network/error_handler.dart';
@@ -8,9 +7,10 @@ import 'package:schmgtsystem/utils/enums.dart';
 import 'package:schmgtsystem/utils/http.dart';
 import 'package:schmgtsystem/utils/locator.dart';
 import 'package:schmgtsystem/utils/response_model.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HttpService {
-  final Dio _dio = Dio();
+  final Dio _dio;
 
   static const httpTimeoutDuration = 25;
 
@@ -24,6 +24,30 @@ class HttpService {
 
   final _navigatorService = locator<NavigatorService>();
 
+  HttpService() : _dio = Dio() {
+    _dio.options.baseUrl = AppConstants.kBaseUrl;
+
+    // Add interceptor only once during initialization
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) async {
+          final prefs = await SharedPreferences.getInstance();
+          final token = prefs.getString("token");
+          print('saved as $token');
+
+          if (token != null && token.isNotEmpty) {
+            options.headers["Authorization"] = "Bearer $token";
+          }
+          return handler.next(options);
+        },
+        onError: (DioError e, handler) {
+          // Handle expired token or 401 here
+          return handler.next(e);
+        },
+      ),
+    );
+  }
+
   Future<HTTPResponseModel> runApi({
     required ApiRequestType type,
     required String url,
@@ -32,17 +56,10 @@ class HttpService {
     Map<String, String>? headers,
     bool showError = true,
   }) async {
-    _dio.options.baseUrl = AppConstants.kBaseUrl;
-
-
-  
-
-   
-
-    // log('header: ${headers ?? kHeader}');
-    log('url: ${_dio.options.baseUrl + url}');
-    log('request: $body');
-    log('params: $params');
+    // log('header: ${headers ?? _dio.options.headers}');
+    // log('url: ${_dio.options.baseUrl + url}');
+    // log('request: $body');
+    // log('params: $params');
 
     Response res;
 
@@ -53,7 +70,6 @@ class HttpService {
           break;
         case ApiRequestType.post:
           res = await _post(url: url, body: body);
-
           break;
         case ApiRequestType.put:
           res = await _put(url: url, body: body);
@@ -69,7 +85,7 @@ class HttpService {
           break;
       }
 
-      log('res: $res');
+      // log('res: $res');
 
       if (res.statusCode == StatusRequestTimeout) {
         DioErrorHandler().handleStringError(
@@ -84,12 +100,15 @@ class HttpService {
         }, res.statusCode!);
       }
 
-      return HTTPResponseModel.jsonToMap(res.data, res.statusCode!);
+      return HTTPResponseModel.jsonToMap(
+        _normalizeResponse(res.data),
+        res.statusCode!,
+      );
     } on DioException catch (error) {
       if (EasyLoading.isShow) EasyLoading.dismiss();
 
       final int statusCode = error.response?.statusCode ?? 400;
-      log('Status code: $statusCode');
+      // log('Status code: $statusCode');
       // log('#Dio error.response.data: ${error.response?.data}');
       // log('#Dio error: ${error.toString()}');
 
@@ -108,7 +127,7 @@ class HttpService {
         DioErrorHandler().handleError(error);
       }
 
-      log('DioError [$statusCode]: $errorMessage');
+      // log('DioError [$statusCode]: $errorMessage');
 
       Map parsedJson = error.response?.data is Map ? error.response?.data : {};
 
@@ -120,7 +139,7 @@ class HttpService {
       );
     } catch (e) {
       if (EasyLoading.isShow) EasyLoading.dismiss();
-      log('error: ${e.toString()}');
+      // log('error: ${e.toString()}');
 
       rethrow;
     }
@@ -179,5 +198,19 @@ class HttpService {
           Duration(seconds: httpTimeoutDuration),
           onTimeout: () => kTimeoutResponse,
         );
+  }
+
+  Map<String, dynamic> _normalizeResponse(dynamic raw) {
+    if (raw is Map<String, dynamic>) {
+      // If API response has "data" key, unwrap it
+      if (raw.containsKey('data') && raw['data'] is Map<String, dynamic>) {
+        return {
+          ...raw, // keep success/message
+          ...raw['data'], // merge user, token, etc directly
+        };
+      }
+      return raw;
+    }
+    return {"success": false, "message": "Invalid response"};
   }
 }

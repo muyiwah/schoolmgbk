@@ -2,9 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:schmgtsystem/constants/appcolor.dart';
 
-class MetricScreen extends StatelessWidget {
+class MetricScreen extends StatefulWidget {
   final Function navigateTo;
   MetricScreen({super.key, required this.navigateTo});
+
+  @override
+  State<MetricScreen> createState() => _MetricScreenState();
+}
+
+class _MetricScreenState extends State<MetricScreen> {
+
+@override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -14,8 +27,8 @@ class MetricScreen extends StatelessWidget {
         child: SingleChildScrollView(
           child: Column(
             children: [
-        _buildHeader(),
-        
+              _buildHeader(),
+
               const SizedBox(height: 32),
               _buildStatsCards(),
               const SizedBox(height: 32),
@@ -61,7 +74,7 @@ class MetricScreen extends StatelessWidget {
           const SizedBox(height: 24),
           ElevatedButton.icon(
             onPressed: () {
-              navigateTo();
+              widget.navigateTo();
             },
             icon: const Icon(Icons.bar_chart, size: 20),
             label: const Text('View Detailed Reports'),
