@@ -37,6 +37,7 @@ dependencies:
   flutter_styled_toast: ^2.1.3
   flutter_riverpod: ^1.0.3
   shared_preferences: ^2.3.2
+  go_router: ^12.0.0
   
 
   

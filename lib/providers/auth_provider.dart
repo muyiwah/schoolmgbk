@@ -16,6 +16,7 @@ import 'package:schmgtsystem/utils/locator.dart';
 import 'package:schmgtsystem/utils/response_model.dart';
 import 'package:schmgtsystem/widgets/custom_toast_notification.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:go_router/go_router.dart';
 
 class AuthProvider extends ChangeNotifier {
   final _authRepo = locator<AuthRepo>();
@@ -61,12 +62,11 @@ class AuthProvider extends ChangeNotifier {
       //  print(res.data['user']);
       //  print(res.data['data']['user']);
 
-      await _handleLoginSuccess(context,profileProvider, res: res, body: body);
+      await _handleLoginSuccess(context, profileProvider, res: res, body: body);
 
       return true;
     } else if (res.message == 'Please verify your email before logging in') {
       print('Please verify your email before logging in');
-
     }
 
     EasyLoading.dismiss();
@@ -91,15 +91,9 @@ class AuthProvider extends ChangeNotifier {
         res.message ?? 'Password reset link sent!',
         type: ToastType.success,
       );
-      _navigatorService.pushAndRemoveUntil(
-        // LoginScreen()
-        Text('data'),
-      );
+   
     } else {
-      _navigatorService.pushAndRemoveUntil(
-        // LoginScreen()
-        Text('data'),
-      );
+    
     }
 
     EasyLoading.dismiss();
@@ -123,10 +117,7 @@ class AuthProvider extends ChangeNotifier {
         res.message ?? 'Password reset link sent!',
         type: ToastType.success,
       );
-      _navigatorService.push(
-        // ResetPasswordPin(email: body['email'])
-        Text('data'),
-      );
+   
     } else {
       CustomToastNotification.show(
         'Please check your email and try again',
@@ -166,7 +157,8 @@ class AuthProvider extends ChangeNotifier {
   }
 
   _handleLoginSuccess(
-    BuildContext context, ProfileProvider profileProvider, {
+    BuildContext context,
+    ProfileProvider profileProvider, {
     required Map body,
     required HTTPResponseModel res,
   }) async {
@@ -179,35 +171,10 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
     profileProvider.setUserProfile(userData);
 
-    // if (userData.pinSet == true) {
-    //   // set hasPinSet to true so that user is redirected to login via PIN next time
-    //   // await _storageService.setData(AppConstants.hasPinSet, true);
-    // }
 
     EasyLoading.dismiss();
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => DashboardScreen()),
-    );
-    // if (userData.emailVerified == false) {
-    //   log('Email not verified');
-    //   String email = '${userData.email}';
-    //   EasyLoading.show(status: 'Sending OTP code...');
-    //   await _authRepo.requestOtpCode({'email': email});
-    //   EasyLoading.dismiss();
-
-    // _navigatorService.push(
-    //  SchoolAdminDashboard3()
-    // );
-    //   return;
-    // }
-
-    // if (userData.pinSet == false) {
-    //   log('PIN not set');
-    //   // set hasPinSet to false so that user is not redirected to login via PIN
-    //   // _navigatorService.push(CreateTransactionPinScreen());
-    //   return;
-    // }
+  context.go('/dashboard');
+  
   }
 
   requestOtpCode(String email) async {

@@ -1,808 +1,301 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:schmgtsystem/RoleHome/teacher_attendance.dart';
-import 'package:schmgtsystem/RoleHome/teacher_lessons.dart';
-import 'package:schmgtsystem/providers/provider.dart';
-import 'package:schmgtsystem/screens/Class/all_table.dart';
-import 'package:schmgtsystem/screens/Class/assign_student.dart';
-import 'package:schmgtsystem/screens/Class/classes.dart';
-import 'package:schmgtsystem/screens/Class/single_class.dart';
-import 'package:schmgtsystem/screens/Inventory/inventory_screen.dart';
-import 'package:schmgtsystem/RoleHome/teacher.dart';
-import 'package:schmgtsystem/screens/Student/add_student.dart';
-import 'package:schmgtsystem/screens/Student/all_parents.dart';
-import 'package:schmgtsystem/screens/Student/all_student.dart';
-import 'package:schmgtsystem/screens/Student/create_timetale.dart';
-import 'package:schmgtsystem/screens/Student/parent_all_transactions.dart';
-import 'package:schmgtsystem/screens/Student/single_parent.dart';
-import 'package:schmgtsystem/screens/Student/single_student.dart';
-import 'package:schmgtsystem/screens/Student/timetable.dart';
+import 'package:go_router/go_router.dart';
+import 'package:schmgtsystem/login_screen.dart';
+import 'package:schmgtsystem/widgets/add_teacher.dart';
 
-import 'package:schmgtsystem/screens/accunts/account_home.dart';
-import 'package:schmgtsystem/screens/accunts/accounts.dart';
-import 'package:schmgtsystem/screens/accunts/expenditure.dart';
-import 'package:schmgtsystem/screens/accunts/expenditure_manager.dart';
-
-import 'package:schmgtsystem/screens/admissions/admission_screen.dart';
-
-import 'package:schmgtsystem/screens/cbt/cbt_crateexam_teacher.dart';
-import 'package:schmgtsystem/screens/cbt/cbt_question_bank.dart';
-import 'package:schmgtsystem/screens/cbt/cbt_result.dart';
-import 'package:schmgtsystem/screens/cbt/cbt_result_students.dart';
-import 'package:schmgtsystem/screens/cbt/cbt_score_parent.dart';
-import 'package:schmgtsystem/screens/cbt/cbt_take_exam.dart';
-
-import 'package:schmgtsystem/screens/communication/new_communication.dart';
-
-import 'package:schmgtsystem/constants/appcolor.dart';
-
-import 'package:schmgtsystem/custom_timetable.dart';
-import 'package:schmgtsystem/deepseek/deepseek2222/examsetupscreen.dart';
-import 'package:schmgtsystem/screens/exams/records.dart';
-import 'package:schmgtsystem/screens/adminhome/dashboar_details.dart';
-import 'package:schmgtsystem/screens/adminhome/dshboard.dart';
-import 'package:collection/collection.dart';
-import 'package:schmgtsystem/screens/exams/add_exams.dart';
-
-import 'package:schmgtsystem/screens/exams/exam_schedule.dart';
-
-import 'package:schmgtsystem/screens/exams/overview2.dart';
-
-import 'package:schmgtsystem/screens/promotions/manage_promotion.dart';
-import 'package:schmgtsystem/screens/promotions/report_card.dart';
-import 'package:schmgtsystem/screens/promotions/student_list_reportcard.dart';
-import 'package:schmgtsystem/schoolfees_monitor.dart';
-import 'package:schmgtsystem/screens/staff/add_staff.dart';
-import 'package:schmgtsystem/screens/staff/all_staff.dart';
-import 'package:schmgtsystem/screens/staff/teachers.dart';
-
-import 'package:schmgtsystem/testingg5555.dart';
-import 'package:schmgtsystem/widgets/header_new.dart';
-
+// Menu Item Model
 class MenuItem {
   final String title;
   final IconData icon;
-  final List<String> subMenuItems;
+  final String route;
+  final List<MenuItem>? subItems;
+  final List<String>? allowedRoles;
 
-  MenuItem(this.title, this.icon, this.subMenuItems);
+  MenuItem({
+    required this.title,
+    required this.icon,
+    required this.route,
+    this.subItems,
+    this.allowedRoles,
+  });
 }
 
-class DashboardScreen extends ConsumerStatefulWidget {
-  const DashboardScreen({super.key});
+// Providers
+final currentUserRoleProvider = StateProvider<String>((ref) => 'admin');
+final sidebarExpandedProvider = StateProvider<bool>((ref) => true);
+final selectedMenuIndexProvider = StateProvider<int>((ref) => 0);
 
-  @override
-  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
-}
+// Menu Configuration
+final menuItemsProvider = Provider<List<MenuItem>>((ref) {
+  final userRole = ref.watch(currentUserRoleProvider);
 
-String roleRoute = '';
-
-class _DashboardScreenState extends ConsumerState<DashboardScreen> {
-  late final Map<String, Widget> internalRoutes = _createRoutes();
-  String currentRoute = 'home';
-  List<String> breadcrumbs = ['home'];
-  @override
-  void initState() {
-    super.initState();
-    getMetrics();
-    applyRole();
-
-    // for (int i = 0; i < menuItems.length; i++) {
-    //   _controllers[i] = ExpansionTileController();
-    // }
-  }
-
-  getMetrics() async {
-    // ref.read(provider)
-  }
-
-  applyRole() {
-    ref.read(RiverpodProvider.profileProvider).user?.role=='teacher'?
-         currentRoute = 'teacherhome'
-        :  ref.read(RiverpodProvider.profileProvider).user?.role=='admin'?
-        currentRoute = 'home'
-        : currentRoute = 'accounthome';
-   
-    // roleRoute = 'home';
-    setState(() {});
-  }
-
-  Set<int> _builtTiles = {};
-  Map<String, Widget> _createRoutes() {
-    return {
-      'home': MetricScreen(
-        navigateTo: () {
-          navigateTo('home/dashboard_details');
-        },
-      ),
-
-
-
-///teacherssss
-      'teacherhome': TeacherDashboardApp(
-navigateTo: () {
-          navigateTo('teacherattendance');
-        },
-
-navigateTo2: () {
-          navigateTo('homeworkmanagementscreen');
-        },
-      ),
-      'teacherattendance': TeacherAttendance(),
-      'homeworkmanagementscreen': HomeworkManagementScreen(),
-
-
-
-
-
-
-      'accounthome': AccountHome(),
-
-
-      // 'class/add': AddClassScreen(
-      //   onNavigateToInnerRoute:
-      //       () => navigateTo('student/addstudent/innerroute'),
-      // ),
-      // 'student/attendance': Attendance(
-      //   onNavigateToInnerRoute:
-      //       () => navigateTo('student/addstudent/innerroute'),
-      // ),
-      // 'inventory/allitem': const AllStudentsPage(),
-
-      /////students
-      ///
-      'student/singlestudent': const SingleStudent(),
-
-      'student/timetable': const CreateTimetale(),
-      'student/registration': StudentRegistrationPage(
-        navigateTo: () {
-          navigateTo('student/allstudents');
-        },
-      ),
-      'student/parents': AllParents(
-        navigateTo: () {
-          navigateTo('student/single_parent');
-        },
-      ),
-      'student/parent_all_transactions': PaymentSummaryScreen(
-        navigateTo: () {
-          navigateTo('student/single_parent');
-        },
-      ),
-      'student/allstudents': AllStudentsScreen(
-        navigateTo: () {
-          navigateTo('student/singlestudent');
-        },
-        navigateTo2: () {
-          navigateTo('student/registration');
-        },
-      ),
-      'staff/allstaff': AllStaff(
-        navigateTo: () {
-          navigateTo('student/single_parent');
-        },
-      ),
-      'student/single_parent': SingleParent(
-        navigateTo: () {
-          navigateTo('student/parents');
-        },
-        navigateTo2: () {
-          navigateTo('student/parent_all_transactions');
-        },
-      ),
-      'home/dashboard_details': DashboardDetails(
-        navigateBack: () {
-          navigateTo('home');
-        },
-      ),
-
-      ///classssess
-      'class/timetable': const TimeTableApp(),
-      'class/assignstudent': const AssignStudentsScreen(),
-      'class/examschedule': ExamTimeTable(),
-      'class/allclasses': SchoolClasses(
-        navigateTo: () {
-          navigateTo('class/alltables');
-        },
-        navigateTo2: () async{
-          navigateTo2('class/singleclass');
-        },
-        navigateTo3: () {
-          navigateTo('class/assignstudent');
-        },
-      ),
-      'class/singleclass': ClassDetailsScreen(
-        navigateTo: () {
-          navigateTo('class/allclasses');
-        },
-      ),
-      'class/alltables': AllTables(
-        navigateBack: () {
-          navigateTo('class/allclasses');
-        },
-      ),
-
-      'staff/addstaff': const AddStaff(),
-      'student/attendance': const ExamSetupScreen(),
-      'staff/createtimetable': const Edit5(),
-
-      ///examssss
-      'exams/allexams': ExaminationOverviewScreenTwo(
-        navigateTo: () {
-          navigateTo('exams/addexam');
-        },
-      ),
-
-      ///cbt
-      'cbt/createexam': PageView(
-        children: [
-          CBTExamCreatorPage(),
-          QuestionBankScreen(),
-          ExamScreen(),
-          CBTResultsScreen(),
-          CbtExamResultsDashboard(),
-          CbtParentDashboard(),
-        ],
-      ),
-      // 'exams/overview': const ExaminationOverviewPage(),
-      'exams/examschedule': const ExamSchedule(),
-      'exams/records': const ExamRecordsScreen(),
-      'exams/addexam': CreateNewExamScreen(
-        navigateBack: () {
-          navigateTo('exams/allexams');
-        },
-      ),
-
-      ////admissions
-      'admissions/alladmissions': const AdmissionsOverviewPage(),
-
-      ///staff
-      'staff/assignteacher': const AssignTeacher(),
-
-      ////promotions
-      'promotions/managepromotion': StudentPromotionManager(),
-      'promotions/reportcard': ReportCardStudentList(
-        navigateTo: () {
-          navigateTo('promotions/singlereport');
-        },
-      ),
-      'promotions/singlereport': ReportCardScreen(
-        navigateTo: () {
-          navigateTo('promotions/reportcard');
-        },
-      ),
-
-      ////notifications
-      'notifications/newnotification': const AdminMessagingCenter(),
-
-      ////inventory
-      'inventory/inventory': const InventoryScreen(),
-
-      ////accounts
-      'accounts/income': const FinancialOverviewScreen(),
-      'accounts/expenditure': ExpenditureScreen(),
-      'accounts/expendituremanager': ExpenditureManger(),
-      'accounts/fees': SchoolFeesDashboard(),
-
-      // 'inventory/edititem': const StudentTablePage2(),//////undo for web
-      // 'student/allstudents': Container(
-      //   color: Colors.amber,
-      //   child: Center(
-      //     child: ElevatedButton(
-      //       onPressed: () {
-      //         navigateTo('student/addstudent/innerroute');
-      //       },
-      //       child: const Text('go'),
-      //     ),
-      //   ),
-      // ),
-      'accounts': Container(
-        color: Colors.red,
-        child: const Center(child: Text('Account')),
-      ),
-      'student/addstudent/innerroute': InnerRoute(
-        navigateTo: () {
-          navigateTo('student/allstudents');
-        },
-        onNavigateToInnerRoute:
-            () => navigateTo('student/addstudent/innerroute/inner'),
-      ),
-      'student/addstudent/innerroute/inner': Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.amber,
-          title: ElevatedButton(
-            onPressed: () {
-              navigateTo('student/addstudent/innerroute');
-            },
-            child: Text('back'),
-          ),
+  final allMenuItems = [
+    MenuItem(
+      title: 'Dashboard',
+      icon: Icons.dashboard,
+      route: '/dashboard',
+      allowedRoles: ['admin', 'teacher', 'accountant'],
+    ),
+    MenuItem(
+      title: 'Students',
+      icon: Icons.people,
+      route: '/students',
+      allowedRoles: ['admin', 'teacher'],
+      subItems: [
+        MenuItem(title: 'All Students', icon: Icons.list, route: '/students'),
+        MenuItem(title: 'Add Student', icon: Icons.add, route: '/students/add'),
+        MenuItem(title: 'Student Reports', icon: Icons.assessment,route: '/students/reports',
         ),
-        body: Container(
-          color: Colors.pink,
-          child: const Center(child: Text('inner inner routeee')),
+      ],
+    ),
+    MenuItem(
+      title: 'Classes',
+      icon: Icons.class_,
+      route: '/classes',
+      allowedRoles: ['admin', 'teacher'],
+      subItems: [
+        MenuItem(title: 'All Classes', icon: Icons.list, route: '/classes'),
+        MenuItem(
+          title: 'Class Schedule',
+          icon: Icons.schedule,
+          route: '/classes/schedule',
         ),
-      ),
-    };
-  }
-
-  int selectedIndex = 0;
-  final Map<int, ExpansionTileController> _controllers = {};
-  final ExpansionTileController _controller = ExpansionTileController();
-  // UniqueKey _tileKey = UniqueKey();
-  final List<MenuItem> menuItems = [
-    MenuItem('home', Icons.person_add, []),
-    MenuItem('Class', Icons.person_add, [
-      'All Classes',
-      'Single class',
-      'Assign Student',
-      'Time Table',
-      'Exam Schedule',
-    ]),
-    // MenuItem('Inventory', Icons.person_add, ['All item', 'Edit item']),
-    MenuItem('Student', Icons.calendar_today, [
-      'All Students',
-      // 'Add Student',
-      // 'Single Student',
-      // 'Attendance',
-      // 'Time Table',
-      'Parents',
-
-      // 'Create Time Table',
-    ]),
-    // MenuItem('Fees', Icons.attach_money, [
-    //   'Teacher1',
-    //   'Admin1',
-    //   'Admin2',
-    //   'Admin3',
-    //   'All Fees',
-    //   'Add/Edit Fee',
-    // ]),
-    // MenuItem('CBT', Icons.attach_money, [
-    //   'Add CBT Exam',
-    //   'Manage Exam',
-    //   'Results',
-    //   'New',
-    // ]),
-    MenuItem('Cbt', Icons.attach_money, ['Create Exam']),
-    MenuItem('Inventory', Icons.attach_money, ['Inventory']),
-    MenuItem('Exams', Icons.attach_money, [
-      'All Exams',
-      'Exam Schedule',
-      'Records',
-      // 'Overview',
-    ]),
-    MenuItem('Staff', Icons.attach_money, [
-      'All Staff',
-      'Add Staff',
-      'Assign Teacher',
-      'Create Timetable',
-    ]),
-    // MenuItem('Lesson Notes', Icons.attach_money, ['All Notes', 'Add New Note']),
-    // MenuItem('Inventory', Icons.attach_money, ['All Inventory', 'Add New']),
-    // MenuItem('Library', Icons.attach_money, ['All Books', 'Add Libarian']),
-    // MenuItem('Chats', Icons.attach_money, []),
-    MenuItem('Admissions', Icons.attach_money, ['All Admissions']),
-    MenuItem('Notifications', Icons.attach_money, ['New Notification']),
-    MenuItem('Promotions', Icons.attach_money, [
-      'Manage Promotion',
-      'Report Card',
-    ]),
-    MenuItem('Accounts', Icons.attach_money, [
-      'Income',
-      'Expenditure',
-      'Expenditure Manager',
-      'fees',
-    ]),
+        MenuItem(
+          title: 'Assign Students',
+          icon: Icons.assignment,
+          route: '/classes/assign',
+        ),
+      ],
+    ),
+    MenuItem(
+      title: 'Teachers',
+      icon: Icons.person,
+      route: '/teachers',
+      allowedRoles: ['admin'],
+      subItems: [
+        MenuItem(title: 'All Teachers', icon: Icons.list, route: '/teachers'),
+        MenuItem(title: 'Add Teacher', icon: Icons.add, route: '/teachers/add'),
+        MenuItem(
+          title: 'Teacher Schedule',
+          icon: Icons.schedule,
+          route: '/teachers/schedule',
+        ),
+      ],
+    ),
+    MenuItem(
+      title: 'Attendance',
+      icon: Icons.check_circle,
+      route: '/attendance',
+      allowedRoles: ['admin', 'teacher'],
+    ),
+    MenuItem(
+      title: 'Exams',
+      icon: Icons.quiz,
+      route: '/exams',
+      allowedRoles: ['admin', 'teacher'],
+      subItems: [
+        MenuItem(title: 'All Exams', icon: Icons.list, route: '/exams'),
+        MenuItem(title: 'Create Exam', icon: Icons.add, route: '/exams/create'),
+        MenuItem(
+          title: 'Results',
+          icon: Icons.assessment,
+          route: '/exams/results',
+        ),
+      ],
+    ),
+    MenuItem(
+      title: 'Accounts',
+      icon: Icons.account_balance,
+      route: '/accounts',
+      allowedRoles: ['admin', 'accountant'],
+      subItems: [
+        MenuItem(title: 'Overview', icon: Icons.dashboard, route: '/accounts'),
+        MenuItem(
+          title: 'Income',
+          icon: Icons.trending_up,
+          route: '/accounts/income',
+        ),
+        MenuItem(
+          title: 'Expenditure',
+          icon: Icons.trending_down,
+          route: '/accounts/expenditure',
+        ),
+        MenuItem(
+          title: 'School Fees',
+          icon: Icons.payment,
+          route: '/accounts/fees',
+        ),
+      ],
+    ),
+    MenuItem(
+      title: 'Reports',
+      icon: Icons.bar_chart,
+      route: '/reports',
+      allowedRoles: ['admin'],
+    ),
+    MenuItem(
+      title: 'Settings',
+      icon: Icons.settings,
+      route: '/settings',
+      allowedRoles: ['admin'],
+    ),
   ];
-  bool _isExpanded = false;
-  String? selectedSubMenu;
-  int tabSelected = -1;
-  int subSelected = -1;
-  void navigateTo(String route) {
-    print(route);
-    setState(() {
-      currentRoute = route;
-      if (!breadcrumbs.contains(route)) {
-        breadcrumbs.add(route);
-      }
-    });
-  }
 
-  void navigateTo2(String route) {
-    print(route);
-    setState(() {
-      currentRoute = route;
-      if (!breadcrumbs.contains(route)) {
-        breadcrumbs.add(route);
-      }
-    });
-  }
+  // Filter menu items based on user role
+  return allMenuItems.where((item) {
+    return item.allowedRoles == null || item.allowedRoles!.contains(userRole);
+  }).toList();
+});
 
-  void navigateBack() {
-    if (breadcrumbs.length > 1) {
-      setState(() {
-        breadcrumbs.removeLast();
-        currentRoute = breadcrumbs.last;
-      });
-    }
-  }
+// Router Configuration with Persistent Shell// Fixed Router Configuration with correct sub-route paths
+final router = GoRouter(
+  initialLocation: '/login',
+  routes: [
+    GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
 
-  Widget _buildDashboardContent() {
-    return internalRoutes[currentRoute] ??
-        const Center(child: Text('Page not found'));
-  }
-
-  Widget _buildBreadcrumbs() {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children:
-              breadcrumbs.map((route) {
-                final label = route.split('/').last;
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: Chip(
-                    label: Text(label),
-                    onDeleted:
-                        route != currentRoute
-                            ? () {
-                              setState(() {
-                                final index = breadcrumbs.indexOf(route);
-                                breadcrumbs = breadcrumbs.sublist(0, index + 1);
-                                currentRoute = route;
-                              });
-                            }
-                            : null,
-                  ),
-                );
-              }).toList(),
+    ShellRoute(
+      builder: (context, state, child) {
+        return DashboardShell(child: child);
+      },
+      routes: [
+        GoRoute(
+          path: '/dashboard',
+          builder: (context, state) => const DashboardHomeScreen(),
         ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      // appBar: AppBar(title: Text(roleRoute)),
-      // backgroundColor: Colors.white,
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.white.withOpacity(.1),
-              // const Color.fromARGB(255, 221, 250, 247),
-              Colors.white,
-            ],
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              margin: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(.7),
-                    spreadRadius: 1,
-                    offset: const Offset(-1, 1),
-                    blurRadius: 1,
-                  ),
-                ],
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  width: .2,
-                  color: Colors.black.withOpacity(.5),
-                ),
-                // border: Border(right: BorderSide(width: .2)),
-                color: AppColors.secondary,
-              ),
-              width: 220,
-              child: Column(
-                children: [
-                  const SizedBox(height: 20),
-                  const Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: Icon(Icons.home, color: Colors.white),
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.all(10.0),
-                    child: Column(
-                      children: [
-                        Text(
-                          'Admin Dashboard',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 40),
-
-                  Expanded(
-                    child: ListView(
-                      children:
-                          menuItems.mapIndexed((index, menu) {
-                            if (menu.subMenuItems.isEmpty) {
-                              return GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    tabSelected = -1;
-                                  });
-                                  print(menu.title);
-                                  navigateTo(roleRoute);
-                                },
-                                child: Container(
-                                  margin: EdgeInsets.only(
-                                    left: 10,
-                                    right: 20,
-                                    bottom: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(12),
-                                    color:
-                                        tabSelected == -1
-                                            ? Color.fromARGB(
-                                              115,
-                                              226,
-                                              239,
-                                              248,
-                                            ).withOpacity(.4)
-                                            : Colors.transparent,
-                                  ),
-                                  padding: const EdgeInsets.only(
-                                    left: 6.0,
-                                    top: 8,
-                                    bottom: 8,
-                                    right: 16,
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        menu.icon,
-                                        color: Colors.white,
-                                        size: 14,
-                                      ),
-                                      SizedBox(width: 20),
-                                      Text(
-                                        menu.title,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            }
-                            return ExpansionTile(
-                              iconColor: Colors.blue,
-                              collapsedIconColor: Colors.white,
-                              title: Text(
-                                menu.title,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                ),
-                              ),
-                              leading: Icon(
-                                menu.icon,
-                                color: Colors.white,
-                                size: 14,
-                              ),
-                              children:
-                                  menu.subMenuItems.isNotEmpty
-                                      ? menu.subMenuItems.mapIndexed((
-                                        index,
-                                        subItem,
-                                      ) {
-                                        return InkWell(
-                                          onTap: () {
-                                            print('hi');
-
-                                            setState(() {
-                                              selectedIndex = index;
-                                              tabSelected = index;
-                                              selectedSubMenu = subItem;
-                                            });
-                                            navigateTo(
-                                              '${menu.title.toLowerCase()}/${subItem.toLowerCase().replaceAll(" ", "")}',
-                                            );
-                                          },
-                                          child: Container(
-                                            // padding: const EdgeInsets.symmetric(
-                                            //   horizontal: 5,
-                                            // ),
-                                            alignment: Alignment.centerLeft,
-                                            height: 30,
-                                            decoration: BoxDecoration(
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                              color:
-                                                  (tabSelected == index &&
-                                                          selectedSubMenu ==
-                                                              subItem)
-                                                      ? const Color.fromARGB(
-                                                        115,
-                                                        226,
-                                                        239,
-                                                        248,
-                                                      ).withOpacity(.4)
-                                                      : Colors.transparent,
-                                            ),
-                                            margin: const EdgeInsets.symmetric(
-                                              vertical: 5,
-                                              horizontal: 20,
-                                            ),
-                                            child: Padding(
-                                              padding: const EdgeInsets.only(
-                                                left: 30.0,
-                                              ),
-                                              child: Text(
-                                                subItem,
-                                                style: const TextStyle(
-                                                  color: Color.fromARGB(
-                                                    255,
-                                                    255,
-                                                    243,
-                                                    243,
-                                                  ),
-                                                  fontSize: 12,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        );
-                                      }).toList()
-                                      : [
-                                        ListTile(
-                                          title: const Padding(
-                                            padding: EdgeInsets.only(
-                                              left: 42.0,
-                                            ),
-                                            child: Text(
-                                              'View',
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 12,
-                                              ),
-                                            ),
-                                          ),
-                                          onTap: () {
-                                            navigateTo(
-                                              menu.title.toLowerCase(),
-                                            );
-                                          },
-                                        ),
-                                      ],
-                            );
-                          }).toList(),
-                    ),
-                  ),
-                ],
-              ),
+        GoRoute(
+          path: '/students',
+          builder: (context, state) => const StudentsScreen(),
+          routes: [
+            // FIXED: Remove leading slash from sub-routes
+            GoRoute(
+              path: 'add', // Changed from '/add' to 'add'
+              builder: (context, state) => const AddStudentScreen(),
             ),
-            Expanded(
-              child: Scaffold(
-                appBar: buildAppBar(context, ref),
-                body: Column(
-                  children: [
-                    // Container(
-                    //   height: 40,
-                    //   color: Colors.transparent,
-                    //   padding: const EdgeInsets.only(top: 14.0, bottom: 2),
-                    //   alignment: Alignment.centerLeft,
-                    //   child: const Row(
-                    //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    //     children: [
-                    //       Text(
-                    //         'School Admin Dashboard',
-                    //         style: TextStyle(
-                    //           fontSize: 18,
-                    //           fontWeight: FontWeight.bold,
-                    //           color: Colors.indigo,
-                    //         ),
-                    //       ),
-                    //       CircleAvatar(
-                    //         backgroundColor: Colors.indigoAccent,
-                    //         child: Icon(Icons.person, color: Colors.white),
-                    //       ),
-                    //     ],
-                    //   ),
-                    // ),
-                    Expanded(
-                      child: Container(
-                        margin: const EdgeInsets.only(
-                          right: 10,
-                          top: 10,
-                          bottom: 20,
-                        ),
-                        color: Colors.transparent,
-                        child: _buildDashboardContent(),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            GoRoute(
+              path: 'reports', // Changed from '/reports' to 'reports'
+              builder: (context, state) => const StudentReportsScreen(),
+            ),
+            GoRoute(
+              path: ':studentId', // Changed from '/:studentId' to ':studentId'
+              builder: (context, state) {
+                final studentId = state.pathParameters['studentId']!;
+                return StudentDetailScreen(studentId: studentId);
+              },
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildCustomScreen(String title, Color color) {
-    return Container(
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      padding: const EdgeInsets.all(20),
-      child: Center(
-        child: Text(
-          title,
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey.shade800,
-          ),
+        GoRoute(
+          path: '/classes',
+          builder: (context, state) => const ClassesScreen(),
+          routes: [
+            GoRoute(
+              path: 'schedule', // Changed from '/schedule' to 'schedule'
+              builder: (context, state) => const ClassScheduleScreen(),
+            ),
+            GoRoute(
+              path: 'assign', // Changed from '/assign' to 'assign'
+              builder: (context, state) => const AssignStudentsScreen(),
+            ),
+          ],
         ),
-      ),
-    );
-  }
-}
+        GoRoute(
+          path: '/teachers',
+          builder: (context, state) => const TeachersScreen(),
+          routes: [
+            GoRoute(
+              path: 'add', // Changed from '/add' to 'add'
+              builder: (context, state) => const AddTeacherScreen(),
+            ),
+            GoRoute(
+              path: 'schedule', // Changed from '/schedule' to 'schedule'
+              builder: (context, state) => const TeacherScheduleScreen(),
+            ),
+          ],
+        ),
+        GoRoute(
+          path: '/attendance',
+          builder: (context, state) => const AttendanceScreen(),
+        ),
+        GoRoute(
+          path: '/exams',
+          builder: (context, state) => const ExamsScreen(),
+          routes: [
+            GoRoute(
+              path: 'create', // Changed from '/create' to 'create'
+              builder: (context, state) => const CreateExamScreen(),
+            ),
+            GoRoute(
+              path: 'results', // Changed from '/results' to 'results'
+              builder: (context, state) => const ExamResultsScreen(),
+            ),
+          ],
+        ),
+        GoRoute(
+          path: '/accounts',
+          builder: (context, state) => const AccountsOverviewScreen(),
+          routes: [
+            GoRoute(
+              path: 'income', // Changed from '/income' to 'income'
+              builder: (context, state) => const IncomeScreen(),
+            ),
+            GoRoute(
+              path:
+                  'expenditure', // Changed from '/expenditure' to 'expenditure'
+              builder: (context, state) => const ExpenditureScreen(),
+            ),
+            GoRoute(
+              path: 'fees', // Changed from '/fees' to 'fees'
+              builder: (context, state) => const SchoolFeesScreen(),
+            ),
+          ],
+        ),
+        GoRoute(
+          path: '/reports',
+          builder: (context, state) => const ReportsScreen(),
+        ),
+        GoRoute(
+          path: '/settings',
+          builder: (context, state) => const SettingsScreen(),
+        ),
+      ],
+    ),
+  ],
+);
+// Main Dashboard Shell - This stays persistent
+class DashboardShell extends ConsumerWidget {
+  final Widget child;
 
-// class MenuItem {
-//   final String title;
-//   final IconData icon;
-//   final List<String> subMenu;
-
-//   MenuItem(this.title, this.icon, this.subMenu);
-// }
-
-class FeesScreen extends StatelessWidget {
-  const FeesScreen({super.key});
+  const DashboardShell({Key? key, required this.child}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Text(
-        'Fees Screen',
-        style: Theme.of(context).textTheme.headlineMedium,
-      ),
-    );
-  }
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sidebarExpanded = ref.watch(sidebarExpandedProvider);
 
-class Account extends StatelessWidget {
-  Account({super.key, this.onNavigate});
-
-  final void Function(String destination)? onNavigate;
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
+      body: Row(
         children: [
-          ElevatedButton(
-            onPressed: () => onNavigate?.call('Subaccount'),
-
-            child: const Text('ho to subaccount'),
+          // Persistent Sidebar
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            width: sidebarExpanded ? 280 : 70,
+            child: PersistentSidebar(),
           ),
-          ElevatedButton(
-            onPressed: () => onNavigate?.call('AccountSettings'),
-            child: const Text('Go to Settings'),
+          // Main Content Area
+          Expanded(
+            child: Column(
+              children: [
+                // Persistent Header
+                PersistentHeader(),
+                // Dynamic Content
+                Expanded(
+                  child: Container(
+                    color: Colors.grey[50],
+                    child: child, // This changes based on the route
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -810,69 +303,531 @@ class Account extends StatelessWidget {
   }
 }
 
-class subaccount extends StatelessWidget {
-  const subaccount({super.key, this.onBack});
-
-  final VoidCallback? onBack;
-
+// Persistent Sidebar Component
+class PersistentSidebar extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.amber,
-      body: Center(
-        child: ElevatedButton.icon(
-          onPressed: onBack,
-          icon: const Icon(Icons.arrow_back),
-          label: const Text('Back to Account'),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final menuItems = ref.watch(menuItemsProvider);
+    final sidebarExpanded = ref.watch(sidebarExpandedProvider);
+    final userRole = ref.watch(currentUserRoleProvider);
+    final currentLocation =
+        GoRouter.of(context).routeInformationProvider.value.location;
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Colors.indigo[900]!, Colors.indigo[700]!],
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            spreadRadius: 2,
+            blurRadius: 8,
+            offset: const Offset(2, 0),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Sidebar Header
+          Container(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                // Logo/Icon
+                CircleAvatar(
+                  radius: sidebarExpanded ? 30 : 20,
+                  backgroundColor: Colors.white,
+                  child: Icon(
+                    Icons.school,
+                    color: Colors.indigo[700],
+                    size: sidebarExpanded ? 30 : 20,
+                  ),
+                ),
+                if (sidebarExpanded) ...[
+                  const SizedBox(height: 10),
+                  const Text(
+                    'School Management',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  Text(
+                    userRole.toUpperCase(),
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                ],
+              ],
+            ),
+          ),
+
+          const Divider(color: Colors.white30),
+
+          // Menu Items
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              itemCount: menuItems.length,
+              itemBuilder: (context, index) {
+                final item = menuItems[index];
+                final isActive = _isRouteActive(currentLocation, item.route);
+                final hasSubItems =
+                    item.subItems != null && item.subItems!.isNotEmpty;
+
+                if (hasSubItems && sidebarExpanded) {
+                  return _buildExpandableMenuItem(
+                    context,
+                    ref,
+                    item,
+                    currentLocation,
+                  );
+                } else {
+                  return _buildMenuItem(context, ref, item, isActive);
+                }
+              },
+            ),
+          ),
+
+          const Divider(color: Colors.white30),
+
+          // Sidebar Toggle
+          Container(
+            padding: const EdgeInsets.all(8),
+            child: IconButton(
+              onPressed: () {
+                ref.read(sidebarExpandedProvider.notifier).state =
+                    !sidebarExpanded;
+              },
+              icon: Icon(
+                sidebarExpanded ? Icons.chevron_left : Icons.chevron_right,
+                color: Colors.white,
+              ),
+              tooltip: sidebarExpanded ? 'Collapse Sidebar' : 'Expand Sidebar',
+            ),
+          ),
+        ],
       ),
     );
   }
-}
 
-class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({super.key, this.onBack});
+  Widget _buildMenuItem(
+    BuildContext context,
+    WidgetRef ref,
+    MenuItem item,
+    bool isActive,
+  ) {
+    final sidebarExpanded = ref.watch(sidebarExpandedProvider);
 
-  final VoidCallback? onBack;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.amber,
-      body: Center(
-        child: ElevatedButton.icon(
-          onPressed: onBack,
-          icon: const Icon(Icons.arrow_back),
-          label: const Text('Back to Account'),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        color: isActive ? Colors.white.withOpacity(0.2) : Colors.transparent,
+      ),
+      child: ListTile(
+        leading: Icon(item.icon, color: Colors.white, size: 20),
+        title:
+            sidebarExpanded
+                ? Text(
+                  item.title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                )
+                : null,
+        onTap: () => context.go(item.route),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: sidebarExpanded ? 16 : 8,
+          vertical: 4,
         ),
+        dense: true,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }
+
+  Widget _buildExpandableMenuItem(
+    BuildContext context,
+    WidgetRef ref,
+    MenuItem item,
+    String currentLocation,
+  ) {
+    final isParentActive = _isRouteActive(currentLocation, item.route);
+
+    return ExpansionTile(
+      leading: Icon(item.icon, color: Colors.white, size: 20),
+      title: Text(
+        item.title,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      iconColor: Colors.white,
+      collapsedIconColor: Colors.white,
+      backgroundColor: isParentActive ? Colors.white.withOpacity(0.1) : null,
+      children:
+          item.subItems!.map((subItem) {
+            final isSubActive = _isRouteActive(currentLocation, subItem.route);
+            return Container(
+              margin: const EdgeInsets.only(left: 20, right: 8, bottom: 2),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(6),
+                color:
+                    isSubActive
+                        ? Colors.white.withOpacity(0.2)
+                        : Colors.transparent,
+              ),
+              child: ListTile(
+                leading: Icon(subItem.icon, color: Colors.white70, size: 16),
+                title: Text(
+                  subItem.title,
+                  style: const TextStyle(color: Colors.white70, fontSize: 13),
+                ),
+                onTap: () => context.go(subItem.route),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 0,
+                ),
+                dense: true,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+            );
+          }).toList(),
+    );
+  }
+
+  bool _isRouteActive(String currentLocation, String itemRoute) {
+    if (itemRoute == '/dashboard') {
+      return currentLocation == '/dashboard';
+    }
+    return currentLocation.startsWith(itemRoute);
+  }
 }
 
-class InnerRoute extends StatelessWidget {
-  final VoidCallback? onNavigateToInnerRoute;
-  final VoidCallback? navigateTo;
-  InnerRoute({super.key, this.onNavigateToInnerRoute, this.navigateTo});
-
+// Persistent Header Component
+class PersistentHeader extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
-    return Column(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentLocation =
+        GoRouter.of(context).routeInformationProvider.value.location;
+
+    return Container(
+      height: 60,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 3,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Breadcrumbs
+          Expanded(child: _buildBreadcrumbs(currentLocation)),
+          // Header Actions
+          Row(
+            children: [
+              // Role Switcher (for demo)
+              _buildRoleSelector(ref),
+              const SizedBox(width: 16),
+              // Notifications
+              IconButton(
+                icon: const Icon(Icons.notifications_outlined),
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Notifications clicked')),
+                  );
+                },
+              ),
+              const SizedBox(width: 8),
+              // User Avatar
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: Colors.indigo,
+                child: const Icon(Icons.person, color: Colors.white, size: 18),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBreadcrumbs(String currentLocation) {
+    final segments =
+        currentLocation
+            .split('/')
+            .where((s) => s.isNotEmpty)
+            .map((s) => s.replaceAll('-', ' ').toUpperCase())
+            .toList();
+
+    if (segments.isEmpty) return const SizedBox.shrink();
+
+    return Row(
       children: [
-        ElevatedButton(
-          onPressed: () {
-            navigateTo!();
-          },
-          child: Text('back'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            onNavigateToInnerRoute!();
-          },
-          child: Text('go inner'),
-        ),
-        Text('Inner Route Screen', style: TextStyle(fontSize: 24)),
+        for (int i = 0; i < segments.length; i++) ...[
+          if (i > 0)
+            const Icon(Icons.chevron_right, size: 16, color: Colors.grey),
+          Text(
+            segments[i],
+            style: TextStyle(
+              fontSize: 14,
+              color:
+                  i == segments.length - 1 ? Colors.indigo : Colors.grey[600],
+              fontWeight:
+                  i == segments.length - 1
+                      ? FontWeight.bold
+                      : FontWeight.normal,
+            ),
+          ),
+        ],
       ],
     );
   }
+
+  Widget _buildRoleSelector(WidgetRef ref) {
+    final currentRole = ref.watch(currentUserRoleProvider);
+
+    return DropdownButton<String>(
+      value: currentRole,
+      underline: const SizedBox.shrink(),
+      items:
+          ['admin', 'teacher', 'accountant'].map((role) {
+            return DropdownMenuItem(
+              value: role,
+              child: Text(role.toUpperCase()),
+            );
+          }).toList(),
+      onChanged: (newRole) {
+        if (newRole != null) {
+          ref.read(currentUserRoleProvider.notifier).state = newRole;
+        }
+      },
+    );
+  }
+}
+
+// Sample Screen Components (replace with your actual screens)
+class DashboardHomeScreen extends StatelessWidget {
+  const DashboardHomeScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Dashboard Overview',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 20),
+          Expanded(child: Center(child: Text('Dashboard content goes here'))),
+        ],
+      ),
+    );
+  }
+}
+
+class StudentsScreen extends StatelessWidget {
+  const StudentsScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Students',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              ElevatedButton(
+                onPressed: () => context.go('/students/add'),
+                child: const Text('Add Student'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          const Expanded(
+            child: Center(child: Text('Students list will go here')),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Add other screen implementations...
+class AddStudentScreen extends StatelessWidget {
+  const AddStudentScreen({Key? key}) : super(key: key);
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => context.go('/students'),
+              ),
+              const Text(
+                'Add Student',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          const Expanded(
+            child: Center(child: Text('Add student form goes here')),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class StudentReportsScreen extends StatelessWidget {
+  const StudentReportsScreen({Key? key}) : super(key: key);
+  @override
+  Widget build(BuildContext context) =>
+      const Center(child: Text('Student Reports'));
+}
+
+class StudentDetailScreen extends StatelessWidget {
+  final String studentId;
+  const StudentDetailScreen({Key? key, required this.studentId})
+    : super(key: key);
+  @override
+  Widget build(BuildContext context) =>
+      Center(child: Text('Student Detail: $studentId'));
+}
+
+class ClassesScreen extends StatelessWidget {
+  const ClassesScreen({Key? key}) : super(key: key);
+  @override
+  Widget build(BuildContext context) => const Center(child: Text('Classes'));
+}
+
+class ClassScheduleScreen extends StatelessWidget {
+  const ClassScheduleScreen({Key? key}) : super(key: key);
+  @override
+  Widget build(BuildContext context) =>
+      const Center(child: Text('Class Schedule'));
+}
+
+class AssignStudentsScreen extends StatelessWidget {
+  const AssignStudentsScreen({Key? key}) : super(key: key);
+  @override
+  Widget build(BuildContext context) =>
+      const Center(child: Text('Assign Students'));
+}
+
+class TeachersScreen extends StatelessWidget {
+  const TeachersScreen({Key? key}) : super(key: key);
+  @override
+  Widget build(BuildContext context) => const Center(child: Text('Teachers'));
+}
+
+class AddTeacherScreen extends StatelessWidget {
+  const AddTeacherScreen({Key? key}) : super(key: key);
+  @override
+  Widget build(BuildContext context) =>
+      const Center(child: Text('Add Teacher'));
+}
+
+class TeacherScheduleScreen extends StatelessWidget {
+  const TeacherScheduleScreen({Key? key}) : super(key: key);
+  @override
+  Widget build(BuildContext context) =>
+      const Center(child: Text('Teacher Schedule'));
+}
+
+class AttendanceScreen extends StatelessWidget {
+  const AttendanceScreen({Key? key}) : super(key: key);
+  @override
+  Widget build(BuildContext context) => const Center(child: Text('Attendance'));
+}
+
+class ExamsScreen extends StatelessWidget {
+  const ExamsScreen({Key? key}) : super(key: key);
+  @override
+  Widget build(BuildContext context) => const Center(child: Text('Exams'));
+}
+
+class CreateExamScreen extends StatelessWidget {
+  const CreateExamScreen({Key? key}) : super(key: key);
+  @override
+  Widget build(BuildContext context) =>
+      const Center(child: Text('Create Exam'));
+}
+
+class ExamResultsScreen extends StatelessWidget {
+  const ExamResultsScreen({Key? key}) : super(key: key);
+  @override
+  Widget build(BuildContext context) =>
+      const Center(child: Text('Exam Results'));
+}
+
+class AccountsOverviewScreen extends StatelessWidget {
+  const AccountsOverviewScreen({Key? key}) : super(key: key);
+  @override
+  Widget build(BuildContext context) =>
+      const Center(child: Text('Accounts Overview'));
+}
+
+class IncomeScreen extends StatelessWidget {
+  const IncomeScreen({Key? key}) : super(key: key);
+  @override
+  Widget build(BuildContext context) => const Center(child: Text('Income'));
+}
+
+class ExpenditureScreen extends StatelessWidget {
+  const ExpenditureScreen({Key? key}) : super(key: key);
+  @override
+  Widget build(BuildContext context) =>
+      const Center(child: Text('Expenditure'));
+}
+
+class SchoolFeesScreen extends StatelessWidget {
+  const SchoolFeesScreen({Key? key}) : super(key: key);
+  @override
+  Widget build(BuildContext context) =>
+      const Center(child: Text('School Fees'));
+}
+
+class ReportsScreen extends StatelessWidget {
+  const ReportsScreen({Key? key}) : super(key: key);
+  @override
+  Widget build(BuildContext context) => const Center(child: Text('Reports'));
+}
+
+class SettingsScreen extends StatelessWidget {
+  const SettingsScreen({Key? key}) : super(key: key);
+  @override
+  Widget build(BuildContext context) => const Center(child: Text('Settings'));
 }
