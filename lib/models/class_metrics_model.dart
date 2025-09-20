@@ -2,10 +2,6 @@
 //
 //     final welcome = welcomeFromJson(jsonString);
 
-import 'dart:convert';
-
-
-
 class ClassMetricModel {
   List<Class>? classes;
   Pagination? pagination;
@@ -13,20 +9,23 @@ class ClassMetricModel {
 
   ClassMetricModel({this.classes, this.pagination, this.overallStats});
 
-  factory ClassMetricModel.fromJson(Map<String, dynamic> json) => ClassMetricModel(
-    classes:
-        json["classes"] == null
-            ? []
-            : List<Class>.from(json["classes"]!.map((x) => Class.fromJson(x))),
-    pagination:
-        json["pagination"] == null
-            ? null
-            : Pagination.fromJson(json["pagination"]),
-    overallStats:
-        json["overallStats"] == null
-            ? null
-            : OverallStats.fromJson(json["overallStats"]),
-  );
+  factory ClassMetricModel.fromJson(Map<String, dynamic> json) =>
+      ClassMetricModel(
+        classes:
+            json["classes"] == null
+                ? []
+                : List<Class>.from(
+                  json["classes"]!.map((x) => Class.fromJson(x)),
+                ),
+        pagination:
+            json["pagination"] == null
+                ? null
+                : Pagination.fromJson(json["pagination"]),
+        overallStats:
+            json["overallStats"] == null
+                ? null
+                : OverallStats.fromJson(json["overallStats"]),
+      );
 
   Map<String, dynamic> toJson() => {
     "classes":
@@ -48,6 +47,7 @@ class Class {
   String? academicYear;
   List<SubjectTeacher>? subjectTeachers;
   List<dynamic>? students;
+  List<String>? subjects;
   int? capacity;
   Fees? fees;
   List<String>? feeStructures;
@@ -85,6 +85,7 @@ class Class {
     this.academicYear,
     this.subjectTeachers,
     this.students,
+    this.subjects,
     this.capacity,
     this.fees,
     this.feeStructures,
@@ -131,18 +132,35 @@ class Class {
             : List<SubjectTeacher>.from(
               json["subjectTeachers"]!.map((x) => SubjectTeacher.fromJson(x)),
             ),
-    students:
-        json["students"] == null
+    students: json["students"] ?? [],
+    subjects:
+        json["subjects"] == null
             ? []
-            : 
-              json["students"],
-            
+            : List<String>.from(
+              json["subjects"]!.map(
+                (x) =>
+                    x is String
+                        ? x
+                        : (x is Map<String, dynamic>
+                            ? x['id'] ?? x['_id'] ?? x.toString()
+                            : x.toString()),
+              ),
+            ),
     capacity: json["capacity"],
     fees: json["fees"] == null ? null : Fees.fromJson(json["fees"]),
     feeStructures:
         json["feeStructures"] == null
             ? []
-            : List<String>.from(json["feeStructures"]!.map((x) => x)),
+            : List<String>.from(
+              json["feeStructures"]!.map(
+                (x) =>
+                    x is String
+                        ? x
+                        : (x is Map<String, dynamic>
+                            ? x['id'] ?? x['_id'] ?? x.toString()
+                            : x.toString()),
+              ),
+            ),
     isActive: json["isActive"],
     createdAt:
         json["createdAt"] == null ? null : DateTime.parse(json["createdAt"]),
@@ -201,6 +219,8 @@ class Class {
     //     students == null
     //         ? []
     //         : List<dynamic>.from(students!.map((x) => x.toJson())),
+    "subjects":
+        subjects == null ? [] : List<dynamic>.from(subjects!.map((x) => x)),
     "capacity": capacity,
     "fees": fees?.toJson(),
     "feeStructures":

@@ -5,9 +5,11 @@ class Subject {
   final String? code;
   final String category;
   final String department;
-  final String difficulty;
+  final String level;
   final bool isActive;
   final String? description;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
   Subject({
     required this.id,
@@ -15,21 +17,31 @@ class Subject {
     this.code,
     required this.category,
     required this.department,
-    required this.difficulty,
+    required this.level,
     required this.isActive,
     this.description,
+    this.createdAt,
+    this.updatedAt,
   });
 
   factory Subject.fromJson(Map<String, dynamic> json) {
     return Subject(
-      id: json['_id'],
-      name: json['name'],
+      id: json['_id'] ?? json['id'] ?? '',
+      name: json['name'] ?? '',
       code: json['code'],
-      category: json['category'],
-      department: json['department'],
-      difficulty: json['difficulty'],
-      isActive: json['isActive'],
+      category: json['category'] ?? 'Core',
+      department: json['department'] ?? 'General',
+      level: json['level'] ?? 'Nursery',
+      isActive: json['isActive'] ?? true,
       description: json['description'],
+      createdAt:
+          json['createdAt'] != null
+              ? DateTime.tryParse(json['createdAt'].toString())
+              : null,
+      updatedAt:
+          json['updatedAt'] != null
+              ? DateTime.tryParse(json['updatedAt'].toString())
+              : null,
     );
   }
 
@@ -39,9 +51,26 @@ class Subject {
       'code': code,
       'category': category,
       'department': department,
-      'difficulty': difficulty,
+      'level': level,
       'isActive': isActive,
       'description': description,
     };
   }
+
+  // Helper methods for enums
+  static const List<String> categories = [
+    'Core',
+    'Elective',
+    'Practical',
+    'Extra-curricular',
+  ];
+
+  static const List<String> departments = [
+    'Science',
+    'Arts',
+    'Commercial',
+    'General',
+  ];
+
+  static const List<String> levels = ['Nursery', 'Primary', 'Secondary'];
 }

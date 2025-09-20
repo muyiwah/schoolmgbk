@@ -17,6 +17,7 @@ class ClassRepo {
       url: "/classes/metrics",
     );
   }
+
   // ✅ Get all classes
   Future<HTTPResponseModel> getSingleClass(String classId) async {
     return await _httpService.runApi(
@@ -118,7 +119,18 @@ class ClassRepo {
     return await _httpService.runApi(
       type: ApiRequestType.delete,
       url: "/classes/$classId/teachers/$teacherId?role=$role",
-      params: {'role': role},  
+      params: {'role': role},
+    );
+  }
+
+  // ✅ Bulk assign subjects to classes
+  Future<HTTPResponseModel> bulkAssignSubjects(
+    Map<String, dynamic> body,
+  ) async {
+    return await _httpService.runApi(
+      type: ApiRequestType.post,
+      url: "/classes/bulk-assign-subjects",
+      body: body,
     );
   }
 }

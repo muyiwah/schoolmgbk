@@ -11,6 +11,7 @@ import 'package:schmgtsystem/repository/profile_repo.dart';
 import 'package:schmgtsystem/repository/staff_repo.dart';
 import 'package:schmgtsystem/repository/student_performance_repo.dart';
 import 'package:schmgtsystem/repository/students_repo.dart';
+import 'package:schmgtsystem/repository/subject_repo.dart';
 import 'package:schmgtsystem/repository/teacher_repo.dart';
 import 'package:schmgtsystem/repository/time_table_repo.dart';
 import 'package:schmgtsystem/services/dialog_service.dart';
@@ -47,6 +48,7 @@ Future<void> setupLocator({Env? env = Env.prod}) async {
   locator.registerLazySingleton(() => AssignmentRepo());
   locator.registerLazySingleton(() => AttendanceRepo());
   locator.registerLazySingleton(() => ClassRepo());
+  locator.registerLazySingleton(() => SubjectRepo());
 }
 
 // Future<void> _setupSharedPreferences() async {

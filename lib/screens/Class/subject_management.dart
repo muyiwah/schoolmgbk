@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:schmgtsystem/constants/appcolor.dart';
+import 'package:schmgtsystem/models/subject_model.dart';
+import 'package:schmgtsystem/providers/subject_provider.dart';
+import 'package:schmgtsystem/providers/class_provider.dart';
 
 class SubjectsManagementPage extends StatefulWidget {
   const SubjectsManagementPage({super.key});
@@ -31,6 +35,34 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
     // Synchronize scrolling between header and body
     _headerScrollController.addListener(_syncHeaderScroll);
     _bodyScrollController.addListener(_syncBodyScroll);
+
+    // Load subjects and classes from backend
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<SubjectProvider>(
+        context,
+        listen: false,
+      ).getAllSubjects(context);
+
+      Provider.of<ClassProvider>(
+        context,
+        listen: false,
+      ).getAllClassesWithMetric(context);
+    });
+  }
+
+  // Initialize class subjects data
+  void _initializeClassSubjects(
+    ClassProvider classProvider,
+    SubjectProvider subjectProvider,
+  ) {
+    if (classSubjects.isEmpty) {
+      classSubjects = getClassSubjectsFromProvider(
+        classProvider,
+        subjectProvider,
+      );
+      _ensureAllSubjectsAvailable(subjectProvider);
+      print('Initialized classSubjects: $classSubjects');
+    }
   }
 
   @override
@@ -61,54 +93,105 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
     });
   }
 
-  // Subject assignments for each class
-  Map<String, Map<String, bool>> classSubjects = {
-    'Class 1A': {
-      'MATHEMATICS': true,
-      'SCIENCE': true,
-      'ENGLISH': true,
-      'HISTORY': false,
-      'ART': true,
-      'MUSIC': false,
-      'HISTORY2': false,
-      'ART2': true,
-      'MUSIC2': false,
-      'HISTORY3': false,
-      'ART3': true,
-      'MUSIC3': false,
-    },
-    'Class 1B': {
-      'MATHEMATICS': true,
-      'SCIENCE': false,
-      'ENGLISH': true,
-      'HISTORY': false,
-      'ART': false,
-      'MUSIC': true,
-      'HISTORY2': false,
-      'ART2': true,
-      'MUSIC2': false,
-      'HISTORY3': false,
-      'ART3': true,
-      'MUSIC3': false,
-    },
-    'Class 2A': {
-      'MATHEMATICS': true,
-      'SCIENCE': true,
-      'ENGLISH': true,
-      'HISTORY': true,
-      'ART': false,
-      'MUSIC': true,
-      'HISTORY2': false,
-      'ART2': true,
-      'MUSIC2': false,
-      'HISTORY3': false,
-      'ART3': true,
-      'MUSIC3': false,
-    },
-  };
+  // Subject assignments for each class - will be populated from class provider
+  Map<String, Map<String, bool>> classSubjects = {};
 
-  final List<String> grades = ['All Grades', 'Grade 1', 'Grade 2'];
-  final List<String> categories = ['All Categories', 'Core', 'Elective'];
+  // Helper method to ensure all subjects are available for each class
+  void _ensureAllSubjectsAvailable(SubjectProvider subjectProvider) {
+    // Get all available subject names
+    List<String> allSubjectNames =
+        subjectProvider.subjects
+            .map((subject) => subject.name.toUpperCase())
+            .toList();
+
+    // Ensure each class has entries for all subjects
+    for (String className in classSubjects.keys) {
+      for (String subjectName in allSubjectNames) {
+        if (!classSubjects[className]!.containsKey(subjectName)) {
+          classSubjects[className]![subjectName] = false;
+        }
+      }
+    }
+  }
+
+  // Helper method to get class data from provider
+  Map<String, Map<String, bool>> getClassSubjectsFromProvider(
+    ClassProvider classProvider,
+    SubjectProvider subjectProvider,
+  ) {
+    Map<String, Map<String, bool>> result = {};
+
+    if (classProvider.classData.classes != null) {
+      print(
+        'ClassProvider has ${classProvider.classData.classes!.length} classes',
+      );
+      for (var classData in classProvider.classData.classes!) {
+        String className =
+            '${classData.name ?? 'Unknown'} ${classData.section ?? ''}';
+        result[className] = {};
+
+        print('Processing class: $className');
+        print('Class subjects array: ${classData.subjects ?? []}');
+        print(
+          'Class subject teachers: ${classData.subjectTeachers?.length ?? 0}',
+        );
+
+        // Pre-check subjects based on the class model's subjects array
+        if (classData.subjects != null && classData.subjects!.isNotEmpty) {
+          for (var subjectId in classData.subjects!) {
+            // Find the subject name by ID from the subject provider
+            var subject = subjectProvider.subjects.firstWhere(
+              (s) => s.id == subjectId,
+              orElse:
+                  () => Subject(
+                    id: subjectId,
+                    name: subjectId, // Fallback to ID if subject not found
+                    code: '',
+                    description: '',
+                    category: '',
+                    department: '',
+                    level: '',
+                    isActive: true,
+                    createdAt: DateTime.now(),
+                    updatedAt: DateTime.now(),
+                  ),
+            );
+
+            result[className]![subject.name.toUpperCase()] = true;
+            print('  - Pre-checked subject: ${subject.name} (ID: $subjectId)');
+          }
+        }
+
+        // Also check subject teachers as a fallback (for backward compatibility)
+        if (classData.subjectTeachers != null &&
+            classData.subjectTeachers!.isNotEmpty) {
+          for (var subjectTeacher in classData.subjectTeachers!) {
+            if (subjectTeacher.subject != null) {
+              String subjectName = subjectTeacher.subject!.toUpperCase();
+              // Only add if not already added from subjects array
+              if (!result[className]!.containsKey(subjectName)) {
+                result[className]![subjectName] = true;
+                print(
+                  '  - Additional subject from teachers: ${subjectTeacher.subject}',
+                );
+              }
+            }
+          }
+        }
+
+        print('Final subjects for $className: ${result[className]}');
+      }
+    } else {
+      print('ClassProvider has no classes data');
+    }
+
+    print('Final classSubjects result: $result');
+    return result;
+  }
+
+  final List<String> grades = ['All Grades', ...Subject.levels];
+  final List<String> categories = ['All Categories', ...Subject.categories];
+  final List<String> departments = ['All Departments', ...Subject.departments];
   final List<String> statuses = ['All Status', 'Active', 'Inactive'];
 
   Color getSubjectColor(String subject) {
@@ -156,39 +239,159 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
   }
 
   void _toggleSubject(String className, String subject, bool value) {
+    print('=== TOGGLE SUBJECT DEBUG ===');
+    print('ClassName: $className');
+    print('Subject: $subject');
+    print('Value: $value');
+    print('ClassSubjects before: $classSubjects');
+    print(
+      'ClassSubjects contains className: ${classSubjects.containsKey(className)}',
+    );
+    if (classSubjects.containsKey(className)) {
+      print('ClassSubjects[$className]: ${classSubjects[className]}');
+    }
+    print('==========================');
+
     setState(() {
+      // Ensure the class exists in classSubjects
+      if (!classSubjects.containsKey(className)) {
+        classSubjects[className] = {};
+        print('Created new class entry for: $className');
+      }
+
+      // Update the subject assignment
       classSubjects[className]![subject] = value;
-      // This would normally update the changes pending count based on actual changes
+
+      // Increment changes pending counter
+      changesPending++;
+
+      print('Toggled $subject for $className to $value');
+      print('Changes pending: $changesPending');
+      print('ClassSubjects after: $classSubjects');
     });
   }
 
   void _toggleAllForSubject(String subject, bool value) {
     setState(() {
+      int changesCount = 0;
       for (String className in classSubjects.keys) {
-        classSubjects[className]![subject] = value;
+        // Only count as change if the value is actually different
+        if (classSubjects[className]![subject] != value) {
+          classSubjects[className]![subject] = value;
+          changesCount++;
+        }
       }
+
+      // Update changes pending counter
+      changesPending += changesCount;
+
+      print('Toggled all classes for $subject to $value');
+      print('Changes made: $changesCount, Total pending: $changesPending');
     });
   }
 
-  void _saveChanges() {
-    // Implement save functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Changes saved successfully!'),
-        backgroundColor: Colors.green,
-      ),
+  // Helper method to convert classSubjects to API format
+  Map<String, dynamic> _prepareBulkAssignData(
+    ClassProvider classProvider,
+    SubjectProvider subjectProvider,
+  ) {
+    List<Map<String, dynamic>> classSubjectMappings = [];
+
+    if (classProvider.classData.classes != null) {
+      for (var classData in classProvider.classData.classes!) {
+        String className =
+            '${classData.name ?? 'Unknown'} ${classData.section ?? ''}';
+
+        // Get all subjects for this class (both selected and unselected)
+        List<String> selectedSubjectIds = [];
+        List<String> unselectedSubjectIds = [];
+
+        if (classSubjects.containsKey(className)) {
+          classSubjects[className]!.forEach((subjectName, isSelected) {
+            // Find subject ID from subject provider
+            final subject = subjectProvider.subjects.firstWhere(
+              (s) => s.name.toUpperCase() == subjectName,
+              orElse:
+                  () => Subject(
+                    id: subjectName, // Fallback to name if not found
+                    name: subjectName,
+                    category: 'Core',
+                    department: 'General',
+                    level: 'Primary',
+                    isActive: true,
+                  ),
+            );
+
+            if (isSelected) {
+              selectedSubjectIds.add(subject.id);
+            } else {
+              unselectedSubjectIds.add(subject.id);
+            }
+          });
+        }
+
+        // Always include the class mapping, even if no subjects are selected
+        // This allows the backend to remove all subjects if none are selected
+        classSubjectMappings.add({
+          'classId': classData.id,
+          'subjects': selectedSubjectIds, // Only send selected subjects
+          'removedSubjects':
+              unselectedSubjectIds, // Track removed subjects for debugging
+        });
+      }
+    }
+
+    return {
+      'classSubjectMappings': classSubjectMappings,
+      'dryRun': false, // Set to true for testing, false for actual update
+    };
+  }
+
+  void _saveChanges() async {
+    // Get both providers from context
+    final classProvider = Provider.of<ClassProvider>(context, listen: false);
+    final subjectProvider = Provider.of<SubjectProvider>(
+      context,
+      listen: false,
     );
-    setState(() {
-      changesPending = 0;
-    });
+
+    // Prepare the data for bulk assignment
+    final bulkData = _prepareBulkAssignData(classProvider, subjectProvider);
+
+    print('Bulk assignment data: $bulkData');
+
+    // Call the bulk assign subjects method
+    final success = await classProvider.bulkAssignSubjects(context, bulkData);
+
+    if (success) {
+      setState(() {
+        changesPending = 0;
+      });
+    }
   }
 
   void _resetChanges() {
-    // Implement reset functionality
+    // Reset to original state by reloading data from providers
     setState(() {
-      // Reset to original state
       changesPending = 0;
+      // Reload class subjects from provider to restore original state
+      final classProvider = Provider.of<ClassProvider>(context, listen: false);
+      final subjectProvider = Provider.of<SubjectProvider>(
+        context,
+        listen: false,
+      );
+      classSubjects = getClassSubjectsFromProvider(
+        classProvider,
+        subjectProvider,
+      );
     });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Changes reset to original state'),
+        backgroundColor: Colors.orange,
+      ),
+    );
   }
 
   void _undoChanges() {
@@ -200,29 +403,82 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
 
   @override
   Widget build(BuildContext context) {
-    final subjects = classSubjects.values.first.keys.toList();
+    return Consumer2<SubjectProvider, ClassProvider>(
+      builder: (context, subjectProvider, classProvider, child) {
+        // Initialize class subjects data if not already done
+        _initializeClassSubjects(classProvider, subjectProvider);
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      body: Column(
-        children: [
-          // Sleek Header
-          _buildSleekHeader(),
+        // Debug: Print current state
+        print('=== BUILD METHOD DEBUG ===');
+        print('Subjects count: ${subjectProvider.subjects.length}');
+        print('Classes count: ${classProvider.classData.classes?.length ?? 0}');
+        print('ClassSubjects keys: ${classSubjects.keys.toList()}');
+        if (classSubjects.isNotEmpty) {
+          String firstClass = classSubjects.keys.first;
+          print('First class subjects: ${classSubjects[firstClass]}');
+        }
+        print('========================');
 
-          // Advanced Search & Filter Bar
-          _buildAdvancedSearchBar(),
+        if (subjectProvider.isLoading) {
+          return const Scaffold(
+            backgroundColor: Color(0xFFF8FAFC),
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
 
-          // Main Data Table
-          Expanded(child: _buildDataTable(subjects)),
+        if (subjectProvider.errorMessage != null) {
+          return Scaffold(
+            backgroundColor: const Color(0xFFF8FAFC),
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Error: ${subjectProvider.errorMessage}',
+                    style: const TextStyle(fontSize: 16),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => subjectProvider.getAllSubjects(context),
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
 
-          // Bottom Action Bar
-          _buildBottomActionBar(),
-        ],
-      ),
+        final subjects = subjectProvider.subjects.map((s) => s.name).toList();
+
+        return Scaffold(
+          backgroundColor: const Color(0xFFF8FAFC),
+          body: Column(
+            children: [
+              // Sleek Header
+              _buildSleekHeader(subjectProvider, classProvider),
+
+              // Advanced Search & Filter Bar
+              _buildAdvancedSearchBar(),
+
+              // Main Data Table
+              Expanded(child: _buildDataTable(subjects)),
+
+              // Bottom Action Bar
+              _buildBottomActionBar(),
+            ],
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildSleekHeader() {
+  Widget _buildSleekHeader(
+    SubjectProvider subjectProvider,
+    ClassProvider classProvider,
+  ) {
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
       decoration: BoxDecoration(
@@ -296,7 +552,12 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
               ),
               const SizedBox(width: 12),
               ElevatedButton.icon(
-                onPressed: () => showAddSubjectDialog(context),
+                onPressed:
+                    () => showAddSubjectDialog(
+                      context,
+                      subjectProvider,
+                      classProvider,
+                    ),
                 icon: const Icon(Icons.add, size: 18),
                 label: const Text('Add Subject'),
                 style: ElevatedButton.styleFrom(
@@ -468,10 +729,7 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
                       topLeft: Radius.circular(16),
                     ),
                     border: Border(
-                      right: BorderSide(
-                        color: Color(0xFFE2E8F0),
-                        width: 1,
-                      ),
+                      right: BorderSide(color: Color(0xFFE2E8F0), width: 1),
                     ),
                   ),
                   child: _buildClassColumnHeader(),
@@ -486,24 +744,19 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
                     height: 70,
                     decoration: const BoxDecoration(
                       border: Border(
-                        bottom: BorderSide(
-                          color: Color(0xFFE2E8F0),
-                          width: 1,
-                        ),
-                        right: BorderSide(
-                          color: Color(0xFFE2E8F0),
-                          width: 1,
-                        ),
+                        bottom: BorderSide(color: Color(0xFFE2E8F0), width: 1),
+                        right: BorderSide(color: Color(0xFFE2E8F0), width: 1),
                       ),
                     ),
                     child: _buildClassCell(className, gradeText),
                   );
-                }).toList(),
+                }),
               ],
             ),
           ),
           // Scrollable Subject Columns
-          Expanded(
+          SizedBox(
+            width: MediaQuery.of(context).size.width - 160, // Fixed width
             child: SingleChildScrollView(
               controller: _bodyScrollController,
               scrollDirection: Axis.horizontal,
@@ -537,7 +790,7 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
                       ),
                       child: _buildSubjectRow(classData, subjects, className),
                     );
-                  }).toList(),
+                  }),
                 ],
               ),
             ),
@@ -561,10 +814,7 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
                   decoration: const BoxDecoration(
                     color: Color(0xFFF8FAFC),
                     border: Border(
-                      right: BorderSide(
-                        color: Color(0xFFE2E8F0),
-                        width: 1,
-                      ),
+                      right: BorderSide(color: Color(0xFFE2E8F0), width: 1),
                     ),
                   ),
                   child: _buildSubjectColumnHeader(subject),
@@ -579,6 +829,10 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
     List<String> subjects,
     String className,
   ) {
+    print('Building row for class: $className');
+    print('ClassData: $classData');
+    print('Subjects: $subjects');
+
     return Row(
       children:
           subjects
@@ -592,10 +846,7 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
                   decoration: const BoxDecoration(
                     color: Colors.white,
                     border: Border(
-                      right: BorderSide(
-                        color: Color(0xFFE2E8F0),
-                        width: 1,
-                      ),
+                      right: BorderSide(color: Color(0xFFE2E8F0), width: 1),
                     ),
                   ),
                   child: _buildSubjectCell(
@@ -716,7 +967,7 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
             ),
           ),
           const SizedBox(width: 8),
-          Expanded(
+          Flexible(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -728,6 +979,7 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF1E293B),
                   ),
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
                 Container(
@@ -758,12 +1010,16 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
 
   Widget _buildSubjectCell(String subject, bool value, String className) {
     return Center(
-      child: GestureDetector(
-        onTap: () => _toggleSubject(className, subject, !value),
+      child: InkWell(
+        onTap: () {
+          print('Checkbox tapped: $subject for $className');
+          _toggleSubject(className, subject, !value);
+        },
+        borderRadius: BorderRadius.circular(6),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
-          width: 28,
-          height: 28,
+          width: 32,
+          height: 32,
           decoration: BoxDecoration(
             color: value ? getSubjectColor(subject) : Colors.transparent,
             borderRadius: BorderRadius.circular(6),
@@ -779,7 +1035,7 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
               value
                   ? Icon(
                     Icons.check,
-                    size: 16,
+                    size: 18,
                     color: getSubjectTextColor(subject),
                   )
                   : null,
@@ -963,7 +1219,9 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
 }
 
 class AddSubjectDialog extends StatefulWidget {
-  const AddSubjectDialog({super.key});
+  final SubjectProvider subjectProvider;
+
+  const AddSubjectDialog({super.key, required this.subjectProvider});
 
   @override
   State<AddSubjectDialog> createState() => _AddSubjectDialogState();
@@ -974,7 +1232,10 @@ class _AddSubjectDialogState extends State<AddSubjectDialog> {
   final TextEditingController _subjectCodeController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
 
-  String? _selectedClass;
+  String? _selectedCategory;
+  String? _selectedDepartment;
+  String? _selectedLevel;
+  bool _isActive = true;
 
   @override
   void dispose() {
@@ -986,10 +1247,18 @@ class _AddSubjectDialogState extends State<AddSubjectDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
-        width: 600,
+        width: screenWidth > 600 ? 600 : screenWidth * 0.9,
+        height: screenHeight > 700 ? null : screenHeight * 0.9,
+        constraints: BoxConstraints(
+          maxHeight: screenHeight * 0.9,
+          maxWidth: screenWidth > 600 ? 600 : screenWidth * 0.9,
+        ),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
@@ -1072,100 +1341,184 @@ class _AddSubjectDialogState extends State<AddSubjectDialog> {
             ),
 
             // Modern Form Content
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Subject Name Field
-                  _buildModernFormField(
-                    label: 'Subject Name',
-                    isRequired: true,
-                    controller: _subjectNameController,
-                    hintText: 'Enter subject name',
-                    helperText: 'Enter a unique subject name.',
-                  ),
-                  const SizedBox(height: 24),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Subject Name Field
+                    _buildModernFormField(
+                      label: 'Subject Name',
+                      isRequired: true,
+                      controller: _subjectNameController,
+                      hintText: 'Enter subject name',
+                      helperText: 'Enter a unique subject name.',
+                    ),
+                    const SizedBox(height: 20),
 
-                  // Subject Code Field
-                  _buildModernFormField(
-                    label: 'Subject Code',
-                    controller: _subjectCodeController,
-                    hintText: 'e.g., MATH101',
-                    helperText: 'Optional short code for internal reference.',
-                  ),
-                  const SizedBox(height: 24),
+                    // Subject Code Field
+                    _buildModernFormField(
+                      label: 'Subject Code',
+                      controller: _subjectCodeController,
+                      hintText: 'e.g., MATH101',
+                      helperText: 'Optional short code for internal reference.',
+                    ),
+                    const SizedBox(height: 20),
 
-                  // Description Field
-                  _buildModernFormField(
-                    label: 'Description',
-                    controller: _descriptionController,
-                    hintText: 'Brief description of the subject (optional)',
-                    helperText:
-                        'Provide a brief description of what this subject covers.',
-                    maxLines: 4,
-                  ),
-                  const SizedBox(height: 32),
+                    // Description Field
+                    _buildModernFormField(
+                      label: 'Description',
+                      controller: _descriptionController,
+                      hintText: 'Brief description of the subject (optional)',
+                      helperText:
+                          'Provide a brief description of what this subject covers.',
+                      maxLines: 4,
+                    ),
+                    const SizedBox(height: 20),
 
-                  // Action Buttons
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 12,
+                    // Category Field
+                    _buildDropdownField(
+                      label: 'Category',
+                      isRequired: true,
+                      value: _selectedCategory,
+                      items: Subject.categories,
+                      onChanged:
+                          (value) => setState(() => _selectedCategory = value),
+                      hintText: 'Select subject category',
+                      helperText: 'Choose the category for this subject.',
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Department Field
+                    _buildDropdownField(
+                      label: 'Department',
+                      isRequired: true,
+                      value: _selectedDepartment,
+                      items: Subject.departments,
+                      onChanged:
+                          (value) =>
+                              setState(() => _selectedDepartment = value),
+                      hintText: 'Select department',
+                      helperText: 'Choose the department for this subject.',
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Level Field
+                    _buildDropdownField(
+                      label: 'Level',
+                      isRequired: true,
+                      value: _selectedLevel,
+                      items: Subject.levels,
+                      onChanged:
+                          (value) => setState(() => _selectedLevel = value),
+                      hintText: 'Select education level',
+                      helperText:
+                          'Choose the education level for this subject.',
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Active Status Field
+                    _buildSwitchField(
+                      label: 'Active Status',
+                      value: _isActive,
+                      onChanged: (value) => setState(() => _isActive = value),
+                      helperText: 'Enable or disable this subject.',
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Action Buttons
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              side: const BorderSide(color: Color(0xFFE2E8F0)),
+                            ),
                           ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            side: const BorderSide(color: Color(0xFFE2E8F0)),
+                          child: const Text(
+                            'Cancel',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF64748B),
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
-                        child: const Text(
-                          'Cancel',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF64748B),
-                            fontWeight: FontWeight.w500,
+                        const SizedBox(width: 12),
+                        ElevatedButton.icon(
+                          onPressed: () async {
+                            if (_subjectNameController.text.isNotEmpty &&
+                                _selectedCategory != null &&
+                                _selectedDepartment != null &&
+                                _selectedLevel != null) {
+                              final subjectData = {
+                                'name':
+                                    _subjectNameController.text
+                                        .trim()
+                                        .toUpperCase(),
+                                'code':
+                                    _subjectCodeController.text
+                                        .trim()
+                                        .toUpperCase(),
+                                'description':
+                                    _descriptionController.text.trim(),
+                                'category': _selectedCategory!,
+                                'department': _selectedDepartment!,
+                                'level': _selectedLevel!,
+                                'isActive': _isActive,
+                              };
+
+                              final success = await widget.subjectProvider
+                                  .createSubject(context, subjectData);
+
+                              if (success && mounted) {
+                                Navigator.of(context).pop();
+                              }
+                            } else {
+                              print(
+                                'Form validation failed - missing required fields',
+                              );
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Please fill in all required fields',
+                                  ),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          },
+                          icon: const Icon(
+                            Icons.add,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                          label: const Text('Save Subject'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            elevation: 0,
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          if (_subjectNameController.text.isNotEmpty) {
-                            Navigator.of(context).pop({
-                              'name': _subjectNameController.text,
-                              'code': _subjectCodeController.text,
-                              'description': _descriptionController.text,
-                              'class': _selectedClass,
-                            });
-                          }
-                        },
-                        icon: const Icon(
-                          Icons.add,
-                          color: Colors.white,
-                          size: 18,
-                        ),
-                        label: const Text('Save Subject'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 12,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          elevation: 0,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -1237,14 +1590,137 @@ class _AddSubjectDialogState extends State<AddSubjectDialog> {
       ],
     );
   }
+
+  Widget _buildDropdownField({
+    required String label,
+    required String? value,
+    required List<String> items,
+    required ValueChanged<String?> onChanged,
+    required String hintText,
+    required String helperText,
+    bool isRequired = false,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        RichText(
+          text: TextSpan(
+            text: label,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF1E293B),
+            ),
+            children:
+                isRequired
+                    ? [
+                      const TextSpan(
+                        text: ' *',
+                        style: TextStyle(color: Color(0xFFEF4444)),
+                      ),
+                    ]
+                    : [],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: value,
+              onChanged: onChanged,
+              hint: Text(
+                hintText,
+                style: const TextStyle(color: Color(0xFF64748B)),
+              ),
+              items:
+                  items.map((String item) {
+                    return DropdownMenuItem<String>(
+                      value: item,
+                      child: Text(item),
+                    );
+                  }).toList(),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          helperText,
+          style: const TextStyle(
+            fontSize: 12,
+            color: Color(0xFF64748B),
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSwitchField({
+    required String label,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+    required String helperText,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1E293B),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Switch(
+              value: value,
+              onChanged: onChanged,
+              activeColor: AppColors.primary,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              value ? 'Active' : 'Inactive',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: value ? Colors.green : Colors.grey,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Text(
+          helperText,
+          style: const TextStyle(
+            fontSize: 12,
+            color: Color(0xFF64748B),
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 // Usage example:
-void showAddSubjectDialog(BuildContext context) {
+void showAddSubjectDialog(
+  BuildContext context,
+  SubjectProvider subjectProvider,
+  ClassProvider classProvider,
+) {
   showDialog(
     context: context,
     builder: (BuildContext context) {
-      return const AddSubjectDialog();
+      return AddSubjectDialog(subjectProvider: subjectProvider);
     },
   ).then((result) {
     if (result != null) {

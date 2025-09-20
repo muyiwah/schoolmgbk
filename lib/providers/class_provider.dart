@@ -234,4 +234,41 @@ class ClassProvider extends ChangeNotifier {
       );
     }
   }
+
+  // ✅ Bulk assign subjects to classes
+  Future<bool> bulkAssignSubjects(
+    BuildContext context,
+    Map<String, dynamic> body,
+  ) async {
+    try {
+      EasyLoading.show(status: 'Updating subject assignments...');
+
+      HTTPResponseModel res = await _classRepo.bulkAssignSubjects(body);
+      EasyLoading.dismiss();
+
+      if (HTTPResponseModel.isApiCallSuccess(res)) {
+        CustomToastNotification.show(
+          res.message ?? 'Subject assignments updated successfully',
+          type: ToastType.success,
+        );
+
+        // Refresh class data to reflect changes
+        await getAllClassesWithMetric(context);
+        return true;
+      } else {
+        CustomToastNotification.show(
+          res.message ?? 'Failed to update subject assignments',
+          type: ToastType.error,
+        );
+        return false;
+      }
+    } catch (e) {
+      EasyLoading.dismiss();
+      CustomToastNotification.show(
+        'Error updating subject assignments: $e',
+        type: ToastType.error,
+      );
+      return false;
+    }
+  }
 }

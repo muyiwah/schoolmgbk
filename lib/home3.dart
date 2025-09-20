@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart' as provider;
 import 'package:schmgtsystem/login_screen.dart';
+import 'package:schmgtsystem/providers/subject_provider.dart';
+import 'package:schmgtsystem/providers/class_provider.dart';
 import 'package:schmgtsystem/screens/Class/subject_management.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -463,7 +466,18 @@ final router = GoRouter(
             ),
             GoRoute(
               path: 'subject-management',
-              builder: (context, state) =>  SubjectsManagementPage(),
+              builder:
+                  (context, state) => provider.MultiProvider(
+                    providers: [
+                      provider.ChangeNotifierProvider(
+                        create: (context) => SubjectProvider(),
+                      ),
+                      provider.ChangeNotifierProvider(
+                        create: (context) => ClassProvider(),
+                      ),
+                    ],
+                    child: const SubjectsManagementPage(),
+                  ),
             ),
             GoRoute(
               path: 'assign',
