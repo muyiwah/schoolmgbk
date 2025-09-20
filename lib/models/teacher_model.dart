@@ -100,7 +100,7 @@ class Statistics {
   ByDepartment? byDepartment;
   ByStatus? byStatus;
   ByEmploymentType? byEmploymentType;
-  int? averageSalary;
+  double? averageSalary;
   ClassTeachers? classTeachers;
 
   Statistics({

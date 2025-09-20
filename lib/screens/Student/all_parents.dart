@@ -1,70 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:schmgtsystem/color_pallete.dart';
+import 'package:schmgtsystem/providers/provider.dart';
 import 'package:schmgtsystem/widgets/screen_header.dart';
 
-class AllParents extends StatelessWidget {
+class AllParents extends ConsumerStatefulWidget {
   AllParents({super.key, required this.navigateTo});
-  final Function navigateTo;
-  final List<Map<String, dynamic>> peopleList = List.generate(30, (index) {
-    return {
-      "name": _randomName(),
-      "role": _randomRole(),
-      "email": "user$index@example.com",
-      "phone": "(${_randomAreaCode()}) 555-${1000 + index}",
-      "avatar":
-          "https://randomuser.me/api/portraits/${index % 2 == 0 ? 'men' : 'women'}/$index.jpg",
-    };
-  });
+  final Function(String parentId) navigateTo;
 
-  static String _randomName() {
-    const firstNames = [
-      "Linnie",
-      "Miguel",
-      "Jenna",
-      "Chris",
-      "Alex",
-      "Taylor",
-      "Jordan",
-      "Morgan",
-      "Jamie",
-      "Pat",
-    ];
-    const lastNames = [
-      "Richardson",
-      "Daniels",
-      "Smith",
-      "Brown",
-      "Johnson",
-      "Lee",
-      "Clark",
-      "Hall",
-      "Turner",
-      "Evans",
-    ];
-    return "${firstNames[_randomIndex(firstNames.length)]} ${lastNames[_randomIndex(lastNames.length)]}";
+  @override
+  ConsumerState<AllParents> createState() => _AllParentsState();
+}
+
+class _AllParentsState extends ConsumerState<AllParents> {
+  @override
+  void initState() {
+    super.initState();
+    // Clear any previous errors and load parents data when the screen initializes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = ref.read(RiverpodProvider.parentProvider.notifier);
+      provider.setError(null); // Clear any previous errors
+      provider.getAllParents(context);
+    });
   }
-
-  static String _randomRole() {
-    const roles = [
-      "Account Manager",
-      "Salon Owner",
-      "Sales Lead",
-      "Designer",
-      "Developer",
-      "Marketing Director",
-    ];
-    return roles[_randomIndex(roles.length)];
-  }
-
-  static int _randomAreaCode() {
-    const codes = [302, 629, 415, 212, 646, 718, 305, 213];
-    return codes[_randomIndex(codes.length)];
-  }
-
-  static int _randomIndex(int max) =>
-      (DateTime.now().millisecondsSinceEpoch % max);
 
   List images = [
     'assets/images/1.jpeg',
@@ -110,9 +69,12 @@ class AllParents extends StatelessWidget {
   ];
   @override
   Widget build(BuildContext context) {
-    return Scaffold(floatingActionButton: FloatingActionButton(onPressed: (){
-      showDialog(context: context, builder: (_) => const AddClientDialog());
-    }),
+    return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          showDialog(context: context, builder: (_) => const AddClientDialog());
+        },
+      ),
       body: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
@@ -125,174 +87,413 @@ class AllParents extends StatelessWidget {
               group: 'Parents',
               subgroup: 'All Parents',
               showSearchBar: true,
-              showDropdown:true
+              showDropdown: true,
             ),
             const SizedBox(height: 20),
             Expanded(
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.grey.withOpacity(.3)),
-                ),
-                child: SingleChildScrollView(
-                  child: Wrap(
-                    alignment: WrapAlignment.spaceBetween,
-                    runSpacing: 20,
-                    children: List.generate(peopleList.length, (index) {
-                      final person = peopleList[index];
-                      return GestureDetector(
-                        onTap: () {
-                          navigateTo();
-                        },
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(
-                            minWidth: 120,
-                            maxWidth: 240,
-                            minHeight: 160,
-                            maxHeight: 240,
+              child: Consumer(
+                builder: (context, ref, child) {
+                  final parentState = ref.watch(
+                    RiverpodProvider.parentProvider,
+                  );
+
+                  if (parentState.isLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  // if (parentState.errorMessage != null) {
+                  //   return Center(
+                  //     child: Column(
+                  //       mainAxisAlignment: MainAxisAlignment.center,
+                  //       children: [
+                  //         Icon(
+                  //           Icons.error_outline,
+                  //           size: 64,
+                  //           color: Colors.red[300],
+                  //         ),
+                  //         const SizedBox(height: 16),
+                  //         Text(
+                  //           'Error loading parents',
+                  //           style: TextStyle(
+                  //             fontSize: 18,
+                  //             color: Colors.red[700],
+                  //             fontWeight: FontWeight.w600,
+                  //           ),
+                  //         ),
+                  //         const SizedBox(height: 8),
+                  //         Text(
+                  //           parentState.errorMessage!,
+                  //           style: TextStyle(
+                  //             fontSize: 14,
+                  //             color: Colors.red[600],
+                  //           ),
+                  //           textAlign: TextAlign.center,
+                  //         ),
+                  //         const SizedBox(height: 16),
+                  //         ElevatedButton(
+                  //           onPressed: () {
+                  //             ref
+                  //                 .read(
+                  //                   RiverpodProvider.parentProvider.notifier,
+                  //                 )
+                  //                 .getAllParents(context);
+                  //           },
+                  //           child: const Text('Retry'),
+                  //         ),
+                  //       ],
+                  //     ),
+                  //   );
+                  // }
+
+                  final parents = parentState.parents;
+                  if (parents.isEmpty) {
+                    return const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.people_outline,
+                            size: 64,
+                            color: Colors.grey,
                           ),
-                          child: Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(14),
-                                  color: Colors.white,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.05),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceAround,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        CircleAvatar(
-                                          backgroundImage: AssetImage(
-                                            images[index],
-                                          ),
-                                          radius: 20,
+                          SizedBox(height: 16),
+                          Text(
+                            'No parents found',
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.grey,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            'No parents have been registered yet',
+                            style: TextStyle(fontSize: 14, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return Container(
+                    padding: const EdgeInsets.all(20),
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.grey.withOpacity(.3)),
+                    ),
+                    child: SingleChildScrollView(
+                      child: Wrap(
+                        alignment: WrapAlignment.spaceBetween,
+                        runSpacing: 20,
+                        children: List.generate(parents.length, (index) {
+                          final parent = parents[index];
+                          // Debug: Print parent gender information
+                          print(
+                            'DEBUG: Parent ${parent.personalInfo?.firstName} - Gender: ${parent.personalInfo?.gender?.name}',
+                          );
+                          return GestureDetector(
+                            onTap: () {
+                              // Debug: Print parent data to understand the structure
+                              print('Parent ID: ${parent.id}');
+                              print('Parent ID (parentId): ${parent.parentId}');
+                              print('Parent ID type: ${parent.id.runtimeType}');
+                              print(
+                                'Parent parentId type: ${parent.parentId.runtimeType}',
+                              );
+
+                              // Use parentId if available, otherwise fall back to id
+                              // Ensure we convert to string to avoid type errors
+                              final parentIdValue =
+                                  parent.parentId ?? parent.id;
+                              final parentId = parentIdValue?.toString() ?? '';
+
+                              if (parentId.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Parent ID not available'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                                return;
+                              }
+
+                              widget.navigateTo(parentId);
+                            },
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(
+                                minWidth: 120,
+                                maxWidth: 240,
+                                minHeight: 200,
+                                maxHeight: 320,
+                              ),
+                              child: Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(14),
+                                      color: Colors.white,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.05),
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 4),
                                         ),
-                                        const SizedBox(width: 10),
-                                        Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
+                                      ],
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceAround,
+                                      children: [
+                                        Row(
                                           children: [
-                                            Text(
-                                              person['name'],
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
+                                            CircleAvatar(
+                                              backgroundImage: AssetImage(
+                                                images[index % images.length],
                                               ),
+                                              radius: 20,
                                             ),
-                                            Text(
-                                              person['role'],
-                                              style: const TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.grey,
+                                            const SizedBox(width: 10),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    '${parent.personalInfo?.firstName ?? ''} ${parent.personalInfo?.lastName ?? ''}',
+                                                    style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                  Text(
+                                                    parent
+                                                            .professionalInfo
+                                                            ?.occupation ??
+                                                        'Parent',
+                                                    style: const TextStyle(
+                                                      fontSize: 12,
+                                                      color: Colors.grey,
+                                                    ),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ],
                                               ),
                                             ),
                                           ],
                                         ),
-                                      ],
-                                    ),
-                                    // SizedBox(height: 10,),
-                                    Divider(
-                                      color: Colors.grey.shade300,
-                                      height: .2,
-                                    ),
-                                    // const SizedBox(height: 16),
-                                    Row(
-                                      children: [
-                                        const Icon(
-                                          Icons.email_outlined,
-                                          size: 16,
+                                        Divider(
+                                          color: Colors.grey.shade300,
+                                          height: .2,
                                         ),
-                                        const SizedBox(width: 6),
-                                        Expanded(
-                                          child: Text(
-                                            person['email'],
-                                            style: const TextStyle(fontSize: 13),
-                                            overflow: TextOverflow.ellipsis,
+                                        Row(
+                                          children: [
+                                            const Icon(
+                                              Icons.email_outlined,
+                                              size: 16,
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Expanded(
+                                              child: Text(
+                                                parent.contactInfo?.email ??
+                                                    'No email',
+                                                style: const TextStyle(
+                                                  fontSize: 13,
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        Row(
+                                          children: [
+                                            const Icon(
+                                              Icons.phone,
+                                              size: 16,
+                                              color: Colors.grey,
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Expanded(
+                                              child: Text(
+                                                parent
+                                                        .contactInfo
+                                                        ?.primaryPhone ??
+                                                    'No phone',
+                                                style: const TextStyle(
+                                                  fontSize: 13,
+                                                  color: Colors.grey,
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        // Parent role indicator
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              () {
+                                                final gender =
+                                                    parent
+                                                        .personalInfo
+                                                        ?.gender
+                                                        ?.name
+                                                        ?.toLowerCase();
+                                                print(
+                                                  'DEBUG: Parent ${parent.personalInfo?.firstName} gender: $gender',
+                                                );
+                                                return gender == 'male' ||
+                                                        gender == 'm'
+                                                    ? Icons.man
+                                                    : Icons.woman;
+                                              }(),
+                                              size: 16,
+                                              color: () {
+                                                final gender =
+                                                    parent
+                                                        .personalInfo
+                                                        ?.gender
+                                                        ?.name
+                                                        ?.toLowerCase();
+                                                return gender == 'male' ||
+                                                        gender == 'm'
+                                                    ? Colors.blue
+                                                    : Colors.pink;
+                                              }(),
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Expanded(
+                                              child: Text(
+                                                () {
+                                                  final gender =
+                                                      parent
+                                                          .personalInfo
+                                                          ?.gender
+                                                          ?.name
+                                                          ?.toLowerCase();
+                                                  return gender == 'male' ||
+                                                          gender == 'm'
+                                                      ? 'Father'
+                                                      : 'Mother';
+                                                }(),
+                                                style: TextStyle(
+                                                  fontSize: 13,
+                                                  color: () {
+                                                    final gender =
+                                                        parent
+                                                            .personalInfo
+                                                            ?.gender
+                                                            ?.name
+                                                            ?.toLowerCase();
+                                                    return gender == 'male' ||
+                                                            gender == 'm'
+                                                        ? Colors.blue
+                                                        : Colors.pink;
+                                                  }(),
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        // Children names section
+                                        if (parent.children != null &&
+                                            parent.children!.isNotEmpty) ...[
+                                          Row(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              const Icon(
+                                                Icons.child_care,
+                                                size: 16,
+                                                color: Colors.green,
+                                              ),
+                                              const SizedBox(width: 6),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      'Children:',
+                                                      style: TextStyle(
+                                                        fontSize: 12,
+                                                        color: Colors.grey[600],
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 2),
+                                                    ...parent.children!
+                                                        .map(
+                                                          (child) => Text(
+                                                            '• ${child.personalInfo?.firstName ?? 'Unknown'} ${child.personalInfo?.lastName ?? ''}',
+                                                            style:
+                                                                const TextStyle(
+                                                                  fontSize: 12,
+                                                                  color:
+                                                                      Colors
+                                                                          .grey,
+                                                                ),
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                          ),
+                                                        )
+                                                        .toList(),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                    // const SizedBox(height: 8),
-                                    Row(
-                                      children: [
-                                        const Icon(
-                                          Icons.phone,
-                                          size: 16,
-                                          color: Colors.grey,
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          person['phone'],
-                                          style: const TextStyle(
-                                            fontSize: 13,
-                                            color: Colors.grey,
+                                        ] else ...[
+                                          Row(
+                                            children: [
+                                              const Icon(
+                                                Icons.child_care,
+                                                size: 16,
+                                                color: Colors.grey,
+                                              ),
+                                              const SizedBox(width: 6),
+                                              Expanded(
+                                                child: Text(
+                                                  'No children',
+                                                  style: TextStyle(
+                                                    fontSize: 13,
+                                                    color: Colors.grey[500],
+                                                    fontStyle: FontStyle.italic,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
                                           ),
-                                        ),
+                                        ],
                                       ],
                                     ),
-                                    Row(
-                                      children: [
-                                        const Icon(
-                                          Icons.phone,
-                                          size: 16,
-                                          color: Colors.grey,
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          person['phone'],
-                                          style: const TextStyle(
-                                            fontSize: 13,
-                                            color: Colors.grey,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Row(
-                                      children: [
-                                        const Icon(
-                                          Icons.phone,
-                                          size: 16,
-                                          color: Colors.grey,
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          person['phone'],
-                                          style: const TextStyle(
-                                            fontSize: 13,
-                                            color: Colors.grey,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              )
-                              .animate()
-                              .fadeIn(
-                                delay: Duration(milliseconds: 100 * index),
-                                duration: const Duration(milliseconds: 400),
-                              )
-                              .slideX(
-                                begin: 1,
-                                delay: Duration(milliseconds: 100 * index),
-                                duration: const Duration(milliseconds: 400),
-                              ),
-                        ),
-                      );
-                    }),
-                  ),
-                ),
+                                  )
+                                  .animate()
+                                  .fadeIn(
+                                    delay: Duration(milliseconds: 100 * index),
+                                    duration: const Duration(milliseconds: 400),
+                                  )
+                                  .slideX(
+                                    begin: 1,
+                                    delay: Duration(milliseconds: 100 * index),
+                                    duration: const Duration(milliseconds: 400),
+                                  ),
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
           ],
@@ -301,8 +502,6 @@ class AllParents extends StatelessWidget {
     );
   }
 }
-
-
 
 class AddClientDialog extends StatefulWidget {
   const AddClientDialog({Key? key}) : super(key: key);
@@ -317,14 +516,15 @@ class _AddClientDialogState extends State<AddClientDialog> {
 
   @override
   Widget build(BuildContext context) {
-     final screenWidth = MediaQuery.of(context).size.width;
-    return Dialog(backgroundColor: Colors.white,
+    final screenWidth = MediaQuery.of(context).size.width;
+    return Dialog(
+      backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child:  ConstrainedBox(
-      constraints: BoxConstraints(
-        maxWidth: screenWidth * 0.5, // Set to half the screen width
-      ),
-        
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: screenWidth * 0.5, // Set to half the screen width
+        ),
+
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -345,7 +545,7 @@ class _AddClientDialogState extends State<AddClientDialog> {
                 ],
               ),
               const SizedBox(height: 16),
-        
+
               // Form Fields
               Form(
                 key: _formKey,
@@ -376,7 +576,7 @@ class _AddClientDialogState extends State<AddClientDialog> {
                       ],
                     ),
                     const SizedBox(height: 16),
-        
+
                     // Email
                     TextFormField(
                       decoration: const InputDecoration(
@@ -386,7 +586,7 @@ class _AddClientDialogState extends State<AddClientDialog> {
                       ),
                     ),
                     const SizedBox(height: 16),
-        
+
                     // Gender & Year
                     Row(
                       children: [
@@ -422,7 +622,7 @@ class _AddClientDialogState extends State<AddClientDialog> {
                       ],
                     ),
                     const SizedBox(height: 16),
-        
+
                     // Client info
                     TextFormField(
                       maxLines: 3,
@@ -433,7 +633,7 @@ class _AddClientDialogState extends State<AddClientDialog> {
                       ),
                     ),
                     const SizedBox(height: 16),
-        
+
                     // Checkbox
                     Row(
                       children: [
@@ -451,9 +651,9 @@ class _AddClientDialogState extends State<AddClientDialog> {
                   ],
                 ),
               ),
-        
+
               const SizedBox(height: 24),
-        
+
               // Buttons
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,

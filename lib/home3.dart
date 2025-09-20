@@ -2,7 +2,67 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:schmgtsystem/login_screen.dart';
-import 'package:schmgtsystem/widgets/add_teacher.dart';
+import 'package:schmgtsystem/screens/Class/subject_management.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+// Screen imports - Class
+import 'package:schmgtsystem/screens/Class/all_table.dart';
+import 'package:schmgtsystem/screens/Class/classes.dart';
+import 'package:schmgtsystem/screens/Class/single_class.dart';
+
+// Screen imports - Student
+import 'package:schmgtsystem/screens/Student/add_student.dart';
+import 'package:schmgtsystem/screens/Student/all_parents.dart';
+import 'package:schmgtsystem/screens/Student/all_student.dart';
+import 'package:schmgtsystem/screens/Student/create_timetale.dart';
+import 'package:schmgtsystem/screens/Student/parent_all_transactions.dart';
+import 'package:schmgtsystem/screens/Student/single_parent.dart';
+import 'package:schmgtsystem/screens/Student/single_student.dart';
+import 'package:schmgtsystem/screens/Student/timetable.dart';
+
+// Screen imports - Accounts
+import 'package:schmgtsystem/screens/accunts/account_home.dart';
+import 'package:schmgtsystem/screens/accunts/accounts.dart';
+import 'package:schmgtsystem/screens/accunts/expenditure_manager.dart';
+
+// Screen imports - Admissions
+import 'package:schmgtsystem/screens/admissions/admission_screen.dart';
+
+// Screen imports - CBT
+import 'package:schmgtsystem/screens/cbt/cbt_crateexam_teacher.dart';
+import 'package:schmgtsystem/screens/cbt/cbt_question_bank.dart';
+import 'package:schmgtsystem/screens/cbt/cbt_result.dart';
+import 'package:schmgtsystem/screens/cbt/cbt_score_parent.dart';
+import 'package:schmgtsystem/screens/cbt/cbt_take_exam.dart';
+
+// Screen imports - Communication
+import 'package:schmgtsystem/screens/communication/new_communication.dart';
+
+// Screen imports - Exams
+import 'package:schmgtsystem/screens/exams/add_exams.dart';
+import 'package:schmgtsystem/screens/exams/overview2.dart';
+
+// Screen imports - Admin Home
+import 'package:schmgtsystem/screens/adminhome/dashboar_details.dart';
+import 'package:schmgtsystem/screens/adminhome/dshboard.dart';
+import 'package:schmgtsystem/screens/parent/parent_dashboard.dart';
+
+// Screen imports - Promotions
+import 'package:schmgtsystem/screens/promotions/manage_promotion.dart';
+import 'package:schmgtsystem/screens/promotions/report_card.dart';
+import 'package:schmgtsystem/screens/promotions/student_list_reportcard.dart';
+
+// Screen imports - Staff
+import 'package:schmgtsystem/screens/staff/add_staff.dart';
+import 'package:schmgtsystem/screens/staff/all_staff.dart';
+import 'package:schmgtsystem/screens/staff/teachers.dart';
+
+// Screen imports - Inventory
+
+// Other imports
+import 'package:schmgtsystem/custom_timetable.dart';
+import 'package:schmgtsystem/deepseek/deepseek2222/examsetupscreen.dart';
+import 'package:schmgtsystem/schoolfees_monitor.dart';
 
 // Menu Item Model
 class MenuItem {
@@ -45,7 +105,31 @@ final menuItemsProvider = Provider<List<MenuItem>>((ref) {
       subItems: [
         MenuItem(title: 'All Students', icon: Icons.list, route: '/students'),
         MenuItem(title: 'Add Student', icon: Icons.add, route: '/students/add'),
-        MenuItem(title: 'Student Reports', icon: Icons.assessment,route: '/students/reports',
+
+        MenuItem(
+          title: 'Parents',
+          icon: Icons.family_restroom,
+          route: '/students/parents',
+        ),
+        MenuItem(
+          title: 'Parent Transactions',
+          icon: Icons.payment,
+          route: '/students/parent-transactions',
+        ),
+        MenuItem(
+          title: 'Time Table',
+          icon: Icons.schedule,
+          route: '/students/timetable',
+        ),
+        MenuItem(
+          title: 'Create Time Table',
+          icon: Icons.create,
+          route: '/students/create-timetable',
+        ),
+        MenuItem(
+          title: 'Attendance',
+          icon: Icons.check_circle,
+          route: '/students/attendance',
         ),
       ],
     ),
@@ -57,37 +141,115 @@ final menuItemsProvider = Provider<List<MenuItem>>((ref) {
       subItems: [
         MenuItem(title: 'All Classes', icon: Icons.list, route: '/classes'),
         MenuItem(
-          title: 'Class Schedule',
-          icon: Icons.schedule,
-          route: '/classes/schedule',
+          title: 'Subject Management',
+          icon: Icons.class_,
+          route: '/classes/subject-management',
+        ),
+        MenuItem(
+          title: 'All Tables',
+          icon: Icons.table_chart,
+          route: '/classes/tables',
         ),
         MenuItem(
           title: 'Assign Students',
           icon: Icons.assignment,
           route: '/classes/assign',
         ),
-      ],
-    ),
-    MenuItem(
-      title: 'Teachers',
-      icon: Icons.person,
-      route: '/teachers',
-      allowedRoles: ['admin'],
-      subItems: [
-        MenuItem(title: 'All Teachers', icon: Icons.list, route: '/teachers'),
-        MenuItem(title: 'Add Teacher', icon: Icons.add, route: '/teachers/add'),
         MenuItem(
-          title: 'Teacher Schedule',
+          title: 'Time Table',
           icon: Icons.schedule,
-          route: '/teachers/schedule',
+          route: '/classes/timetable',
+        ),
+        MenuItem(
+          title: 'Exam Schedule',
+          icon: Icons.event,
+          route: '/classes/exam-schedule',
         ),
       ],
     ),
     MenuItem(
-      title: 'Attendance',
-      icon: Icons.check_circle,
-      route: '/attendance',
+      title: 'Staff',
+      icon: Icons.person,
+      route: '/staff',
+      allowedRoles: ['admin'],
+      subItems: [
+        MenuItem(title: 'All Staff', icon: Icons.list, route: '/staff'),
+        MenuItem(title: 'Add Staff', icon: Icons.add, route: '/staff/add'),
+        MenuItem(
+          title: 'Assign Teacher',
+          icon: Icons.assignment_ind,
+          route: '/staff/assign-teacher',
+        ),
+        MenuItem(
+          title: 'Create Timetable',
+          icon: Icons.create,
+          route: '/staff/create-timetable',
+        ),
+      ],
+    ),
+    MenuItem(
+      title: 'CBT',
+      icon: Icons.quiz,
+      route: '/cbt',
       allowedRoles: ['admin', 'teacher'],
+      subItems: [
+        MenuItem(
+          title: 'Create Exam',
+          icon: Icons.add,
+          route: '/cbt/create-exam',
+        ),
+        MenuItem(
+          title: 'Question Bank',
+          icon: Icons.library_books,
+          route: '/cbt/question-bank',
+        ),
+        MenuItem(
+          title: 'Take Exam',
+          icon: Icons.play_arrow,
+          route: '/cbt/take-exam',
+        ),
+        MenuItem(
+          title: 'Results',
+          icon: Icons.assessment,
+          route: '/cbt/results',
+        ),
+        MenuItem(
+          title: 'Student Results',
+          icon: Icons.school,
+          route: '/cbt/student-results',
+        ),
+        MenuItem(
+          title: 'Parent Score',
+          icon: Icons.family_restroom,
+          route: '/cbt/parent-score',
+        ),
+      ],
+    ),
+    MenuItem(
+      title: 'Inventory',
+      icon: Icons.inventory,
+      route: '/inventory',
+      allowedRoles: ['admin'],
+      subItems: [
+        MenuItem(
+          title: 'Inventory',
+          icon: Icons.inventory_2,
+          route: '/inventory',
+        ),
+      ],
+    ),
+    MenuItem(
+      title: 'Parent',
+      icon: Icons.inventory,
+      route: '/parent',
+      allowedRoles: ['parent'],
+      subItems: [
+        // MenuItem(
+        //   title: 'Inventory',
+        //   icon: Icons.inventory_2,
+        //   route: '/inventory',
+        // ),
+      ],
     ),
     MenuItem(
       title: 'Exams',
@@ -96,11 +258,65 @@ final menuItemsProvider = Provider<List<MenuItem>>((ref) {
       allowedRoles: ['admin', 'teacher'],
       subItems: [
         MenuItem(title: 'All Exams', icon: Icons.list, route: '/exams'),
-        MenuItem(title: 'Create Exam', icon: Icons.add, route: '/exams/create'),
+        MenuItem(title: 'Add Exam', icon: Icons.add, route: '/exams/add'),
         MenuItem(
-          title: 'Results',
-          icon: Icons.assessment,
-          route: '/exams/results',
+          title: 'Exam Schedule',
+          icon: Icons.schedule,
+          route: '/exams/schedule',
+        ),
+        MenuItem(
+          title: 'Records',
+          icon: Icons.record_voice_over,
+          route: '/exams/records',
+        ),
+      ],
+    ),
+    MenuItem(
+      title: 'Admissions',
+      icon: Icons.school,
+      route: '/admissions',
+      allowedRoles: ['admin'],
+      subItems: [
+        MenuItem(
+          title: 'All Admissions',
+          icon: Icons.list,
+          route: '/admissions',
+        ),
+      ],
+    ),
+    MenuItem(
+      title: 'Notifications',
+      icon: Icons.notifications,
+      route: '/notifications',
+      allowedRoles: ['admin'],
+      subItems: [
+        MenuItem(
+          title: 'New Notification',
+          icon: Icons.add,
+          route: '/notifications/new',
+        ),
+      ],
+    ),
+    MenuItem(
+      title: 'Promotions',
+      icon: Icons.trending_up,
+      route: '/promotions',
+      allowedRoles: ['admin'],
+      subItems: [
+        MenuItem(
+          title: 'Manage Promotion',
+          icon: Icons.manage_accounts,
+          route: '/promotions/manage',
+        ),
+        MenuItem(
+          title: 'Report Card',
+          icon: Icons.description,
+          route: '/promotions/report-card',
+        ),
+        MenuItem(
+          title: 'Single Report',
+          icon: Icons.description_outlined,
+          route: '/promotions/single-report',
         ),
       ],
     ),
@@ -110,7 +326,7 @@ final menuItemsProvider = Provider<List<MenuItem>>((ref) {
       route: '/accounts',
       allowedRoles: ['admin', 'accountant'],
       subItems: [
-        MenuItem(title: 'Overview', icon: Icons.dashboard, route: '/accounts'),
+        MenuItem(title: 'Account Home', icon: Icons.home, route: '/accounts'),
         MenuItem(
           title: 'Income',
           icon: Icons.trending_up,
@@ -122,23 +338,16 @@ final menuItemsProvider = Provider<List<MenuItem>>((ref) {
           route: '/accounts/expenditure',
         ),
         MenuItem(
+          title: 'Expenditure Manager',
+          icon: Icons.manage_accounts,
+          route: '/accounts/expenditure-manager',
+        ),
+        MenuItem(
           title: 'School Fees',
           icon: Icons.payment,
           route: '/accounts/fees',
         ),
       ],
-    ),
-    MenuItem(
-      title: 'Reports',
-      icon: Icons.bar_chart,
-      route: '/reports',
-      allowedRoles: ['admin'],
-    ),
-    MenuItem(
-      title: 'Settings',
-      icon: Icons.settings,
-      route: '/settings',
-      allowedRoles: ['admin'],
     ),
   ];
 
@@ -148,9 +357,23 @@ final menuItemsProvider = Provider<List<MenuItem>>((ref) {
   }).toList();
 });
 
-// Router Configuration with Persistent Shell// Fixed Router Configuration with correct sub-route paths
+// Router Configuration with Persistent Shell
 final router = GoRouter(
   initialLocation: '/login',
+  redirect: (context, state) {
+    // Get the current user role from the provider
+    final container = ProviderScope.containerOf(context);
+    final userRole = container.read(currentUserRoleProvider);
+
+    // If user is a parent and trying to access non-parent routes, redirect to parent dashboard
+    if (userRole == 'parent' &&
+        state.uri.path != '/parent' &&
+        state.uri.path != '/login') {
+      return '/parent';
+    }
+
+    return null; // No redirect needed
+  },
   routes: [
     GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
 
@@ -159,109 +382,248 @@ final router = GoRouter(
         return DashboardShell(child: child);
       },
       routes: [
+        // Dashboard
         GoRoute(
           path: '/dashboard',
           builder: (context, state) => const DashboardHomeScreen(),
         ),
         GoRoute(
+          path: '/dashboard/details',
+          builder: (context, state) => const DashboardDetailsScreen(),
+        ),
+
+        // Parent Dashboard Route
+        GoRoute(
+          path: '/parent',
+          builder: (context, state) => const ParentScreen(),
+        ),
+
+        // Students Routes
+        GoRoute(
           path: '/students',
           builder: (context, state) => const StudentsScreen(),
           routes: [
-            // FIXED: Remove leading slash from sub-routes
             GoRoute(
-              path: 'add', // Changed from '/add' to 'add'
+              path: 'add',
               builder: (context, state) => const AddStudentScreen(),
             ),
             GoRoute(
-              path: 'reports', // Changed from '/reports' to 'reports'
-              builder: (context, state) => const StudentReportsScreen(),
-            ),
-            GoRoute(
-              path: ':studentId', // Changed from '/:studentId' to ':studentId'
+              path: 'single/:studentId',
               builder: (context, state) {
                 final studentId = state.pathParameters['studentId']!;
-                return StudentDetailScreen(studentId: studentId);
+                return SingleStudentScreen(studentId: studentId);
               },
+            ),
+            GoRoute(
+              path: 'parents',
+              builder: (context, state) => const AllParentsScreen(),
+            ),
+            GoRoute(
+              path: 'single-parent/:parentId',
+              builder: (context, state) {
+                final parentId = state.pathParameters['parentId']!;
+                return SingleParentScreen(parentId: parentId);
+              },
+            ),
+            GoRoute(
+              path: 'parent-transactions',
+              builder: (context, state) => const ParentTransactionsScreen(),
+            ),
+            GoRoute(
+              path: 'timetable',
+              builder: (context, state) => const StudentTimetableScreen(),
+            ),
+            GoRoute(
+              path: 'create-timetable',
+              builder: (context, state) => const CreateTimetableScreen(),
+            ),
+            GoRoute(
+              path: 'attendance',
+              builder: (context, state) => const StudentAttendanceScreen(),
             ),
           ],
         ),
+
+        // Classes Routes
         GoRoute(
           path: '/classes',
           builder: (context, state) => const ClassesScreen(),
           routes: [
+            GoRoute(path: 'single', redirect: (context, state) => '/classes'),
             GoRoute(
-              path: 'schedule', // Changed from '/schedule' to 'schedule'
-              builder: (context, state) => const ClassScheduleScreen(),
+              path: 'single/:classId',
+              builder: (context, state) {
+                final classId = state.pathParameters['classId'] ?? '';
+                return SingleClassScreen(classId: classId);
+              },
             ),
             GoRoute(
-              path: 'assign', // Changed from '/assign' to 'assign'
+              path: 'tables',
+              builder: (context, state) => const AllTablesScreen(),
+            ),
+            GoRoute(
+              path: 'subject-management',
+              builder: (context, state) =>  SubjectsManagementPage(),
+            ),
+            GoRoute(
+              path: 'assign',
               builder: (context, state) => const AssignStudentsScreen(),
             ),
+            GoRoute(
+              path: 'timetable',
+              builder: (context, state) => const ClassTimetableScreen(),
+            ),
+            GoRoute(
+              path: 'exam-schedule',
+              builder: (context, state) => const ExamScheduleScreen(),
+            ),
           ],
         ),
+
+        // Staff Routes
         GoRoute(
-          path: '/teachers',
-          builder: (context, state) => const TeachersScreen(),
+          path: '/staff',
+          builder: (context, state) => const AllStaffScreen(),
           routes: [
             GoRoute(
-              path: 'add', // Changed from '/add' to 'add'
-              builder: (context, state) => const AddTeacherScreen(),
+              path: 'add',
+              builder: (context, state) => const AddStaffScreen(),
             ),
             GoRoute(
-              path: 'schedule', // Changed from '/schedule' to 'schedule'
-              builder: (context, state) => const TeacherScheduleScreen(),
+              path: 'assign-teacher',
+              builder: (context, state) => const AssignTeacherScreen(),
+            ),
+            GoRoute(
+              path: 'create-timetable',
+              builder: (context, state) => const CreateTimetableScreen(),
             ),
           ],
         ),
+
+        // CBT Routes
         GoRoute(
-          path: '/attendance',
-          builder: (context, state) => const AttendanceScreen(),
+          path: '/cbt',
+          builder: (context, state) => const CBTHomeScreen(),
+          routes: [
+            GoRoute(
+              path: 'create-exam',
+              builder: (context, state) => const CBTCreateExamScreen(),
+            ),
+            GoRoute(
+              path: 'question-bank',
+              builder: (context, state) => const CBTQuestionBankScreen(),
+            ),
+            GoRoute(
+              path: 'take-exam',
+              builder: (context, state) => const CBTTakeExamScreen(),
+            ),
+            GoRoute(
+              path: 'results',
+              builder: (context, state) => const CBTResultsScreen(),
+            ),
+            GoRoute(
+              path: 'student-results',
+              builder: (context, state) => const CBTStudentResultsScreen(),
+            ),
+            GoRoute(
+              path: 'parent-score',
+              builder: (context, state) => const CBTParentScoreScreen(),
+            ),
+          ],
         ),
+
+        // Inventory Routes
+        GoRoute(
+          path: '/inventory',
+          builder: (context, state) => const InventoryScreen(),
+        ),
+
+        // Exams Routes
         GoRoute(
           path: '/exams',
           builder: (context, state) => const ExamsScreen(),
           routes: [
             GoRoute(
-              path: 'create', // Changed from '/create' to 'create'
-              builder: (context, state) => const CreateExamScreen(),
+              path: 'add',
+              builder: (context, state) => const AddExamScreen(),
             ),
             GoRoute(
-              path: 'results', // Changed from '/results' to 'results'
-              builder: (context, state) => const ExamResultsScreen(),
+              path: 'schedule',
+              builder: (context, state) => const ExamScheduleScreen(),
+            ),
+            GoRoute(
+              path: 'records',
+              builder: (context, state) => const ExamRecordsScreen(),
             ),
           ],
         ),
+
+        // Admissions Routes
         GoRoute(
-          path: '/accounts',
-          builder: (context, state) => const AccountsOverviewScreen(),
+          path: '/admissions',
+          builder: (context, state) => const AdmissionsScreen(),
+        ),
+
+        // Notifications Routes
+        GoRoute(
+          path: '/notifications',
+          builder: (context, state) => const NotificationsScreen(),
           routes: [
             GoRoute(
-              path: 'income', // Changed from '/income' to 'income'
+              path: 'new',
+              builder: (context, state) => const NewNotificationScreen(),
+            ),
+          ],
+        ),
+
+        // Promotions Routes
+        GoRoute(
+          path: '/promotions',
+          builder: (context, state) => const PromotionsScreen(),
+          routes: [
+            GoRoute(
+              path: 'manage',
+              builder: (context, state) => const ManagePromotionScreen(),
+            ),
+            GoRoute(
+              path: 'report-card',
+              builder: (context, state) => const ReportCardListScreen(),
+            ),
+            GoRoute(
+              path: 'single-report',
+              builder: (context, state) => const SingleReportScreen(),
+            ),
+          ],
+        ),
+
+        // Accounts Routes
+        GoRoute(
+          path: '/accounts',
+          builder: (context, state) => const AccountHomeScreen(),
+          routes: [
+            GoRoute(
+              path: 'income',
               builder: (context, state) => const IncomeScreen(),
             ),
             GoRoute(
-              path:
-                  'expenditure', // Changed from '/expenditure' to 'expenditure'
+              path: 'expenditure',
               builder: (context, state) => const ExpenditureScreen(),
             ),
             GoRoute(
-              path: 'fees', // Changed from '/fees' to 'fees'
+              path: 'expenditure-manager',
+              builder: (context, state) => const ExpenditureManagerScreen(),
+            ),
+            GoRoute(
+              path: 'fees',
               builder: (context, state) => const SchoolFeesScreen(),
             ),
           ],
-        ),
-        GoRoute(
-          path: '/reports',
-          builder: (context, state) => const ReportsScreen(),
-        ),
-        GoRoute(
-          path: '/settings',
-          builder: (context, state) => const SettingsScreen(),
         ),
       ],
     ),
   ],
 );
+
 // Main Dashboard Shell - This stays persistent
 class DashboardShell extends ConsumerWidget {
   final Widget child;
@@ -543,9 +905,11 @@ class PersistentHeader extends ConsumerWidget {
           // Header Actions
           Row(
             children: [
-              // Role Switcher (for demo)
-              _buildRoleSelector(ref),
-              const SizedBox(width: 16),
+              // Role Switcher (for demo - only show for admin)
+              if (ref.watch(currentUserRoleProvider) == 'admin')
+                _buildRoleSelector(ref),
+              if (ref.watch(currentUserRoleProvider) == 'admin')
+                const SizedBox(width: 16),
               // Notifications
               IconButton(
                 icon: const Icon(Icons.notifications_outlined),
@@ -561,6 +925,13 @@ class PersistentHeader extends ConsumerWidget {
                 radius: 18,
                 backgroundColor: Colors.indigo,
                 child: const Icon(Icons.person, color: Colors.white, size: 18),
+              ),
+              const SizedBox(width: 8),
+              // Logout Button
+              IconButton(
+                icon: const Icon(Icons.logout, color: Colors.red),
+                onPressed: () => _showLogoutDialog(context),
+                tooltip: 'Logout',
               ),
             ],
           ),
@@ -604,230 +975,588 @@ class PersistentHeader extends ConsumerWidget {
   Widget _buildRoleSelector(WidgetRef ref) {
     final currentRole = ref.watch(currentUserRoleProvider);
 
-    return DropdownButton<String>(
-      value: currentRole,
-      underline: const SizedBox.shrink(),
-      items:
-          ['admin', 'teacher', 'accountant'].map((role) {
-            return DropdownMenuItem(
-              value: role,
-              child: Text(role.toUpperCase()),
-            );
-          }).toList(),
-      onChanged: (newRole) {
-        if (newRole != null) {
-          ref.read(currentUserRoleProvider.notifier).state = newRole;
-        }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey[300]!),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: DropdownButton<String>(
+        value: currentRole,
+        underline: const SizedBox.shrink(),
+        icon: const Icon(Icons.arrow_drop_down, color: Colors.grey),
+        style: const TextStyle(
+          color: Colors.black87,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
+        items:
+            ['admin', 'teacher', 'accountant', 'parent'].map((role) {
+              return DropdownMenuItem(
+                value: role,
+                child: Text(
+                  role.toUpperCase(),
+                  style: TextStyle(
+                    color:
+                        role == 'admin'
+                            ? Colors.red
+                            : role == 'teacher'
+                            ? Colors.blue
+                            : role == 'accountant'
+                            ? Colors.green
+                            : Colors.orange,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              );
+            }).toList(),
+        onChanged: (newRole) {
+          if (newRole != null) {
+            ref.read(currentUserRoleProvider.notifier).state = newRole;
+          }
+        },
+      ),
+    );
+  }
+
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Logout'),
+          content: const Text('Are you sure you want to logout?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                // Clear saved credentials
+                await _clearSavedCredentials();
+                // Reset user role to default
+                final container = ProviderScope.containerOf(context);
+                container.read(currentUserRoleProvider.notifier).state =
+                    'admin';
+                // Clear user data and redirect to login
+                context.go('/login');
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Logged out successfully'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Logout'),
+            ),
+          ],
+        );
       },
     );
   }
+
+  // Clear saved credentials (for logout)
+  Future<void> _clearSavedCredentials() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('saved_email');
+      await prefs.remove('saved_password');
+      await prefs.setBool('remember_me', false);
+      await prefs.remove('saved_role');
+    } catch (e) {
+      // Handle error silently
+      print('Error clearing saved credentials: $e');
+    }
+  }
 }
 
-// Sample Screen Components (replace with your actual screens)
+// Screen Components - Using actual screens from the archive
 class DashboardHomeScreen extends StatelessWidget {
   const DashboardHomeScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Dashboard Overview',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 20),
-          Expanded(child: Center(child: Text('Dashboard content goes here'))),
-        ],
-      ),
+    return MetricScreen(
+      navigateTo: () {
+        context.go('/dashboard/details');
+      },
     );
   }
 }
 
+class DashboardDetailsScreen extends StatelessWidget {
+  const DashboardDetailsScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return DashboardDetails(
+      navigateBack: () {
+        context.go('/dashboard');
+      },
+    );
+  }
+}
+
+// Student Screens
 class StudentsScreen extends StatelessWidget {
   const StudentsScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Students',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              ElevatedButton(
-                onPressed: () => context.go('/students/add'),
-                child: const Text('Add Student'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          const Expanded(
-            child: Center(child: Text('Students list will go here')),
-          ),
-        ],
-      ),
-    );
+    return const AllStudentsScreen();
   }
 }
 
-// Add other screen implementations...
 class AddStudentScreen extends StatelessWidget {
   const AddStudentScreen({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () => context.go('/students'),
-              ),
-              const Text(
-                'Add Student',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          const Expanded(
-            child: Center(child: Text('Add student form goes here')),
-          ),
-        ],
-      ),
+    return const StudentRegistrationPage();
+  }
+}
+
+class SingleStudentScreen extends StatelessWidget {
+  final String studentId;
+  const SingleStudentScreen({Key? key, required this.studentId})
+    : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleStudent(studentId: studentId);
+  }
+}
+
+class AllParentsScreen extends StatelessWidget {
+  const AllParentsScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return AllParents(
+      navigateTo: (parentId) {
+        context.go('/students/single-parent/$parentId');
+      },
     );
   }
 }
 
-class StudentReportsScreen extends StatelessWidget {
-  const StudentReportsScreen({Key? key}) : super(key: key);
-  @override
-  Widget build(BuildContext context) =>
-      const Center(child: Text('Student Reports'));
-}
+class SingleParentScreen extends StatelessWidget {
+  final String parentId;
 
-class StudentDetailScreen extends StatelessWidget {
-  final String studentId;
-  const StudentDetailScreen({Key? key, required this.studentId})
+  const SingleParentScreen({Key? key, required this.parentId})
     : super(key: key);
+
   @override
-  Widget build(BuildContext context) =>
-      Center(child: Text('Student Detail: $studentId'));
+  Widget build(BuildContext context) {
+    // Debug: Print the parentId being passed
+    print('SingleParentScreen received parentId: $parentId');
+
+    return SingleParent(
+      parentId: parentId,
+      navigateTo: () {
+        context.go('/students/parents');
+      },
+      navigateTo2: () {
+        context.go('/students/parent-transactions');
+      },
+    );
+  }
 }
 
+class ParentTransactionsScreen extends StatelessWidget {
+  const ParentTransactionsScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return PaymentSummaryScreen(
+      navigateTo: () {
+        context.go('/students/parents');
+      },
+    );
+  }
+}
+
+class StudentTimetableScreen extends StatelessWidget {
+  const StudentTimetableScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return const CreateTimetale();
+  }
+}
+
+class CreateTimetableScreen extends StatelessWidget {
+  const CreateTimetableScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return const CreateTimetale();
+  }
+}
+
+class StudentAttendanceScreen extends StatelessWidget {
+  const StudentAttendanceScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return const ExamSetupScreen();
+  }
+}
+
+// Class Screens
 class ClassesScreen extends StatelessWidget {
   const ClassesScreen({Key? key}) : super(key: key);
+
   @override
-  Widget build(BuildContext context) => const Center(child: Text('Classes'));
+  Widget build(BuildContext context) {
+    return SchoolClasses(
+      navigateTo: () {
+        context.go('/classes/tables');
+      },
+      navigateTo2: () async {
+        context.go('/classes/single');
+      },
+      navigateTo3: () {
+        context.go('/classes/assign');
+      },
+    );
+  }
 }
 
-class ClassScheduleScreen extends StatelessWidget {
-  const ClassScheduleScreen({Key? key}) : super(key: key);
+class SingleClassScreen extends StatelessWidget {
+  final String classId;
+
+  const SingleClassScreen({Key? key, required this.classId}) : super(key: key);
+
   @override
-  Widget build(BuildContext context) =>
-      const Center(child: Text('Class Schedule'));
+  Widget build(BuildContext context) {
+    return ClassDetailsScreen(classId: classId);
+  }
+}
+
+class AllTablesScreen extends StatelessWidget {
+  const AllTablesScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return AllTables(
+      navigateBack: () {
+        context.go('/classes');
+      },
+    );
+  }
 }
 
 class AssignStudentsScreen extends StatelessWidget {
   const AssignStudentsScreen({Key? key}) : super(key: key);
+
   @override
-  Widget build(BuildContext context) =>
-      const Center(child: Text('Assign Students'));
+  Widget build(BuildContext context) {
+    return const AssignStudentsScreen();
+  }
 }
 
-class TeachersScreen extends StatelessWidget {
-  const TeachersScreen({Key? key}) : super(key: key);
+class ClassTimetableScreen extends StatelessWidget {
+  const ClassTimetableScreen({Key? key}) : super(key: key);
+
   @override
-  Widget build(BuildContext context) => const Center(child: Text('Teachers'));
+  Widget build(BuildContext context) {
+    return const TimeTableApp();
+  }
 }
 
-class AddTeacherScreen extends StatelessWidget {
-  const AddTeacherScreen({Key? key}) : super(key: key);
+class ExamScheduleScreen extends StatelessWidget {
+  const ExamScheduleScreen({Key? key}) : super(key: key);
+
   @override
-  Widget build(BuildContext context) =>
-      const Center(child: Text('Add Teacher'));
+  Widget build(BuildContext context) {
+    return ExamTimeTable();
+  }
 }
 
-class TeacherScheduleScreen extends StatelessWidget {
-  const TeacherScheduleScreen({Key? key}) : super(key: key);
+// Staff Screens
+class AllStaffScreen extends StatelessWidget {
+  const AllStaffScreen({Key? key}) : super(key: key);
+
   @override
-  Widget build(BuildContext context) =>
-      const Center(child: Text('Teacher Schedule'));
+  Widget build(BuildContext context) {
+    return AllStaff(
+      navigateTo: () {
+        // AllStaff doesn't actually use navigateTo, but keeping for compatibility
+        context.go('/staff');
+      },
+    );
+  }
 }
 
-class AttendanceScreen extends StatelessWidget {
-  const AttendanceScreen({Key? key}) : super(key: key);
+class AddStaffScreen extends StatelessWidget {
+  const AddStaffScreen({Key? key}) : super(key: key);
+
   @override
-  Widget build(BuildContext context) => const Center(child: Text('Attendance'));
+  Widget build(BuildContext context) {
+    return const AddStaff();
+  }
 }
 
+class AssignTeacherScreen extends StatelessWidget {
+  const AssignTeacherScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return const AssignTeacher();
+  }
+}
+
+// CBT Screens
+class CBTHomeScreen extends StatelessWidget {
+  const CBTHomeScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return PageView(
+      children: [
+        CBTExamCreatorPage(),
+        QuestionBankScreen(),
+        ExamScreen(),
+        CBTResultsScreen(),
+        CbtExamResultsDashboard(),
+        CbtParentDashboard(),
+      ],
+    );
+  }
+}
+
+class CBTCreateExamScreen extends StatelessWidget {
+  const CBTCreateExamScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return CBTExamCreatorPage();
+  }
+}
+
+class CBTQuestionBankScreen extends StatelessWidget {
+  const CBTQuestionBankScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return QuestionBankScreen();
+  }
+}
+
+class CBTTakeExamScreen extends StatelessWidget {
+  const CBTTakeExamScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return ExamScreen();
+  }
+}
+
+class CBTResultsScreen extends StatelessWidget {
+  const CBTResultsScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return CBTResultsScreen();
+  }
+}
+
+class CBTStudentResultsScreen extends StatelessWidget {
+  const CBTStudentResultsScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return CbtExamResultsDashboard();
+  }
+}
+
+class CBTParentScoreScreen extends StatelessWidget {
+  const CBTParentScoreScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return CbtParentDashboard();
+  }
+}
+
+// Inventory Screen
+class InventoryScreen extends StatelessWidget {
+  const InventoryScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return const InventoryScreen();
+  }
+}
+
+// Exam Screens
 class ExamsScreen extends StatelessWidget {
   const ExamsScreen({Key? key}) : super(key: key);
+
   @override
-  Widget build(BuildContext context) => const Center(child: Text('Exams'));
+  Widget build(BuildContext context) {
+    return ExaminationOverviewScreenTwo(
+      navigateTo: () {
+        context.go('/exams/add');
+      },
+    );
+  }
 }
 
-class CreateExamScreen extends StatelessWidget {
-  const CreateExamScreen({Key? key}) : super(key: key);
+class AddExamScreen extends StatelessWidget {
+  const AddExamScreen({Key? key}) : super(key: key);
+
   @override
-  Widget build(BuildContext context) =>
-      const Center(child: Text('Create Exam'));
+  Widget build(BuildContext context) {
+    return CreateNewExamScreen(
+      navigateBack: () {
+        context.go('/exams');
+      },
+    );
+  }
 }
 
-class ExamResultsScreen extends StatelessWidget {
-  const ExamResultsScreen({Key? key}) : super(key: key);
+class ExamRecordsScreen extends StatelessWidget {
+  const ExamRecordsScreen({Key? key}) : super(key: key);
+
   @override
-  Widget build(BuildContext context) =>
-      const Center(child: Text('Exam Results'));
+  Widget build(BuildContext context) {
+    return const ExamRecordsScreen();
+  }
 }
 
-class AccountsOverviewScreen extends StatelessWidget {
-  const AccountsOverviewScreen({Key? key}) : super(key: key);
+// Admissions Screen
+class AdmissionsScreen extends StatelessWidget {
+  const AdmissionsScreen({Key? key}) : super(key: key);
+
   @override
-  Widget build(BuildContext context) =>
-      const Center(child: Text('Accounts Overview'));
+  Widget build(BuildContext context) {
+    return const AdmissionsOverviewPage();
+  }
+}
+
+// Notifications Screens
+class NotificationsScreen extends StatelessWidget {
+  const NotificationsScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return const AdminMessagingCenter();
+  }
+}
+
+class NewNotificationScreen extends StatelessWidget {
+  const NewNotificationScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return const AdminMessagingCenter();
+  }
+}
+
+// Promotions Screens
+class PromotionsScreen extends StatelessWidget {
+  const PromotionsScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return StudentPromotionManager();
+  }
+}
+
+class ManagePromotionScreen extends StatelessWidget {
+  const ManagePromotionScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return StudentPromotionManager();
+  }
+}
+
+class ReportCardListScreen extends StatelessWidget {
+  const ReportCardListScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return ReportCardStudentList(
+      navigateTo: () {
+        context.go('/promotions/single-report');
+      },
+    );
+  }
+}
+
+class SingleReportScreen extends StatelessWidget {
+  const SingleReportScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return ReportCardScreen(
+      navigateTo: () {
+        context.go('/promotions/report-card');
+      },
+    );
+  }
+}
+
+// Account Screens
+class AccountHomeScreen extends StatelessWidget {
+  const AccountHomeScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return AccountHome();
+  }
 }
 
 class IncomeScreen extends StatelessWidget {
   const IncomeScreen({Key? key}) : super(key: key);
+
   @override
-  Widget build(BuildContext context) => const Center(child: Text('Income'));
+  Widget build(BuildContext context) {
+    return const FinancialOverviewScreen();
+  }
+}
+
+class ParentScreen extends StatelessWidget {
+  const ParentScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return const ParentDashboardScreen();
+  }
 }
 
 class ExpenditureScreen extends StatelessWidget {
   const ExpenditureScreen({Key? key}) : super(key: key);
+
   @override
-  Widget build(BuildContext context) =>
-      const Center(child: Text('Expenditure'));
+  Widget build(BuildContext context) {
+    return ExpenditureScreen();
+  }
+}
+
+class ExpenditureManagerScreen extends StatelessWidget {
+  const ExpenditureManagerScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return ExpenditureManger();
+  }
 }
 
 class SchoolFeesScreen extends StatelessWidget {
   const SchoolFeesScreen({Key? key}) : super(key: key);
-  @override
-  Widget build(BuildContext context) =>
-      const Center(child: Text('School Fees'));
-}
 
-class ReportsScreen extends StatelessWidget {
-  const ReportsScreen({Key? key}) : super(key: key);
   @override
-  Widget build(BuildContext context) => const Center(child: Text('Reports'));
-}
-
-class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({Key? key}) : super(key: key);
-  @override
-  Widget build(BuildContext context) => const Center(child: Text('Settings'));
+  Widget build(BuildContext context) {
+    return SchoolFeesDashboard();
+  }
 }

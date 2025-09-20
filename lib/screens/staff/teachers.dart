@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:schmgtsystem/constants/appcolor.dart';
@@ -42,96 +41,6 @@ class _AssignTeacherState extends State<AssignTeacher> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Row(
-      children: [
-        // Logo and Title
-        Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: AppColors.secondary,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(Icons.school, color: Colors.white, size: 24),
-            ),
-            const SizedBox(width: 12),
-            const Text(
-              'SchoolAdmin',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1F2937),
-              ),
-            ),
-          ],
-        ),
-
-        const Spacer(),
-
-        // Notifications and Profile
-        Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Stack(
-                children: [
-                  const Center(
-                    child: Icon(
-                      Icons.notifications_outlined,
-                      color: Color(0xFF6B7280),
-                      size: 20,
-                    ),
-                  ),
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFEF4444),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                image: const DecorationImage(
-                  image: NetworkImage(
-                    'https://avatar.iran.liara.run/public/45',
-                  ),
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
     );
   }
 
@@ -345,51 +254,31 @@ class _AssignTeacherState extends State<AssignTeacher> {
           BarChartGroupData(
             x: 0,
             barRods: [
-              BarChartRodData(
-                toY: 4.2,
-                color: AppColors.secondary,
-                width: 32,
-              ),
+              BarChartRodData(toY: 4.2, color: AppColors.secondary, width: 32),
             ],
           ),
           BarChartGroupData(
             x: 1,
             barRods: [
-              BarChartRodData(
-                toY: 3.1,
-                color: AppColors.secondary,
-                width: 32,
-              ),
+              BarChartRodData(toY: 3.1, color: AppColors.secondary, width: 32),
             ],
           ),
           BarChartGroupData(
             x: 2,
             barRods: [
-              BarChartRodData(
-                toY: 4.8,
-                color: AppColors.secondary,
-                width: 32,
-              ),
+              BarChartRodData(toY: 4.8, color: AppColors.secondary, width: 32),
             ],
           ),
           BarChartGroupData(
             x: 3,
             barRods: [
-              BarChartRodData(
-                toY: 2.0,
-                color: AppColors.secondary,
-                width: 32,
-              ),
+              BarChartRodData(toY: 2.0, color: AppColors.secondary, width: 32),
             ],
           ),
           BarChartGroupData(
             x: 4,
             barRods: [
-              BarChartRodData(
-                toY: 3.2,
-                color: AppColors.secondary,
-                width: 32,
-              ),
+              BarChartRodData(toY: 3.2, color: AppColors.secondary, width: 32),
             ],
           ),
         ],

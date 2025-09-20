@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:schmgtsystem/constants/appcolor.dart';
 import 'package:schmgtsystem/models/class_metrics_model.dart';
-import 'package:schmgtsystem/models/class_model.dart';
 import 'package:schmgtsystem/models/teacher_model.dart';
 import 'package:schmgtsystem/providers/provider.dart';
 import 'package:schmgtsystem/widgets/add_class.dart';
 import 'package:schmgtsystem/widgets/add_teacher.dart';
+import 'package:schmgtsystem/widgets/remove_teacher_dialog.dart';
 import 'package:schmgtsystem/widgets/prompt.dart';
 // import '../../models/class_metrics_model.dart'
 //     show Class, Teacher, Student, Attendance; // Import only what you need
@@ -35,16 +36,195 @@ class _SchoolClassesState extends ConsumerState<SchoolClasses> {
     });
   }
 
-  ClassMetricModel classData = ClassMetricModel();
   TeacherListModel teacherData = TeacherListModel();
   loadClassesData() async {
-    classData = await ref
+    await ref
         .read(RiverpodProvider.classProvider)
         .getAllClassesWithMetric(context);
     teacherData = await ref
         .read(RiverpodProvider.teachersProvider)
         .getAllTeachers(context);
     setState(() {});
+  }
+
+  void _showClassSelectionDialog() {
+    final classData = ref.watch(RiverpodProvider.classProvider).classData;
+    final classes = classData.classes ?? [];
+
+    if (classes.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No classes available'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black.withOpacity(0.5),
+      builder:
+          (context) => Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.5,
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          Icons.class_,
+                          color: AppColors.primary,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Text(
+                          'Select Class to Remove Teachers',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const Icon(Icons.close),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Choose a class to remove teachers from:',
+                    style: TextStyle(fontSize: 14, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    height: 300,
+                    child: ListView.builder(
+                      itemCount: classes.length,
+                      itemBuilder: (context, index) {
+                        final singleClass = classes[index];
+                        final hasTeachers =
+                            singleClass.classTeacher?.id != null ||
+                            (singleClass.subjectTeachers != null &&
+                                singleClass.subjectTeachers!.isNotEmpty);
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          child: ListTile(
+                            leading: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color:
+                                    hasTeachers
+                                        ? Colors.green.withOpacity(0.1)
+                                        : Colors.grey.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                hasTeachers
+                                    ? Icons.people
+                                    : Icons.people_outline,
+                                color: hasTeachers ? Colors.green : Colors.grey,
+                                size: 20,
+                              ),
+                            ),
+                            title: Text(
+                              singleClass.name ?? 'Unknown Class',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(singleClass.level ?? 'Unknown Level'),
+                                if (hasTeachers)
+                                  Text(
+                                    'Has assigned teachers',
+                                    style: TextStyle(
+                                      color: Colors.green.shade600,
+                                      fontSize: 12,
+                                    ),
+                                  )
+                                else
+                                  Text(
+                                    'No teachers assigned',
+                                    style: TextStyle(
+                                      color: Colors.grey.shade600,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            trailing:
+                                hasTeachers
+                                    ? const Icon(
+                                      Icons.arrow_forward_ios,
+                                      size: 16,
+                                      color: Colors.grey,
+                                    )
+                                    : null,
+                            enabled: hasTeachers,
+                            onTap:
+                                hasTeachers
+                                    ? () {
+                                      Navigator.of(context).pop();
+                                      showDialog(
+                                        context: context,
+                                        barrierDismissible: true,
+                                        barrierColor: Colors.black.withOpacity(
+                                          0.5,
+                                        ),
+                                        builder:
+                                            (context) => RemoveTeacherDialog(
+                                              classData: singleClass,
+                                            ),
+                                      );
+                                    }
+                                    : null,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            tileColor: hasTeachers ? null : Colors.grey.shade50,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text('Cancel'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+    );
   }
 
   String selectedLevel = 'All Levels';
@@ -64,7 +244,6 @@ class _SchoolClassesState extends ConsumerState<SchoolClasses> {
     'Sort by Attendance',
   ];
 
-  Class? _selectedClass;
   prompt(context) {
     CustomDialog(message: 'Do you want to download report?', context: context);
   }
@@ -178,6 +357,23 @@ class _SchoolClassesState extends ConsumerState<SchoolClasses> {
           ),
         ),
         const SizedBox(width: 12),
+        ElevatedButton.icon(
+          onPressed: () {
+            // Show a dialog to select which class to remove teachers from
+            _showClassSelectionDialog();
+          },
+          icon: const Icon(Icons.person_remove, size: 20),
+          label: const Text('Unassign Teacher'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.amber2,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
 
         ElevatedButton.icon(
           onPressed: () {
@@ -199,6 +395,9 @@ class _SchoolClassesState extends ConsumerState<SchoolClasses> {
   }
 
   Widget _buildStatsCards() {
+    // Get class data from provider instead of local variable
+    final classData = ref.watch(RiverpodProvider.classProvider).classData;
+
     return Row(
       children: [
         Expanded(
@@ -397,7 +596,8 @@ class _SchoolClassesState extends ConsumerState<SchoolClasses> {
   }
 
   Widget _buildClassesList() {
-    // final classes = _getClassData();
+    // Get class data from provider instead of local variable
+    final classData = ref.watch(RiverpodProvider.classProvider).classData;
 
     return GridView.builder(
       shrinkWrap: true,
@@ -406,7 +606,7 @@ class _SchoolClassesState extends ConsumerState<SchoolClasses> {
         crossAxisCount: 4,
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
-        childAspectRatio: 0.85,
+        childAspectRatio: 0.75,
       ),
       itemCount: classData.classes?.length ?? 0,
       itemBuilder: (context, index) {
@@ -440,6 +640,7 @@ class _SchoolClassesState extends ConsumerState<SchoolClasses> {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -533,14 +734,13 @@ class _SchoolClassesState extends ConsumerState<SchoolClasses> {
                     context: context,
                     barrierDismissible: true,
                     barrierColor: Colors.black.withOpacity(0.5),
-                    builder: (context) => AssignNewTeacherDialog(),
+                    builder:
+                        (context) =>
+                            AssignNewTeacherDialog(classData: classData),
                   );
                 } else {
-                  // Store the selected class and call navigateTo2
-                  _selectedClass = classData;
-                  final result = await widget.navigateTo2();
-                  // You can handle the returned result here if needed
-                  print('Navigation completed with result: $result');
+                  // Navigate to single class screen with classId
+                  context.go('/classes/single/${classData.id}');
                 }
               },
               style: ElevatedButton.styleFrom(
@@ -556,7 +756,7 @@ class _SchoolClassesState extends ConsumerState<SchoolClasses> {
               ),
               child: Text(
                 classData.classTeacher?.id == null
-                    ? 'Assign Teacher'
+                    ? 'Assign Class Teacher'
                     : 'View Class Details',
                 style: const TextStyle(
                   fontSize: 14,
@@ -565,6 +765,40 @@ class _SchoolClassesState extends ConsumerState<SchoolClasses> {
               ),
             ),
           ),
+
+          // Add Unassign Teacher button when teacher is assigned
+          if (classData.classTeacher?.id != null ||
+              (classData.subjectTeachers != null &&
+                  classData.subjectTeachers!.isNotEmpty))
+            const SizedBox(height: 8),
+
+          if (classData.classTeacher?.id != null ||
+              (classData.subjectTeachers != null &&
+                  classData.subjectTeachers!.isNotEmpty))
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    barrierDismissible: true,
+                    barrierColor: Colors.black.withOpacity(0.5),
+                    builder:
+                        (context) => RemoveTeacherDialog(classData: classData),
+                  );
+                },
+                icon: const Icon(Icons.person_remove, size: 18),
+                label: const Text('Unassign Teachers'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.red.shade600,
+                  side: BorderSide(color: Colors.red.shade300),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

@@ -1,38 +1,138 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:schmgtsystem/constants/appcolor.dart';
+import 'package:schmgtsystem/models/single_class_model.dart';
+import 'package:schmgtsystem/providers/provider.dart';
 import 'package:schmgtsystem/widgets/message_popup.dart';
-import 'package:schmgtsystem/widgets/prompt.dart';
 
-class ClassDetailsScreen extends StatefulWidget {
-  final Function navigateTo;
-  ClassDetailsScreen({super.key, required this.navigateTo});
+class ClassDetailsScreen extends ConsumerStatefulWidget {
+  final String classId;
+
+  const ClassDetailsScreen({super.key, required this.classId});
 
   @override
-  State<ClassDetailsScreen> createState() => _ClassDetailsScreenState();
+  ConsumerState<ClassDetailsScreen> createState() => _ClassDetailsScreenState();
 }
 
-class _ClassDetailsScreenState extends State<ClassDetailsScreen> {
+class _ClassDetailsScreenState extends ConsumerState<ClassDetailsScreen> {
   int selectedTabIndex = 0;
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadClassData();
+  }
+
+  Future<void> _loadClassData() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+
+      print('Loading class data for classId: ${widget.classId}');
+
+      await ref
+          .read(RiverpodProvider.classProvider)
+          .getSingleClass(context, widget.classId);
+
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading class data: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Failed to load class data: $e';
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: Colors.grey[50],
+        body: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Loading class details...'),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_errorMessage != null) {
+      return Scaffold(
+        backgroundColor: Colors.grey[50],
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, size: 64, color: Colors.red.shade400),
+              const SizedBox(height: 16),
+              Text(
+                _errorMessage!,
+                style: const TextStyle(fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _loadClassData,
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final classData =
+        ref.watch(RiverpodProvider.classProvider).singlgeClassData;
+
+    print('ClassData received: ${classData.toJson()}');
+    print('ClassData.data: ${classData.data}');
+    print('ClassData.data?.dataClass: ${classData.data?.dataClass}');
+
+    if (classData.data == null) {
+      return Scaffold(
+        backgroundColor: Colors.grey[50],
+        body: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.school_outlined, size: 64, color: Colors.grey),
+              SizedBox(height: 16),
+              Text('No class data found'),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.grey[50],
       body: Column(
         children: [
-          // _buildHeader(),
-          _buildClassOverview(
-            navigateBack: () {
-              widget.navigateTo();
-            },
-          ),
+          _buildClassOverview(classData.data!),
           Expanded(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(flex: 3, child: _buildMainContent()),
+                Expanded(flex: 3, child: _buildMainContent(classData.data!)),
                 const SizedBox(width: 16),
-                Expanded(flex: 1, child: _buildSidebar()),
+                Expanded(flex: 1, child: _buildSidebar(classData.data!)),
               ],
             ),
           ),
@@ -41,45 +141,16 @@ class _ClassDetailsScreenState extends State<ClassDetailsScreen> {
     );
   }
 
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      color: Colors.white,
-      child: Row(
-        children: [
-          const Icon(Icons.school, color: Color(0xFF6366F1), size: 24),
-          const SizedBox(width: 8),
-          const Text(
-            'School Admin',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF1F2937),
-            ),
-          ),
-          const Spacer(),
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.notifications_outlined),
-          ),
-          const SizedBox(width: 8),
-          const CircleAvatar(
-            radius: 16,
-            backgroundColor: Color(0xFF6366F1),
-            child: Icon(Icons.person, color: Colors.white, size: 18),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _buildClassOverview(Data data) {
+    final classInfo = data.dataClass;
+    final metrics = data.metrics;
+    final classTeacher = classInfo?.classTeacher;
 
-  Widget _buildClassOverview({required Null Function() navigateBack}) {
     return Stack(
       children: [
         Container(
           width: double.infinity,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
             gradient: LinearGradient(
               colors: [AppColors.secondary, Color(0xFF8B5CF6)],
               begin: Alignment.centerLeft,
@@ -94,12 +165,20 @@ class _ClassDetailsScreenState extends State<ClassDetailsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Class Details – Grade 5 Blue',
-                      style: TextStyle(
+                    Text(
+                      'Class Details – ${classInfo?.name ?? 'Unknown Class'}',
+                      style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${classInfo?.level ?? 'Unknown Level'} ${classInfo?.section ?? ''}',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Colors.white70,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -110,27 +189,34 @@ class _ClassDetailsScreenState extends State<ClassDetailsScreen> {
                     const SizedBox(height: 24),
                     Row(
                       children: [
-                        const CircleAvatar(
+                        CircleAvatar(
                           radius: 24,
-                          backgroundImage: NetworkImage(
-                            'https://via.placeholder.com/48',
+                          backgroundColor: Colors.white.withOpacity(0.2),
+                          child: Text(
+                            classTeacher?.name?.substring(0, 1).toUpperCase() ??
+                                '?',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Mrs. Sarah Johnson',
-                              style: TextStyle(
+                            Text(
+                              classTeacher?.name ?? 'No Class Teacher',
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.white,
                               ),
                             ),
-                            const Text(
-                              'Mathematics & Science',
-                              style: TextStyle(
+                            Text(
+                              'Staff ID: ${classTeacher?.staffId ?? 'N/A'}',
+                              style: const TextStyle(
                                 fontSize: 12,
                                 color: Colors.white70,
                               ),
@@ -167,9 +253,9 @@ class _ClassDetailsScreenState extends State<ClassDetailsScreen> {
               const SizedBox(width: 24),
               Column(
                 children: [
-                  const Text(
-                    '22',
-                    style: TextStyle(
+                  Text(
+                    '${metrics?.totalStudents ?? 0}',
+                    style: const TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -182,9 +268,9 @@ class _ClassDetailsScreenState extends State<ClassDetailsScreen> {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      _buildGenderIcon('👨', '12'),
+                      _buildGenderIcon('👨', '${metrics?.maleStudents ?? 0}'),
                       const SizedBox(width: 8),
-                      _buildGenderIcon('👩', '10'),
+                      _buildGenderIcon('👩', '${metrics?.femaleStudents ?? 0}'),
                     ],
                   ),
                 ],
@@ -198,16 +284,16 @@ class _ClassDetailsScreenState extends State<ClassDetailsScreen> {
                 ),
                 child: Column(
                   children: [
-                    const Text(
-                      '87%',
-                      style: TextStyle(
+                    Text(
+                      '${metrics?.todayAttendance?.attendancePercentage ?? 0}%',
+                      style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
                     ),
                     const Text(
-                      'Average Attendance',
+                      'Today\'s Attendance',
                       style: TextStyle(fontSize: 12, color: Colors.white70),
                     ),
                   ],
@@ -222,14 +308,14 @@ class _ClassDetailsScreenState extends State<ClassDetailsScreen> {
                     const Color(0xFF6366F1),
                   ),
                   const SizedBox(height: 8),
-                
+
                   _buildActionButton(
                     '✏️ Message Single Parent',
-                   AppColors.tertiary3,
+                    AppColors.tertiary3,
                     Colors.white,
                   ),
                   const SizedBox(height: 8),
-                    _buildActionButton(
+                  _buildActionButton(
                     '👤 Message All Parents',
                     const Color(0xFF06B6D4),
                     Colors.white,
@@ -244,9 +330,9 @@ class _ClassDetailsScreenState extends State<ClassDetailsScreen> {
           left: 0,
           child: IconButton(
             onPressed: () {
-              navigateBack();
+              context.pop();
             },
-            icon: Icon(Icons.arrow_back_ios_new, color: Colors.white),
+            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
           ),
         ),
       ],
@@ -295,8 +381,7 @@ class _ClassDetailsScreenState extends State<ClassDetailsScreen> {
             context: context,
             barrierDismissible: true,
             barrierColor: Colors.black.withOpacity(0.5),
-            builder:
-                (context) => MessagePopup(title: 'Message to a Parent'),
+            builder: (context) => MessagePopup(title: 'Message to a Parent'),
           );
         }
         if (text.contains('All')) {
@@ -304,8 +389,7 @@ class _ClassDetailsScreenState extends State<ClassDetailsScreen> {
             context: context,
             barrierDismissible: true,
             barrierColor: Colors.black.withOpacity(0.5),
-            builder:
-                (context) => MessagePopup(title: 'Message to all Parents'),
+            builder: (context) => MessagePopup(title: 'Message to all Parents'),
           );
         }
       },
@@ -323,7 +407,7 @@ class _ClassDetailsScreenState extends State<ClassDetailsScreen> {
     );
   }
 
-  Widget _buildMainContent() {
+  Widget _buildMainContent(Data data) {
     return Container(
       margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -343,8 +427,8 @@ class _ClassDetailsScreenState extends State<ClassDetailsScreen> {
           Expanded(
             child:
                 selectedTabIndex == 1
-                    ? _buildStudentsListAttendance()
-                    : _buildStudentsList(),
+                    ? _buildStudentsListAttendance(data.students ?? [])
+                    : _buildStudentsList(data.students ?? []),
           ),
         ],
       ),
@@ -400,7 +484,7 @@ class _ClassDetailsScreenState extends State<ClassDetailsScreen> {
     );
   }
 
-  Widget _buildStudentsList() {
+  Widget _buildStudentsList(List<Student> students) {
     return Column(
       children: [
         Container(
@@ -452,40 +536,45 @@ class _ClassDetailsScreenState extends State<ClassDetailsScreen> {
           ),
         ),
         Expanded(
-          child: ListView(
-            children: [
-              _buildStudentRow(
-                'Emma Watson',
-                'ST001',
-                'John Watson',
-                'Paid',
-                '95%',
-                Colors.green,
-              ),
-              _buildStudentRow(
-                'James Smith',
-                'ST002',
-                'Mary Smith',
-                'Partial',
-                '89%',
-                Colors.orange,
-              ),
-              _buildStudentRow(
-                'Sophia Brown',
-                'ST003',
-                'David Brown',
-                'Paid',
-                '92%',
-                Colors.green,
-              ),
-            ],
-          ),
+          child:
+              students.isEmpty
+                  ? const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.people_outline,
+                          size: 64,
+                          color: Colors.grey,
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'No students found',
+                          style: TextStyle(fontSize: 16, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  )
+                  : ListView.builder(
+                    itemCount: students.length,
+                    itemBuilder: (context, index) {
+                      final student = students[index];
+                      return _buildStudentRow(
+                        student.name ?? 'Unknown Student',
+                        student.admissionNumber ?? 'N/A',
+                        student.parentName ?? 'N/A',
+                        student.feeStatus ?? 'Unknown',
+                        student.todayAttendance ?? 'N/A',
+                        _getFeeStatusColor(student.feeStatus),
+                      );
+                    },
+                  ),
         ),
       ],
     );
   }
 
-  Widget _buildStudentsListAttendance() {
+  Widget _buildStudentsListAttendance(List<Student> students) {
     return Column(
       children: [
         Container(
@@ -511,22 +600,10 @@ class _ClassDetailsScreenState extends State<ClassDetailsScreen> {
               ),
               Expanded(
                 child: Text(
-                  'Class',
+                  'Parent/Guardian',
                   style: TextStyle(fontWeight: FontWeight.w600),
                 ),
               ),
-              // Expanded(
-              //   child: Text(
-              //     'Fee Status',
-              //     style: TextStyle(fontWeight: FontWeight.w600),
-              //   ),
-              // ),
-              // Expanded(
-              //   child: Text(
-              //     'Attendance',
-              //     style: TextStyle(fontWeight: FontWeight.w600),
-              //   ),
-              // ),
               Expanded(
                 child: Text(
                   'Attendance',
@@ -537,37 +614,53 @@ class _ClassDetailsScreenState extends State<ClassDetailsScreen> {
           ),
         ),
         Expanded(
-          child: ListView(
-            children: [
-              _buildStudentRowAttendance(
-                'Emma Watson',
-                'ST001',
-                'John Watson',
-                'Paid',
-                '95%',
-                Colors.green,
-              ),
-              _buildStudentRowAttendance(
-                'James Smith',
-                'ST002',
-                'Mary Smith',
-                'Partial',
-                '89%',
-                Colors.orange,
-              ),
-              _buildStudentRowAttendance(
-                'Sophia Brown',
-                'ST003',
-                'David Brown',
-                'Paid',
-                '92%',
-                Colors.green,
-              ),
-            ],
-          ),
+          child:
+              students.isEmpty
+                  ? const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.people_outline,
+                          size: 64,
+                          color: Colors.grey,
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'No students found',
+                          style: TextStyle(fontSize: 16, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  )
+                  : ListView.builder(
+                    itemCount: students.length,
+                    itemBuilder: (context, index) {
+                      final student = students[index];
+                      return _buildStudentRowAttendance(
+                        student.name ?? 'Unknown Student',
+                        student.admissionNumber ?? 'N/A',
+                        student.parentName ?? 'N/A',
+                        student.todayAttendance ?? 'N/A',
+                      );
+                    },
+                  ),
         ),
       ],
     );
+  }
+
+  Color _getFeeStatusColor(String? feeStatus) {
+    switch (feeStatus?.toLowerCase()) {
+      case 'paid':
+        return Colors.green;
+      case 'partial':
+        return Colors.orange;
+      case 'unpaid':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
   }
 
   Widget _buildStudentRow(
@@ -639,9 +732,7 @@ class _ClassDetailsScreenState extends State<ClassDetailsScreen> {
     String name,
     String admissionNo,
     String parent,
-    String feeStatus,
     String attendance,
-    Color statusColor,
   ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -703,25 +794,25 @@ class _ClassDetailsScreenState extends State<ClassDetailsScreen> {
     );
   }
 
-  Widget _buildSidebar() {
+  Widget _buildSidebar(Data data) {
     return Container(
       margin: const EdgeInsets.only(top: 16, right: 16, bottom: 16),
       child: Container(
         height: double.infinity,
         child: ListView(
           children: [
-            _buildQuickMetrics(),
+            _buildQuickMetrics(data.metrics),
             const SizedBox(height: 16),
-            _buildWeeklySchedule(),
+            _buildWeeklySchedule(data.academicInfo),
             const SizedBox(height: 16),
-            _buildRecentCommunications(),
+            _buildRecentCommunications(data.recentCommunications),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildQuickMetrics() {
+  Widget _buildQuickMetrics(Metrics? metrics) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -747,10 +838,26 @@ class _ClassDetailsScreenState extends State<ClassDetailsScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          _buildMetricRow('Outstanding Fees', '3 Students', Colors.red),
-          _buildMetricRow('Most Absent', 'Mike Johnson', Colors.grey),
-          _buildMetricRow('Gender Ratio', '55% : 45%', Colors.grey),
-          _buildMetricRow('Homework Rate', '91%', Colors.green),
+          _buildMetricRow(
+            'Outstanding Fees',
+            '${metrics?.feeStatus?.unpaid ?? 0} Students',
+            Colors.red,
+          ),
+          _buildMetricRow(
+            'Fee Collection Rate',
+            '${metrics?.feeCollectionRate ?? '0%'}',
+            Colors.green,
+          ),
+          _buildMetricRow(
+            'Gender Ratio',
+            '${metrics?.genderRatio?.male ?? '0%'} : ${metrics?.genderRatio?.female ?? '0%'}',
+            Colors.grey,
+          ),
+          _buildMetricRow(
+            'Available Slots',
+            '${metrics?.availableSlots ?? 0}',
+            Colors.blue,
+          ),
         ],
       ),
     );
@@ -776,7 +883,7 @@ class _ClassDetailsScreenState extends State<ClassDetailsScreen> {
     );
   }
 
-  Widget _buildWeeklySchedule() {
+  Widget _buildWeeklySchedule(AcademicInfo? academicInfo) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -794,7 +901,7 @@ class _ClassDetailsScreenState extends State<ClassDetailsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Weekly Schedule',
+            'Academic Information',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -803,7 +910,7 @@ class _ClassDetailsScreenState extends State<ClassDetailsScreen> {
           ),
           const SizedBox(height: 8),
           const Text(
-            'TODAY',
+            'CURRENT TERM',
             style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w600,
@@ -812,11 +919,21 @@ class _ClassDetailsScreenState extends State<ClassDetailsScreen> {
           ),
           const SizedBox(height: 8),
           _buildScheduleItem(
-            'Mathematics',
-            '9:00 AM - 10:30 AM',
+            'Academic Year',
+            academicInfo?.currentAcademicYear ?? 'N/A',
             const Color(0xFF6366F1),
           ),
-          _buildScheduleItem('Science', '11:00 AM - 12:30 PM', Colors.grey),
+          _buildScheduleItem(
+            'Current Term',
+            academicInfo?.currentTerm ?? 'N/A',
+            Colors.grey,
+          ),
+          if (academicInfo?.attendanceDate != null)
+            _buildScheduleItem(
+              'Last Attendance',
+              '${academicInfo!.attendanceDate!.day}/${academicInfo.attendanceDate!.month}/${academicInfo.attendanceDate!.year}',
+              Colors.orange,
+            ),
         ],
       ),
     );
@@ -854,7 +971,7 @@ class _ClassDetailsScreenState extends State<ClassDetailsScreen> {
     );
   }
 
-  Widget _buildRecentCommunications() {
+  Widget _buildRecentCommunications(List<dynamic>? recentCommunications) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -880,16 +997,29 @@ class _ClassDetailsScreenState extends State<ClassDetailsScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          _buildCommunicationItem(
-            '📧',
-            'Parent Meeting Request',
-            'From: John Watson\n2 hours ago',
-          ),
-          _buildCommunicationItem(
-            '📘',
-            'Homework Reminder Sent',
-            'To: All parents\n1 day ago',
-          ),
+          if (recentCommunications == null || recentCommunications.isEmpty)
+            const Center(
+              child: Column(
+                children: [
+                  Icon(Icons.message_outlined, size: 32, color: Colors.grey),
+                  SizedBox(height: 8),
+                  Text(
+                    'No recent communications',
+                    style: TextStyle(color: Colors.grey, fontSize: 14),
+                  ),
+                ],
+              ),
+            )
+          else
+            ...recentCommunications
+                .take(2)
+                .map(
+                  (communication) => _buildCommunicationItem(
+                    '📧',
+                    'Communication',
+                    'Recent message',
+                  ),
+                ),
         ],
       ),
     );

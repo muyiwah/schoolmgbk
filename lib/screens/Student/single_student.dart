@@ -1,27 +1,122 @@
 import 'package:flutter/material.dart';
-import 'package:schmgtsystem/constants/appcolor.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:schmgtsystem/widgets/piechart.dart';
-import 'package:schmgtsystem/widgets/screen_header.dart';
+import 'package:schmgtsystem/providers/student_provider.dart';
+import 'package:schmgtsystem/models/student_full_model.dart';
 
-class SingleStudent extends StatefulWidget {
-  const SingleStudent({super.key});
+class SingleStudent extends ConsumerStatefulWidget {
+  final String studentId;
+  const SingleStudent({super.key, required this.studentId});
 
   @override
-  State<SingleStudent> createState() => _SingleStudentState();
+  ConsumerState<SingleStudent> createState() => _SingleStudentState();
 }
 
-class _SingleStudentState extends State<SingleStudent> {
+class _SingleStudentState extends ConsumerState<SingleStudent> {
+  @override
+  void initState() {
+    super.initState();
+    // Use WidgetsBinding to defer the loading until after the build is complete
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadStudent();
+    });
+  }
+
+  Future<void> _loadStudent() async {
+    final studentNotifier = ref.read(studentProvider.notifier);
+    await studentNotifier.getStudentById(context, widget.studentId);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final studentState = ref.watch(studentProvider);
+    final student = studentState.studentFullModel.data?.student;
+
+    if (studentState.isLoading) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF5F7FA),
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          title: const Text(
+            'Student Profile',
+            style: TextStyle(
+              color: Colors.black,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          centerTitle: true,
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (studentState.errorMessage != null) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF5F7FA),
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          title: const Text(
+            'Student Profile',
+            style: TextStyle(
+              color: Colors.black,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          centerTitle: true,
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 64, color: Colors.red),
+              const SizedBox(height: 16),
+              Text(
+                'Error loading student data',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                studentState.errorMessage!,
+                style: TextStyle(color: Colors.grey[600]),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _loadStudent,
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return _buildStudentContent(student);
+  }
+
+  Widget _buildStudentContent(Student? student) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
+
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header Section
-            _buildStudentHeader(),
+            _buildStudentHeader(student),
             const SizedBox(height: 20),
 
             // Main Content Grid
@@ -34,15 +129,15 @@ class _SingleStudentState extends State<SingleStudent> {
                   child: Column(
                     children: [
                       // Quick Stats Row
-                      _buildQuickStatsRow(),
+                      _buildQuickStatsRow(student),
                       const SizedBox(height: 20),
 
                       // Academic Performance Section
-                      _buildAcademicPerformanceSection(),
+                      _buildAcademicPerformanceSection(student),
                       const SizedBox(height: 20),
 
                       // Assignments & Assessments
-                      _buildAssignmentsSection(),
+                      _buildAssignmentsSection(student),
                     ],
                   ),
                 ),
@@ -54,9 +149,9 @@ class _SingleStudentState extends State<SingleStudent> {
                   flex: 3,
                   child: Column(
                     children: [
-                      _buildAttendanceCard(),
+                      _buildAttendanceCard(student),
                       const SizedBox(height: 20),
-                      _buildPaymentCard(),
+                      _buildPaymentCard(student),
                       const SizedBox(height: 20),
                       _buildRecentActivitiesCard(),
                     ],
@@ -277,7 +372,7 @@ class _SingleStudentState extends State<SingleStudent> {
     );
   }
 
-  void _showProfileModal(context) {
+  void _showProfileModal(BuildContext context, Student? student) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -286,12 +381,11 @@ class _SingleStudentState extends State<SingleStudent> {
             borderRadius: BorderRadius.circular(16),
           ),
           child: Container(
-          
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-  
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+
               color: const Color.fromARGB(255, 254, 249, 249),
-          ),
+            ),
             width: MediaQuery.of(context).size.width * 0.7,
             height: MediaQuery.of(context).size.height * 0.85,
             padding: const EdgeInsets.all(24),
@@ -330,11 +424,32 @@ class _SingleStudentState extends State<SingleStudent> {
                                   CircleAvatar(
                                     radius: 60,
                                     backgroundColor: Colors.grey[200],
-                                    child: const Icon(
-                                      Icons.person,
-                                      size: 60,
-                                      color: Colors.grey,
-                                    ),
+                                    backgroundImage:
+                                        student?.personalInfo?.profileImage !=
+                                                    null &&
+                                                student!
+                                                    .personalInfo!
+                                                    .profileImage!
+                                                    .isNotEmpty
+                                            ? NetworkImage(
+                                              student
+                                                  .personalInfo!
+                                                  .profileImage!,
+                                            )
+                                            : null,
+                                    child:
+                                        student?.personalInfo?.profileImage ==
+                                                    null ||
+                                                student!
+                                                    .personalInfo!
+                                                    .profileImage!
+                                                    .isEmpty
+                                            ? const Icon(
+                                              Icons.person,
+                                              size: 60,
+                                              color: Colors.grey,
+                                            )
+                                            : null,
                                   ),
                                   Positioned(
                                     bottom: 0,
@@ -355,16 +470,21 @@ class _SingleStudentState extends State<SingleStudent> {
                                 ],
                               ),
                               const SizedBox(height: 16),
-                              const Text(
-                                'Jessie Rose Adebayo',
-                                style: TextStyle(
+                              Text(
+                                '${student?.personalInfo?.firstName ?? ''} ${student?.personalInfo?.lastName ?? ''}'
+                                        .trim()
+                                        .isEmpty
+                                    ? 'Student Name'
+                                    : '${student!.personalInfo!.firstName!} ${student.personalInfo!.lastName!}',
+                                style: const TextStyle(
                                   fontSize: 22,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              const Text(
-                                'Grade 10 - Science Class',
-                                style: TextStyle(
+                              Text(
+                                student?.academicInfo?.currentClass?.name ??
+                                    'No Class Assigned',
+                                style: const TextStyle(
                                   fontSize: 16,
                                   color: Colors.grey,
                                 ),
@@ -376,31 +496,53 @@ class _SingleStudentState extends State<SingleStudent> {
 
                         // Personal Information
                         _buildProfileSection('Personal Information', [
-                          _buildProfileItem('Student ID', 'ST001234'),
-                          _buildProfileItem('Date of Birth', 'March 15, 2008'),
-                          _buildProfileItem('Age', '16 years'),
-                          _buildProfileItem('Gender', 'Female'),
-                          _buildProfileItem('Blood Group', 'O+'),
-                          _buildProfileItem('Religion', 'Christianity'),
+                          _buildProfileItem(
+                            'Student ID',
+                            student?.studentId ?? 'N/A',
+                          ),
+                          _buildProfileItem(
+                            'Date of Birth',
+                            student?.personalInfo?.dateOfBirth != null
+                                ? '${student!.personalInfo!.dateOfBirth!.day}/${student.personalInfo!.dateOfBirth!.month}/${student.personalInfo!.dateOfBirth!.year}'
+                                : 'N/A',
+                          ),
+                          _buildProfileItem(
+                            'Age',
+                            student?.age?.toString() ?? 'N/A',
+                          ),
+                          _buildProfileItem(
+                            'Gender',
+                            student?.personalInfo?.gender ?? 'N/A',
+                          ),
+                          _buildProfileItem(
+                            'Blood Group',
+                            student?.personalInfo?.bloodGroup ?? 'N/A',
+                          ),
+                          _buildProfileItem(
+                            'Religion',
+                            student?.personalInfo?.religion ?? 'N/A',
+                          ),
                         ]),
 
                         // Contact Information
                         _buildProfileSection('Contact Information', [
                           _buildProfileItem(
                             'Address',
-                            'No. 6, Ojoo Road, Ibadan, Oyo State',
-                          ), 
+                            student?.contactInfo?.address != null
+                                ? '${student!.contactInfo!.address!.street ?? ''}, ${student.contactInfo!.address!.city ?? ''}, ${student.contactInfo!.address!.state ?? ''}'
+                                : 'N/A',
+                          ),
                           _buildProfileItem(
                             'Phone Number',
-                            '+234 801 234 5678',
+                            student?.contactInfo?.phone ?? 'N/A',
                           ),
                           _buildProfileItem(
                             'Email',
-                            'jessie.rose@student.school.edu',
+                            student?.contactInfo?.email ?? 'N/A',
                           ),
                           _buildProfileItem(
                             'Emergency Contact',
-                            '+234 803 456 7890',
+                            'N/A', // This field doesn't exist in the model
                           ),
                         ]),
 
@@ -408,47 +550,93 @@ class _SingleStudentState extends State<SingleStudent> {
                         _buildProfileSection('Parent/Guardian Information', [
                           _buildProfileItem(
                             'Father\'s Name',
-                            'Mr. John Adebayo',
+                            student?.parentInfo?.father?.personalInfo != null
+                                ? '${student!.parentInfo!.father!.personalInfo!.firstName ?? ''} ${student.parentInfo!.father!.personalInfo!.lastName ?? ''}'
+                                    .trim()
+                                : 'N/A',
                           ),
-                          _buildProfileItem('Father\'s Occupation', 'Engineer'),
+                          _buildProfileItem(
+                            'Father\'s Occupation',
+                            student
+                                    ?.parentInfo
+                                    ?.father
+                                    ?.professionalInfo
+                                    ?.occupation ??
+                                'N/A',
+                          ),
                           _buildProfileItem(
                             'Father\'s Phone',
-                            '+234 803 456 7890',
+                            student
+                                    ?.parentInfo
+                                    ?.father
+                                    ?.contactInfo
+                                    ?.primaryPhone ??
+                                'N/A',
                           ),
                           _buildProfileItem(
                             'Mother\'s Name',
-                            'Mrs. Sarah Adebayo',
+                            'N/A', // Mother info not available in current model
                           ),
-                          _buildProfileItem('Mother\'s Occupation', 'Teacher'),
+                          _buildProfileItem(
+                            'Mother\'s Occupation',
+                            'N/A',
+                          ), // Mother info not available
                           _buildProfileItem(
                             'Mother\'s Phone',
-                            '+234 807 123 4567',
+                            'N/A', // Mother info not available
                           ),
                         ]),
 
                         // Academic Information
                         _buildProfileSection('Academic Information', [
-                          _buildProfileItem('Admission Date', 'September 2021'),
-                          _buildProfileItem('Current Class', 'SS2 Science'),
-                          _buildProfileItem('House', 'Blue House'),
+                          _buildProfileItem(
+                            'Admission Date',
+                            student?.academicInfo?.admissionDate != null
+                                ? '${student!.academicInfo!.admissionDate!.day}/${student.academicInfo!.admissionDate!.month}/${student.academicInfo!.admissionDate!.year}'
+                                : 'N/A',
+                          ),
+                          _buildProfileItem(
+                            'Current Class',
+                            student?.academicInfo?.currentClass?.name ?? 'N/A',
+                          ),
+                          _buildProfileItem(
+                            'House',
+                            'N/A',
+                          ), // This field doesn't exist in the model
                           _buildProfileItem(
                             'Previous School',
-                            'St. Mary\'s Junior Secondary School',
+                            'N/A', // This field doesn't exist in the model
                           ),
                         ]),
 
                         // Medical Information
                         _buildProfileSection('Medical Information', [
-                          _buildProfileItem('Allergies', 'None'),
-                          _buildProfileItem('Medical Conditions', 'None'),
-                          _buildProfileItem('Medications', 'None'),
+                          _buildProfileItem(
+                            'Allergies',
+                            student?.medicalInfo?.allergies?.join(', ') ??
+                                'None',
+                          ),
+                          _buildProfileItem(
+                            'Medical Conditions',
+                            student?.medicalInfo?.medicalConditions?.join(
+                                  ', ',
+                                ) ??
+                                'None',
+                          ),
+                          _buildProfileItem(
+                            'Medications',
+                            student?.medicalInfo?.medications?.join(', ') ??
+                                'None',
+                          ),
                           _buildProfileItem(
                             'Doctor\'s Name',
-                            'Dr. Michael Johnson',
+                            student?.medicalInfo?.emergencyContact?.name ??
+                                'N/A',
                           ),
                           _buildProfileItem(
                             'Doctor\'s Phone',
-                            '+234 802 345 6789',
+                            student?.medicalInfo?.emergencyContact?.phone ??
+                                'N/A',
                           ),
                         ]),
                       ],
@@ -483,7 +671,7 @@ class _SingleStudentState extends State<SingleStudent> {
     );
   }
 
-  void _showContactParentModal(context) {
+  void _showContactParentModal(BuildContext context, Student? student) {
     final TextEditingController messageController = TextEditingController();
     String selectedParent = 'Both Parents';
     String messageType = 'General';
@@ -499,9 +687,8 @@ class _SingleStudentState extends State<SingleStudent> {
               ),
               child: Container(
                 decoration: BoxDecoration(
-                     borderRadius: BorderRadius.circular(16),
-                color: const Color.fromARGB(255, 255, 251, 251),
-
+                  borderRadius: BorderRadius.circular(16),
+                  color: const Color.fromARGB(255, 255, 251, 251),
                 ),
                 width: MediaQuery.of(context).size.width * 0.5,
                 height: MediaQuery.of(context).size.height * 0.7,
@@ -527,7 +714,7 @@ class _SingleStudentState extends State<SingleStudent> {
                         ],
                       ),
                       const SizedBox(height: 20),
-                  
+
                       // Student Info
                       Container(
                         padding: const EdgeInsets.all(16),
@@ -537,30 +724,57 @@ class _SingleStudentState extends State<SingleStudent> {
                         ),
                         child: Row(
                           children: [
-                            const CircleAvatar(
+                            CircleAvatar(
                               radius: 25,
-                              child: Icon(Icons.person),
+                              backgroundColor: Colors.grey[200],
+                              backgroundImage:
+                                  student?.personalInfo?.profileImage != null &&
+                                          student!
+                                              .personalInfo!
+                                              .profileImage!
+                                              .isNotEmpty
+                                      ? NetworkImage(
+                                        student.personalInfo!.profileImage!,
+                                      )
+                                      : null,
+                              child:
+                                  student?.personalInfo?.profileImage == null ||
+                                          student!
+                                              .personalInfo!
+                                              .profileImage!
+                                              .isEmpty
+                                      ? const Icon(Icons.person)
+                                      : null,
                             ),
                             const SizedBox(width: 12),
-                            const Column(
+                            Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Jessie Rose Adebayo',
-                                  style: TextStyle(
+                                  '${student?.personalInfo?.firstName ?? ''} ${student?.personalInfo?.lastName ?? ''}'
+                                          .trim()
+                                          .isEmpty
+                                      ? 'Student Name'
+                                      : '${student!.personalInfo!.firstName!} ${student.personalInfo!.lastName!}',
+                                  style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
                                   ),
                                 ),
-                                Text('Grade 10 - Science Class'),
-                                Text('Student ID: ST001234'),
+                                Text(
+                                  student?.academicInfo?.currentClass?.name ??
+                                      'No Class Assigned',
+                                ),
+                                Text(
+                                  'Student ID: ${student?.studentId ?? 'N/A'}',
+                                ),
                               ],
                             ),
                           ],
                         ),
                       ),
                       const SizedBox(height: 20),
-                  
+
                       // Parent Selection
                       const Text(
                         'Select Recipient',
@@ -600,7 +814,7 @@ class _SingleStudentState extends State<SingleStudent> {
                         },
                       ),
                       const SizedBox(height: 16),
-                  
+
                       // Message Type
                       const Text(
                         'Message Type',
@@ -645,7 +859,7 @@ class _SingleStudentState extends State<SingleStudent> {
                         },
                       ),
                       const SizedBox(height: 16),
-                  
+
                       // Message Input
                       const Text(
                         'Message',
@@ -655,7 +869,8 @@ class _SingleStudentState extends State<SingleStudent> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      SizedBox(height: 100,
+                      SizedBox(
+                        height: 100,
                         child: TextField(
                           controller: messageController,
                           maxLines: null,
@@ -671,7 +886,7 @@ class _SingleStudentState extends State<SingleStudent> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                  
+
                       // Quick Message Templates
                       const Text(
                         'Quick Templates',
@@ -703,7 +918,7 @@ class _SingleStudentState extends State<SingleStudent> {
                         ],
                       ),
                       const SizedBox(height: 20),
-                  
+
                       // Action Buttons
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
@@ -795,7 +1010,7 @@ class _SingleStudentState extends State<SingleStudent> {
     );
   }
 
-Widget _buildExamResultRow(String subject) {
+  Widget _buildExamResultRow(String subject) {
     final results = <String, Map<String, Object>>{
       'Mathematics': {'ca': 35, 'exam': 53, 'grade': 'A'},
       'English Language': {'ca': 32, 'exam': 50, 'grade': 'B+'},
@@ -811,7 +1026,6 @@ Widget _buildExamResultRow(String subject) {
 
     final int ca = result['ca'] as int;
     final int exam = result['exam'] as int;
-    final String grade = result['grade'] as String;
     final int total = ca + exam;
 
     return Container(
@@ -947,7 +1161,7 @@ Widget _buildExamResultRow(String subject) {
     );
   }
 
-  Widget _buildStudentHeader() {
+  Widget _buildStudentHeader(Student? student) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -967,16 +1181,33 @@ Widget _buildExamResultRow(String subject) {
       ),
       child: Row(
         children: [
-          // Profile Image
+          // Pr
+          //
+          //
+          IconButton(
+            icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          //
+          //ofile Image
           Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(color: Colors.white, width: 3),
             ),
-            child: const CircleAvatar(
+            child: CircleAvatar(
               radius: 45,
-              backgroundImage: null, // Replace with NetworkImage or AssetImage
-              child: Icon(Icons.person, size: 40, color: Colors.white),
+              backgroundColor: Colors.grey[600],
+              backgroundImage:
+                  student?.personalInfo?.profileImage != null &&
+                          student!.personalInfo!.profileImage!.isNotEmpty
+                      ? NetworkImage(student.personalInfo!.profileImage!)
+                      : null,
+              child:
+                  student?.personalInfo?.profileImage == null ||
+                          student!.personalInfo!.profileImage!.isEmpty
+                      ? const Icon(Icons.person, size: 40, color: Colors.white)
+                      : null,
             ),
           ),
 
@@ -987,9 +1218,9 @@ Widget _buildExamResultRow(String subject) {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Jessie Rose',
-                  style: TextStyle(
+                Text(
+                  '${student?.personalInfo?.firstName ?? 'N/A'} ${student?.personalInfo?.lastName ?? ''}',
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
@@ -1001,7 +1232,7 @@ Widget _buildExamResultRow(String subject) {
                     const Icon(Icons.school, size: 16, color: Colors.white70),
                     const SizedBox(width: 6),
                     Text(
-                      'Grade 10 - Science Class',
+                      '${student?.academicInfo?.currentClass?.name ?? 'N/A'} - ${student?.academicInfo?.currentClass?.level ?? 'N/A'}',
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.9),
                         fontSize: 16,
@@ -1016,7 +1247,7 @@ Widget _buildExamResultRow(String subject) {
                     const Icon(Icons.numbers, size: 16, color: Colors.white70),
                     const SizedBox(width: 6),
                     Text(
-                      'Student ID: ST001234',
+                      'Student ID: ${student?.admissionNumber ?? 'N/A'}',
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.8),
                         fontSize: 14,
@@ -1034,7 +1265,7 @@ Widget _buildExamResultRow(String subject) {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'No. 6, Ojoo, Ibadan',
+                      '${student?.contactInfo?.address?.street ?? 'N/A'}, ${student?.contactInfo?.address?.city ?? 'N/A'}',
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.8),
                         fontSize: 14,
@@ -1049,9 +1280,19 @@ Widget _buildExamResultRow(String subject) {
           // Action Buttons
           Column(
             children: [
-              _buildActionButton( ' View Profile     ', Icons.person_outline,context),
+              _buildActionButton(
+                ' View Profile     ',
+                Icons.person_outline,
+                context,
+                student,
+              ),
               const SizedBox(height: 8),
-              _buildActionButton('Contact Parent', Icons.phone_outlined,context),
+              _buildActionButton(
+                'Contact Parent',
+                Icons.phone_outlined,
+                context,
+                student,
+              ),
             ],
           ),
         ],
@@ -1059,9 +1300,14 @@ Widget _buildExamResultRow(String subject) {
     );
   }
 
-  Widget _buildActionButton(String text, IconData icon,BuildContext context) {
+  Widget _buildActionButton(
+    String text,
+    IconData icon,
+    BuildContext context,
+    Student? student,
+  ) {
     return GestureDetector(
-      onTap: () => _handleActionButtonTap(text,context),
+      onTap: () => _handleActionButtonTap(text, context, student),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
@@ -1088,25 +1334,33 @@ Widget _buildExamResultRow(String subject) {
     );
   }
 
-  void _handleActionButtonTap(String action,context) {
+  void _handleActionButtonTap(
+    String action,
+    BuildContext context,
+    Student? student,
+  ) {
     switch (action) {
       case ' View Profile     ':
-        _showProfileModal(context);
+        _showProfileModal(context, student);
         break;
       case 'Contact Parent':
-        _showContactParentModal(context);
+        _showContactParentModal(context, student);
         break;
     }
   }
 
-  Widget _buildQuickStatsRow() {
+  Widget _buildQuickStatsRow(Student? student) {
     return Row(
       children: [
         Expanded(
           child: _buildStatCard(
             'Overall Grade',
-            'A-',
-            '85.6%',
+            student?.performanceData?.latestPerformance?.overallGrade
+                    ?.toString()
+                    .split('.')
+                    .last ??
+                'N/A',
+            '${student?.performanceData?.latestPerformance?.overallScore?.toStringAsFixed(1) ?? '0'}%',
             Icons.grade,
             Colors.green,
           ),
@@ -1115,8 +1369,8 @@ Widget _buildExamResultRow(String subject) {
         Expanded(
           child: _buildStatCard(
             'Attendance',
-            '92%',
-            '23/25 days',
+            '${student?.attendanceData?.statistics?.summary?.presentPercentage ?? 0}%',
+            '${student?.attendanceData?.statistics?.summary?.presentDays ?? 0}/${student?.attendanceData?.statistics?.totalClassDays ?? 0} days',
             Icons.calendar_today,
             Colors.blue,
           ),
@@ -1124,20 +1378,20 @@ Widget _buildExamResultRow(String subject) {
         const SizedBox(width: 15),
         Expanded(
           child: _buildStatCard(
-            'Assignments',
-            '15/18',
-            'Completed',
-            Icons.assignment,
+            'Fee Status',
+            student?.financialInfo?.feeStatus ?? 'N/A',
+            '₦${student?.financialInfo?.outstandingBalance ?? 0}',
+            Icons.payment,
             Colors.orange,
           ),
         ),
         const SizedBox(width: 15),
         Expanded(
           child: _buildStatCard(
-            'Rank',
-            '#3',
-            'in class',
-            Icons.emoji_events,
+            'Age',
+            '${student?.age ?? 0}',
+            'years old',
+            Icons.cake,
             Colors.purple,
           ),
         ),
@@ -1207,7 +1461,9 @@ Widget _buildExamResultRow(String subject) {
     );
   }
 
-  Widget _buildAcademicPerformanceSection() {
+  Widget _buildAcademicPerformanceSection(Student? student) {
+    final subjects = student?.performanceData?.termAverages?.subjects ?? [];
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -1232,7 +1488,9 @@ Widget _buildExamResultRow(String subject) {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               TextButton.icon(
-                onPressed:(){ _showExaminationDetailsModal(context);},
+                onPressed: () {
+                  _showExaminationDetailsModal(context);
+                },
                 icon: const Icon(Icons.visibility),
                 label: const Text('View Details'),
               ),
@@ -1241,28 +1499,61 @@ Widget _buildExamResultRow(String subject) {
           const SizedBox(height: 20),
 
           // Subject Grades
-          ...[
-            'Mathematics',
-            'English',
-            'Physics',
-            'Chemistry',
-            'Biology',
-          ].map((subject) => _buildSubjectGrade(subject)),
+          if (subjects.isEmpty)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(20),
+                child: Text(
+                  'No performance data available',
+                  style: TextStyle(color: Colors.grey, fontSize: 16),
+                ),
+              ),
+            )
+          else
+            ...subjects.take(5).map((subject) => _buildSubjectGrade(subject)),
         ],
       ),
     );
   }
 
-  Widget _buildSubjectGrade(String subject) {
-    final grades = {
-      'Mathematics': {'grade': 'A', 'score': 88, 'color': Colors.green},
-      'English': {'grade': 'B+', 'score': 85, 'color': Colors.blue},
-      'Physics': {'grade': 'A-', 'score': 82, 'color': Colors.orange},
-      'Chemistry': {'grade': 'B', 'score': 79, 'color': Colors.purple},
-      'Biology': {'grade': 'A', 'score': 91, 'color': Colors.teal},
-    };
+  Widget _buildSubjectGrade(Subject subject) {
+    // Get the actual score or use 0 if not available
+    final score = subject.actualScore ?? 0;
 
-    final data = grades[subject]!;
+    // Determine color based on score
+    Color color;
+    if (score >= 90) {
+      color = Colors.green;
+    } else if (score >= 80) {
+      color = Colors.blue;
+    } else if (score >= 70) {
+      color = Colors.orange;
+    } else if (score >= 60) {
+      color = Colors.purple;
+    } else {
+      color = Colors.red;
+    }
+
+    // Get grade string or calculate from score
+    String gradeString;
+    if (subject.grade != null) {
+      // Convert enum to string (assuming Grade enum has toString method)
+      gradeString = subject.grade.toString().split('.').last;
+    } else {
+      // Calculate grade from score
+      if (score >= 90) {
+        gradeString = 'A';
+      } else if (score >= 80) {
+        gradeString = 'B';
+      } else if (score >= 70) {
+        gradeString = 'C';
+      } else if (score >= 60) {
+        gradeString = 'D';
+      } else {
+        gradeString = 'F';
+      }
+    }
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
@@ -1270,16 +1561,16 @@ Widget _buildExamResultRow(String subject) {
           Expanded(
             flex: 2,
             child: Text(
-              subject,
+              subject.name ?? 'Unknown Subject',
               style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
             ),
           ),
           Expanded(
             flex: 3,
             child: LinearProgressIndicator(
-              value: (data['score'] as int) / 100,
+              value: score / 100,
               backgroundColor: Colors.grey[200],
-              valueColor: AlwaysStoppedAnimation<Color>(data['color'] as Color),
+              valueColor: AlwaysStoppedAnimation<Color>(color),
               minHeight: 6,
             ),
           ),
@@ -1287,13 +1578,13 @@ Widget _buildExamResultRow(String subject) {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: (data['color'] as Color).withOpacity(0.1),
+              color: color.withOpacity(0.1),
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
-              data['grade'] as String,
+              gradeString,
               style: TextStyle(
-                color: data['color'] as Color,
+                color: color,
                 fontWeight: FontWeight.bold,
                 fontSize: 12,
               ),
@@ -1301,7 +1592,7 @@ Widget _buildExamResultRow(String subject) {
           ),
           const SizedBox(width: 8),
           Text(
-            '${data['score']}%',
+            '$score%',
             style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
           ),
         ],
@@ -1309,7 +1600,12 @@ Widget _buildExamResultRow(String subject) {
     );
   }
 
-  Widget _buildAssignmentsSection() {
+  Widget _buildAssignmentsSection(Student? student) {
+    // Get assignments from the studentFullModel data, not from student directly
+    final studentState = ref.watch(studentProvider);
+    final assignments =
+        studentState.studentFullModel.data?.recentAssignments ?? [];
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -1333,49 +1629,88 @@ Widget _buildExamResultRow(String subject) {
           const SizedBox(height: 20),
 
           // Assignment List
-          ...List.generate(4, (index) => _buildAssignmentItem(index)),
+          if (assignments.isEmpty)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(20),
+                child: Text(
+                  'No assignments found',
+                  style: TextStyle(color: Colors.grey, fontSize: 16),
+                ),
+              ),
+            )
+          else
+            ...assignments
+                .take(4)
+                .map((assignment) => _buildAssignmentItem(assignment)),
         ],
       ),
     );
   }
 
-  Widget _buildAssignmentItem(int index) {
-    final assignments = [
-      {
-        'title': 'Mathematics Quiz 5',
-        'subject': 'Mathematics',
-        'status': 'Completed',
-        'grade': '94%',
-        'dueDate': '2 days ago',
-        'color': Colors.green,
-      },
-      {
-        'title': 'Physics Lab Report',
-        'subject': 'Physics',
-        'status': 'Pending',
-        'grade': '-',
-        'dueDate': 'Due tomorrow',
-        'color': Colors.orange,
-      },
-      {
-        'title': 'English Essay',
-        'subject': 'English',
-        'status': 'Completed',
-        'grade': '87%',
-        'dueDate': '1 week ago',
-        'color': Colors.green,
-      },
-      {
-        'title': 'Chemistry Test',
-        'subject': 'Chemistry',
-        'status': 'Graded',
-        'grade': '82%',
-        'dueDate': '3 days ago',
-        'color': Colors.blue,
-      },
-    ];
+  Widget _buildAssignmentItem(RecentAssignment assignment) {
+    // Get the student's submission for this assignment
+    final submission =
+        assignment.submissions?.isNotEmpty == true
+            ? assignment.submissions!.first
+            : null;
 
-    final assignment = assignments[index];
+    // Determine status and color based on submission
+    String status;
+    Color statusColor;
+    String grade = '-';
+
+    if (submission != null) {
+      status = submission.status ?? 'Submitted';
+      if (submission.marks != null && assignment.maxMarks != null) {
+        final percentage = (submission.marks! / assignment.maxMarks!) * 100;
+        grade = '${percentage.round()}%';
+      }
+
+      switch (status.toLowerCase()) {
+        case 'graded':
+        case 'completed':
+          statusColor = Colors.green;
+          break;
+        case 'submitted':
+          statusColor = Colors.blue;
+          break;
+        case 'pending':
+        case 'late':
+          statusColor = Colors.orange;
+          break;
+        default:
+          statusColor = Colors.grey;
+      }
+    } else {
+      // Check if assignment is overdue
+      if (assignment.dueDate != null &&
+          assignment.dueDate!.isBefore(DateTime.now())) {
+        status = 'Overdue';
+        statusColor = Colors.red;
+      } else {
+        status = 'Not Submitted';
+        statusColor = Colors.orange;
+      }
+    }
+
+    // Format due date
+    String dueDateText = 'No due date';
+    if (assignment.dueDate != null) {
+      final now = DateTime.now();
+      final dueDate = assignment.dueDate!;
+      final difference = dueDate.difference(now).inDays;
+
+      if (difference < 0) {
+        dueDateText = '${-difference} days ago';
+      } else if (difference == 0) {
+        dueDateText = 'Due today';
+      } else if (difference == 1) {
+        dueDateText = 'Due tomorrow';
+      } else {
+        dueDateText = 'Due in $difference days';
+      }
+    }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -1390,7 +1725,7 @@ Widget _buildExamResultRow(String subject) {
             width: 8,
             height: 40,
             decoration: BoxDecoration(
-              color: assignment['color'] as Color,
+              color: statusColor,
               borderRadius: BorderRadius.circular(4),
             ),
           ),
@@ -1400,15 +1735,20 @@ Widget _buildExamResultRow(String subject) {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  assignment['title'] as String,
+                  assignment.title ?? 'Untitled Assignment',
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
                   ),
                 ),
                 Text(
-                  assignment['subject'] as String,
+                  assignment.subject ?? 'No Subject',
                   style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  dueDateText,
+                  style: TextStyle(color: Colors.grey[500], fontSize: 11),
                 ),
               ],
             ),
@@ -1419,13 +1759,13 @@ Widget _buildExamResultRow(String subject) {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: (assignment['color'] as Color).withOpacity(0.1),
+                  color: statusColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
-                  assignment['status'] as String,
+                  status,
                   style: TextStyle(
-                    color: assignment['color'] as Color,
+                    color: statusColor,
                     fontSize: 10,
                     fontWeight: FontWeight.w500,
                   ),
@@ -1433,7 +1773,7 @@ Widget _buildExamResultRow(String subject) {
               ),
               const SizedBox(height: 4),
               Text(
-                assignment['grade'] as String,
+                grade,
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
@@ -1446,7 +1786,7 @@ Widget _buildExamResultRow(String subject) {
     );
   }
 
-  Widget _buildAttendanceCard() {
+  Widget _buildAttendanceCard(Student? student) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -1475,13 +1815,41 @@ Widget _buildExamResultRow(String subject) {
           const SizedBox(height: 20),
 
           // Pie Chart
-           SizedBox(
+          SizedBox(
             height: 120,
             child: CustomPieChart(
-              spiritual: 92, // Present
-              education: 8, // Absent
-              social: 0,
-              identity: 0,
+              spiritual:
+                  (student
+                              ?.attendanceData
+                              ?.statistics
+                              ?.summary
+                              ?.presentPercentage ??
+                          0)
+                      .toInt(), // Present
+              education:
+                  (student
+                              ?.attendanceData
+                              ?.statistics
+                              ?.summary
+                              ?.absentPercentage ??
+                          0)
+                      .toInt(), // Absent
+              social:
+                  (student
+                              ?.attendanceData
+                              ?.statistics
+                              ?.summary
+                              ?.latePercentage ??
+                          0)
+                      .toInt(), // Late
+              identity:
+                  (student
+                              ?.attendanceData
+                              ?.statistics
+                              ?.summary
+                              ?.excusedPercentage ??
+                          0)
+                      .toInt(), // Excused
             ),
           ),
 
@@ -1490,11 +1858,23 @@ Widget _buildExamResultRow(String subject) {
           // Legend
           Column(
             children: [
-              _buildLegendItem('Present', '92%', Colors.purple),
+              _buildLegendItem(
+                'Present',
+                '${student?.attendanceData?.statistics?.summary?.presentPercentage ?? 0}%',
+                Colors.purple,
+              ),
               const SizedBox(height: 8),
-              _buildLegendItem('Absent', '8%', Colors.amber),
+              _buildLegendItem(
+                'Absent',
+                '${student?.attendanceData?.statistics?.summary?.absentPercentage ?? 0}%',
+                Colors.amber,
+              ),
               const SizedBox(height: 8),
-              _buildLegendItem('Late', '2%', Colors.orange),
+              _buildLegendItem(
+                'Late',
+                '${student?.attendanceData?.statistics?.summary?.latePercentage ?? 0}%',
+                Colors.orange,
+              ),
             ],
           ),
         ],
@@ -1524,7 +1904,7 @@ Widget _buildExamResultRow(String subject) {
     );
   }
 
-  Widget _buildPaymentCard() {
+  Widget _buildPaymentCard(Student? student) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -1554,10 +1934,28 @@ Widget _buildExamResultRow(String subject) {
           const SizedBox(height: 16),
 
           // Payment Items
-          _buildPaymentItem('Tuition Fee', '₦50,000', 'Paid', Colors.green),
-          _buildPaymentItem('Library Fee', '₦2,000', 'Paid', Colors.green),
-          _buildPaymentItem('Sports Fee', '₦5,000', 'Pending', Colors.orange),
-          _buildPaymentItem('Lab Fee', '₦3,000', 'Overdue', Colors.red),
+          _buildPaymentItem(
+            'Total Fees',
+            '₦${student?.financialInfo?.totalFees ?? 0}',
+            'Total',
+            Colors.blue,
+          ),
+          _buildPaymentItem(
+            'Paid Amount',
+            '₦${student?.financialInfo?.paidAmount ?? 0}',
+            'Paid',
+            Colors.green,
+          ),
+          _buildPaymentItem(
+            'Outstanding',
+            '₦${student?.financialInfo?.outstandingBalance ?? 0}',
+            student?.financialInfo?.feeStatus ?? 'Pending',
+            student?.financialInfo?.feeStatus == 'paid'
+                ? Colors.green
+                : student?.financialInfo?.feeStatus == 'pending'
+                ? Colors.orange
+                : Colors.red,
+          ),
 
           const SizedBox(height: 12),
           const Divider(),
@@ -1566,15 +1964,20 @@ Widget _buildExamResultRow(String subject) {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'Total Outstanding',
+                'Fee Status',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               ),
-              const Text(
-                '₦8,000',
+              Text(
+                student?.financialInfo?.feeStatus ?? 'N/A',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
-                  color: Colors.red,
+                  color:
+                      student?.financialInfo?.feeStatus == 'paid'
+                          ? Colors.green
+                          : student?.financialInfo?.feeStatus == 'pending'
+                          ? Colors.orange
+                          : Colors.red,
                 ),
               ),
             ],

@@ -7,17 +7,16 @@ class ParentRepo {
   final _httpService = locator<HttpService>();
 
   Future<HTTPResponseModel> getAllParents() async {
-    return await _httpService.runApi(
-      type: ApiRequestType.get,
-       url: "/parents");
+    return await _httpService.runApi(type: ApiRequestType.get, url: "/parents");
   }
 
-  Future<HTTPResponseModel> getSignleParentDetails(String parentId) async {
+  Future<HTTPResponseModel> getSingleParentDetails(String parentId) async {
     return await _httpService.runApi(
       type: ApiRequestType.get,
       url: "/parents/$parentId",
     );
   }
+
   Future<HTTPResponseModel> getSignleParentDashboard(String parentId) async {
     return await _httpService.runApi(
       type: ApiRequestType.get,

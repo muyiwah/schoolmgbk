@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:schmgtsystem/constants/appcolor.dart';
+import 'package:schmgtsystem/models/staff_model.dart';
+import 'package:schmgtsystem/providers/staff_provider.dart';
 import 'package:schmgtsystem/widgets/select_staffrole_popup.dart';
 import 'package:schmgtsystem/widgets/staff_dialog.dart';
 
@@ -42,62 +45,29 @@ class StaffMember {
   });
 }
 
-class StaffManagementScreen extends StatefulWidget {
+class StaffManagementScreen extends ConsumerStatefulWidget {
   const StaffManagementScreen({Key? key}) : super(key: key);
 
   @override
-  State<StaffManagementScreen> createState() => _StaffManagementScreenState();
+  ConsumerState<StaffManagementScreen> createState() =>
+      _StaffManagementScreenState();
 }
 
-class _StaffManagementScreenState extends State<StaffManagementScreen> {
+class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _selectedRole = 'All Roles';
   String _selectedDepartment = 'All Departments';
   String _selectedStatus = 'All Status';
   int _currentPage = 1;
 
-  final List<StaffMember> _staffMembers = [
-    StaffMember(
-      name: 'Sarah Johnson',
-      role: 'Teacher',
-      department: 'Academic',
-      contact: 'sarah.j@school.edu',
-      dateHired: 'Jan 15, 2020',
-      status: 'Active',
-    ),
-    StaffMember(
-      name: 'Michael Chen',
-      role: 'Accountant',
-      department: 'Admin',
-      contact: '+1 555-0123',
-      dateHired: 'Mar 08, 2019',
-      status: 'Active',
-    ),
-    StaffMember(
-      name: 'Emily Rodriguez',
-      role: 'Librarian',
-      department: 'Academic',
-      contact: 'emily.r@school.edu',
-      dateHired: 'Sep 12, 2021',
-      status: 'On Leave',
-    ),
-    StaffMember(
-      name: 'David Wilson',
-      role: 'Cleaner',
-      department: 'Maintenance',
-      contact: '+1 555-0456',
-      dateHired: 'Nov 03, 2022',
-      status: 'Active',
-    ),
-    StaffMember(
-      name: 'Lisa Thompson',
-      role: 'Teacher',
-      department: 'Academic',
-      contact: 'lisa.t@school.edu',
-      dateHired: 'Aug 20, 2018',
-      status: 'Active',
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    // Fetch staff data when screen loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(staffNotifierProvider.notifier).getAllStaff();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -148,10 +118,9 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
         ),
         Row(
           children: [
-          
             ElevatedButton.icon(
               onPressed: () {
-                 showDialog(
+                showDialog(
                   context: context,
                   barrierDismissible: true,
                   barrierColor: Colors.black.withOpacity(0.5),
@@ -179,12 +148,35 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
   }
 
   Widget _buildStatsCards() {
+    final staffState = ref.watch(staffNotifierProvider);
+    final staff = staffState.staff;
+
+    // Calculate statistics
+    final totalStaff = staff.length;
+    final teachers =
+        staff
+            .where(
+              (s) =>
+                  s.employmentInfo?.position?.toLowerCase().contains(
+                    'teacher',
+                  ) ==
+                  true,
+            )
+            .length;
+    final nonTeaching = totalStaff - teachers;
+    final onLeave =
+        staff.where((s) => s.status?.toLowerCase() == 'inactive').length;
+    final activeRate =
+        totalStaff > 0
+            ? ((totalStaff - onLeave) / totalStaff * 100).toStringAsFixed(1)
+            : '0.0';
+
     return Row(
       children: [
         Expanded(
           child: _buildStatCard(
             'Total Staff',
-            '156',
+            totalStaff.toString(),
             Icons.groups,
             const Color(0xFF8B5CF6),
           ),
@@ -193,7 +185,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
         Expanded(
           child: _buildStatCard(
             'Teachers',
-            '89',
+            teachers.toString(),
             Icons.school,
             const Color(0xFF8B5CF6),
           ),
@@ -202,7 +194,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
         Expanded(
           child: _buildStatCard(
             'Non-Teaching',
-            '67',
+            nonTeaching.toString(),
             Icons.work,
             const Color(0xFF06B6D4),
           ),
@@ -211,7 +203,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
         Expanded(
           child: _buildStatCard(
             'On Leave',
-            '8',
+            onLeave.toString(),
             Icons.event_busy,
             const Color(0xFFF59E0B),
           ),
@@ -220,7 +212,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
         Expanded(
           child: _buildStatCard(
             'Active Rate',
-            '94.8%',
+            '$activeRate%',
             Icons.trending_up,
             const Color(0xFF10B981),
           ),
@@ -312,17 +304,29 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
           ),
         ),
         const SizedBox(width: 16),
-        _buildFilterDropdown(['All Roles','Accountant','Teacher','Cleaner','Security'], _selectedRole, (value) {
-          setState(() => _selectedRole = value!);
-        }),
+        _buildFilterDropdown(
+          ['All Roles', 'Accountant', 'Teacher', 'Cleaner', 'Security'],
+          _selectedRole,
+          (value) {
+            setState(() => _selectedRole = value!);
+          },
+        ),
         const SizedBox(width: 12),
-        _buildFilterDropdown(['All Departments','Academics','Account'], _selectedDepartment, (value) {
-          setState(() => _selectedDepartment = value!);
-        }),
+        _buildFilterDropdown(
+          ['All Departments', 'Academics', 'Account'],
+          _selectedDepartment,
+          (value) {
+            setState(() => _selectedDepartment = value!);
+          },
+        ),
         const SizedBox(width: 12),
-        _buildFilterDropdown(['All Status','On leave','New'], _selectedStatus, (value) {
-          setState(() => _selectedStatus = value!);
-        }),
+        _buildFilterDropdown(
+          ['All Status', 'On leave', 'New'],
+          _selectedStatus,
+          (value) {
+            setState(() => _selectedStatus = value!);
+          },
+        ),
       ],
     );
   }
@@ -357,6 +361,8 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
   }
 
   Widget _buildStaffTable() {
+    final staffState = ref.watch(staffNotifierProvider);
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -372,16 +378,92 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
       child: Column(
         children: [
           _buildTableHeader(),
-          Expanded(
-            child: ListView.builder(
-              itemCount: _staffMembers.length,
-              itemBuilder: (context, index) {
-                return _buildStaffRow(_staffMembers[index], index);
-              },
-            ),
-          ),
+          Expanded(child: _buildStaffContent(staffState)),
         ],
       ),
+    );
+  }
+
+  Widget _buildStaffContent(StaffState staffState) {
+    if (staffState.isLoading) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32.0),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (staffState.errorMessage != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+              const SizedBox(height: 16),
+              Text(
+                'Error loading staff',
+                style: Theme.of(
+                  context,
+                ).textTheme.headlineSmall?.copyWith(color: Colors.red[700]),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                staffState.errorMessage!,
+                textAlign: TextAlign.center,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: () {
+                  ref.read(staffNotifierProvider.notifier).getAllStaff();
+                },
+                icon: const Icon(Icons.refresh),
+                label: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (staffState.staff.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.people_outline, size: 64, color: Colors.grey[400]),
+              const SizedBox(height: 16),
+              Text(
+                'No staff members found',
+                style: Theme.of(
+                  context,
+                ).textTheme.headlineSmall?.copyWith(color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Add new staff members to get started',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: Colors.grey[500]),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      itemCount: staffState.staff.length,
+      itemBuilder: (context, index) {
+        return _buildStaffRow(staffState.staff[index], index);
+      },
     );
   }
 
@@ -421,7 +503,26 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
     );
   }
 
-  Widget _buildStaffRow(StaffMember member, int index) {
+  Widget _buildStaffRow(Staff staff, int index) {
+    final fullName =
+        '${staff.personalInfo?.firstName ?? ''} ${staff.personalInfo?.lastName ?? ''}'
+            .trim();
+    final role = staff.user?.role ?? 'N/A';
+    final department = staff.employmentInfo?.department ?? 'N/A';
+    final contact =
+        staff.contactInfo?.email ?? staff.contactInfo?.primaryPhone ?? 'N/A';
+    final dateHired =
+        staff.employmentInfo?.joinDate != null
+            ? (staff.employmentInfo!.joinDate! is String
+                ? DateTime.parse(
+                  staff.employmentInfo!.joinDate! as String,
+                ).toLocal().toString().split(' ')[0]
+                : staff.employmentInfo!.joinDate!.toLocal().toString().split(
+                  ' ',
+                )[0])
+            : 'N/A';
+    final status = staff.status ?? 'active';
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -437,7 +538,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
                   radius: 20,
                   backgroundColor: Colors.grey[300],
                   child: Text(
-                    member.name[0],
+                    fullName.isNotEmpty ? fullName[0].toUpperCase() : 'S',
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -445,34 +546,41 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                Text(
-                  member.name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w500,
-                    fontSize: 14,
-                  ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      fullName.isNotEmpty ? fullName : 'Unknown Staff',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14,
+                      ),
+                    ),
+                    if (staff.staffStaffId != null)
+                      Text(
+                        staff.staffStaffId!,
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      ),
+                  ],
                 ),
               ],
             ),
           ),
-          Expanded(flex: 2, child: _buildRoleChip(member.role)),
+          Expanded(flex: 2, child: _buildRoleChip(role)),
           Expanded(
             flex: 2,
-            child: Text(
-              member.department,
-              style: const TextStyle(fontSize: 14),
-            ),
+            child: Text(department, style: const TextStyle(fontSize: 14)),
           ),
           Expanded(
             flex: 2,
-            child: Text(member.contact, style: const TextStyle(fontSize: 14)),
+            child: Text(contact, style: const TextStyle(fontSize: 14)),
           ),
           Expanded(
             flex: 2,
-            child: Text(member.dateHired, style: const TextStyle(fontSize: 14)),
+            child: Text(dateHired, style: const TextStyle(fontSize: 14)),
           ),
-          Expanded(flex: 1, child: _buildStatusChip(member.status)),
-          Expanded(flex: 1, child: _buildActionButtons()),
+          Expanded(flex: 1, child: _buildStatusChip(status)),
+          Expanded(flex: 1, child: _buildActionButtons(staff)),
         ],
       ),
     );
@@ -541,7 +649,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
     );
   }
 
-  Widget _buildActionButtons() {
+  Widget _buildActionButtons(Staff staff) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -553,10 +661,8 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
               context: context,
               barrierDismissible: true,
               barrierColor: Colors.black.withOpacity(0.5),
-              builder:
-                  (context) => StaffDialog(),
+              builder: (context) => StaffDialog(),
             );
-
           },
           icon: const Icon(Icons.visibility, color: Color(0xFF4F46E5)),
           iconSize: 18,
@@ -572,9 +678,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
         IconButton(
           padding: EdgeInsets.all(0),
 
-          onPressed: () {
-           
-          },
+          onPressed: () {},
           icon: const Icon(Icons.delete, color: Colors.red),
           iconSize: 18,
           constraints: const BoxConstraints(minWidth: 32, minHeight: 32),

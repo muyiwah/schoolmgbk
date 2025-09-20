@@ -1,20 +1,57 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:schmgtsystem/constants/appcolor.dart';
+import 'package:schmgtsystem/providers/provider.dart';
 import 'package:schmgtsystem/widgets/message_popup.dart';
 import 'package:schmgtsystem/widgets/success_snack.dart';
 
-class SingleParent extends StatefulWidget {
+class SingleParent extends ConsumerStatefulWidget {
   final Function navigateTo;
   final Function navigateTo2;
-  SingleParent({Key? key, required this.navigateTo, required this.navigateTo2})
-    : super(key: key);
+  final String parentId;
+
+  SingleParent({
+    Key? key,
+    required this.navigateTo,
+    required this.navigateTo2,
+    required this.parentId,
+  }) : super(key: key);
 
   @override
-  _SingleParentState createState() => _SingleParentState();
+  ConsumerState<SingleParent> createState() => _SingleParentState();
 }
 
-class _SingleParentState extends State<SingleParent> {
+class _SingleParentState extends ConsumerState<SingleParent> {
   int _selectedTabIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Clear any previous data and load fresh single parent data
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = ref.read(RiverpodProvider.parentProvider.notifier);
+      // Clear previous single parent data to ensure fresh data
+      provider.clearSingleParentData();
+      // Clear any previous errors
+      provider.setError(null);
+      // Fetch new data
+      provider.getSingleParent(context, widget.parentId);
+    });
+  }
+
+  @override
+  void didUpdateWidget(SingleParent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // If parentId changed, fetch new data
+    if (oldWidget.parentId != widget.parentId) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final provider = ref.read(RiverpodProvider.parentProvider.notifier);
+        provider.clearSingleParentData();
+        provider.setError(null);
+        provider.getSingleParent(context, widget.parentId);
+      });
+    }
+  }
 
   void _showMessagePopup(BuildContext context, String title) {
     showDialog(
@@ -25,450 +62,549 @@ class _SingleParentState extends State<SingleParent> {
     );
   }
 
-  Widget _buildTextField({
-    required String label,
-    required IconData icon,
-    required FormFieldValidator<String> validator,
-    required FormFieldSetter<String> onSaved,
-    int maxLines = 1,
-  }) {
-    return TextFormField(
-      maxLines: maxLines,
-      decoration: InputDecoration(
-        prefixIcon: Icon(icon),
-        labelText: label,
-        filled: true,
-        fillColor: Colors.grey.shade100,
-        contentPadding: const EdgeInsets.symmetric(
-          vertical: 14,
-          horizontal: 16,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-      ),
-      validator: validator,
-      onSaved: onSaved,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header Section
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
+      body: Consumer(
+        builder: (context, ref, child) {
+          final parentState = ref.watch(RiverpodProvider.parentProvider);
+
+          if (parentState.isLoading) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Loading parent details...',
+                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                   ),
                 ],
               ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            );
+          }
+
+          if (parentState.errorMessage != null) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  IconButton(
-                    onPressed: () {
-                      widget.navigateTo();
-                    },
-                    icon: Icon(Icons.arrow_back_ios_new),
+                  Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Error loading parent details',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.red[700],
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                  Column(
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Text(
+                      parentState.errorMessage!,
+                      style: TextStyle(fontSize: 14, color: Colors.red[600]),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      final provider = ref.read(
+                        RiverpodProvider.parentProvider.notifier,
+                      );
+                      provider.setError(null);
+                      provider.getSingleParent(context, widget.parentId);
+                    },
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Retry'),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          final parentData = parentState.singleParent.data;
+          if (parentData?.parent == null) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.person_outline, size: 64, color: Colors.grey[400]),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Parent not found',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Parent ID: ${widget.parentId}',
+                    style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      final provider = ref.read(
+                        RiverpodProvider.parentProvider.notifier,
+                      );
+                      provider.setError(null);
+                      provider.getSingleParent(context, widget.parentId);
+                    },
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Retry'),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          final parent = parentData!.parent!;
+          final children = parentData.children ?? [];
+          final financialSummary = parentData.financialSummary;
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header Section
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 24,
+                    horizontal: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Parent Profile Overview',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
+                      IconButton(
+                        onPressed: () {
+                          widget.navigateTo();
+                        },
+                        icon: Icon(Icons.arrow_back_ios_new),
                       ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Full insight into guardian activity, payment records, and child enrollment',
-                        style: TextStyle(fontSize: 14, color: Colors.grey),
-                      ),
-                      const SizedBox(height: 24),
-                      Row(
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          ElevatedButton.icon(
-                            onPressed: () {
-                              _showMessagePopup(context, 'Message');
-                              showSnackbar(context, 'Message sent');
-                            },
-                            icon: const Icon(Icons.send, size: 16),
-                            label: Text('Send Message'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.secondary,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
+                          const Text(
+                            'Parent Profile Overview',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          OutlinedButton.icon(
-                            onPressed: () {
-                              _showMessagePopup(context, 'Push Notification');
-                            },
-                            icon: const Icon(Icons.note_add, size: 16),
-                            label: const Text('Push Notification'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.grey[700],
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Full insight into guardian activity, payment records, and child enrollment',
+                            style: TextStyle(fontSize: 14, color: Colors.grey),
                           ),
-                          const SizedBox(width: 12),
-                          ElevatedButton.icon(
-                            onPressed: () {
-                              widget.navigateTo2();
-                            },
-                            icon: const Icon(Icons.receipt_long, size: 16),
-                            label: const Text('View All Transactions'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF06B6D4),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
+                          const SizedBox(height: 24),
+                          Row(
+                            children: [
+                              ElevatedButton.icon(
+                                onPressed: () {
+                                  _showMessagePopup(context, 'Message');
+                                  showSnackbar(context, 'Message sent');
+                                },
+                                icon: const Icon(Icons.send, size: 16),
+                                label: Text('Send Message'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.secondary,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
                               ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                              const SizedBox(width: 12),
+                              OutlinedButton.icon(
+                                onPressed: () {
+                                  _showMessagePopup(
+                                    context,
+                                    'Push Notification',
+                                  );
+                                },
+                                icon: const Icon(Icons.note_add, size: 16),
+                                label: const Text('Push Notification'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.grey[700],
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
                               ),
-                            ),
+                              const SizedBox(width: 12),
+                              ElevatedButton.icon(
+                                onPressed: () {
+                                  widget.navigateTo2();
+                                },
+                                icon: const Icon(Icons.receipt_long, size: 16),
+                                label: const Text('View All Transactions'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF06B6D4),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
                     ],
                   ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Left Column - Parent Details & Children
-                Expanded(
-                  flex: 2,
-                  child: Column(
-                    children: [
-                      // Parent Details Card
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            // Profile Image
-                            Container(
-                              width: 80,
-                              height: 80,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(40),
-                                image: const DecorationImage(
-                                  image: NetworkImage(
-                                    'https://images.unsplash.com/photo-1494790108755-2616b332c912?w=150&h=150&fit=crop&crop=face',
-                                  ),
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 20),
-                            // Details
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      const Text(
-                                        'Sarah Johnson',
-                                        style: TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 4,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFDCFCE7),
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                        ),
-                                        child: const Text(
-                                          'VIP',
-                                          style: TextStyle(
-                                            color: Color(0xFF16A34A),
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 4,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFDBEAFE),
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                        ),
-                                        child: const Text(
-                                          'Responsive',
-                                          style: TextStyle(
-                                            color: Color(0xFF2563EB),
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            _buildInfoRow(
-                                              Icons.phone,
-                                              '+1 (555) 123-4567',
-                                            ),
-                                            const SizedBox(height: 8),
-                                            _buildInfoRow(
-                                              Icons.email,
-                                              'sarah.johnson@email.com',
-                                            ),
-                                            const SizedBox(height: 8),
-                                            _buildInfoRow(
-                                              Icons.location_on,
-                                              '123 Oak Street, Springfield',
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            _buildInfoRow(
-                                              Icons.work,
-                                              'Marketing Manager',
-                                            ),
-                                            const SizedBox(height: 8),
-                                            _buildInfoRow(
-                                              Icons.email_outlined,
-                                              'Email Preferred',
-                                            ),
-                                            const SizedBox(height: 8),
-                                            _buildInfoRow(
-                                              Icons.people,
-                                              '2 Children Enrolled',
-                                              color: const Color(0xFF6366F1),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      // Tabbed Content Section
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Tab Bar
-                            Row(
-                              children: [
-                                _buildTab('Children Enrolled', 0),
-                                _buildTab('Payment History', 1),
-                                _buildTab('Communication', 2),
-                                _buildTab('Documents', 3),
-                                _buildTab('Notes', 4),
-                              ],
-                            ),
-                            const SizedBox(height: 24),
-
-                            // Tab Content
-                            _buildTabContent(),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
 
-                const SizedBox(width: 24),
+                const SizedBox(height: 24),
 
-                // Right Column - Quick Summary & Recent Activity
-                Expanded(
-                  flex: 1,
-                  child: Column(
-                    children: [
-                      // Quick Summary Card
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, 2),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Left Column - Parent Details & Children
+                    Expanded(
+                      flex: 2,
+                      child: Column(
+                        children: [
+                          // Parent Details Card
+                          Container(
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Quick Summary',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            child: Row(
+                              children: [
+                                // Profile Image
+                                Container(
+                                  width: 80,
+                                  height: 80,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(40),
+                                    image: const DecorationImage(
+                                      image: NetworkImage(
+                                        'https://images.unsplash.com/photo-1494790108755-2616b332c912?w=150&h=150&fit=crop&crop=face',
+                                      ),
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 20),
+                                // Details
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Text(
+                                            '${parent.personalInfo?.firstName ?? ''} ${parent.personalInfo?.lastName ?? ''}',
+                                            style: const TextStyle(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 4,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFDCFCE7),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                            child: const Text(
+                                              'VIP',
+                                              style: TextStyle(
+                                                color: Color(0xFF16A34A),
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 4,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFDBEAFE),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                            child: const Text(
+                                              'Responsive',
+                                              style: TextStyle(
+                                                color: Color(0xFF2563EB),
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                _buildInfoRow(
+                                                  Icons.phone,
+                                                  parent
+                                                          .contactInfo
+                                                          ?.primaryPhone ??
+                                                      'No phone',
+                                                ),
+                                                const SizedBox(height: 8),
+                                                _buildInfoRow(
+                                                  Icons.email,
+                                                  parent.contactInfo?.email ??
+                                                      'No email',
+                                                ),
+                                                const SizedBox(height: 8),
+                                                _buildInfoRow(
+                                                  Icons.location_on,
+                                                  '${parent.contactInfo?.address?.street ?? ''}, ${parent.contactInfo?.address?.city ?? ''}',
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                _buildInfoRow(
+                                                  Icons.work,
+                                                  parent
+                                                          .professionalInfo
+                                                          ?.occupation ??
+                                                      'Not specified',
+                                                ),
+                                                const SizedBox(height: 8),
+                                                _buildInfoRow(
+                                                  Icons.email_outlined,
+                                                  'Email Preferred',
+                                                ),
+                                                const SizedBox(height: 8),
+                                                _buildInfoRow(
+                                                  Icons.people,
+                                                  '${children.length} Children Enrolled',
+                                                  color: const Color(
+                                                    0xFF6366F1,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 20),
-                            _buildSummaryRow(
-                              'Total Owed',
-                              '\$1,250',
-                              Colors.red,
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          // Tabbed Content Section
+                          Container(
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 16),
-                            _buildSummaryRow('Children', '2', Colors.black),
-                            const SizedBox(height: 16),
-                            _buildSummaryRow(
-                              'Last Login',
-                              '2 days ago',
-                              Colors.black,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Tab Bar
+                                Row(
+                                  children: [
+                                    _buildTab('Children Enrolled', 0),
+                                    _buildTab('Payment History', 1),
+                                    _buildTab('Communication', 2),
+                                    _buildTab('Documents', 3),
+                                    _buildTab('Notes', 4),
+                                  ],
+                                ),
+                                const SizedBox(height: 24),
+
+                                // Tab Content
+                                _buildTabContent(),
+                              ],
                             ),
-                            const SizedBox(height: 16),
-                            _buildSummaryRow('Next Due', 'Dec 15', Colors.red),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
+                    ),
 
-                      const SizedBox(height: 24),
+                    const SizedBox(width: 24),
 
-                      // Recent Activity Card
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, 2),
+                    // Right Column - Quick Summary & Recent Activity
+                    Expanded(
+                      flex: 1,
+                      child: Column(
+                        children: [
+                          // Quick Summary Card
+                          Container(
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Recent Activity',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Quick Summary',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+                                _buildSummaryRow(
+                                  'Total Owed',
+                                  '\$${financialSummary?.totalAmountOwed ?? 0}',
+                                  Colors.red,
+                                ),
+                                const SizedBox(height: 16),
+                                _buildSummaryRow(
+                                  'Children',
+                                  '${financialSummary?.numberOfChildren ?? 0}',
+                                  Colors.black,
+                                ),
+                                const SizedBox(height: 16),
+                                _buildSummaryRow(
+                                  'Payment Completion',
+                                  '${(financialSummary?.paymentCompletion ?? 0).toStringAsFixed(1)}%',
+                                  Colors.black,
+                                ),
+                                const SizedBox(height: 16),
+                                _buildSummaryRow(
+                                  'Total Fees',
+                                  '\$${financialSummary?.totalFees ?? 0}',
+                                  Colors.black,
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 20),
-                            _buildActivityItem(
-                              Colors.green,
-                              'Payment received',
-                              '2 hours ago',
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          // Recent Activity Card
+                          Container(
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 16),
-                            _buildActivityItem(
-                              Colors.blue,
-                              'Profile updated',
-                              '1 day ago',
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Recent Activity',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+                                _buildActivityItem(
+                                  Colors.green,
+                                  'Payment received',
+                                  '2 hours ago',
+                                ),
+                                const SizedBox(height: 16),
+                                _buildActivityItem(
+                                  Colors.blue,
+                                  'Profile updated',
+                                  '1 day ago',
+                                ),
+                                const SizedBox(height: 16),
+                                _buildActivityItem(
+                                  Colors.purple,
+                                  'Message sent',
+                                  '3 days ago',
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 16),
-                            _buildActivityItem(
-                              Colors.purple,
-                              'Message sent',
-                              '3 days ago',
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -540,24 +676,50 @@ class _SingleParentState extends State<SingleParent> {
   }
 
   Widget _buildChildrenContent() {
+    final parentData =
+        ref.watch(RiverpodProvider.parentProvider).singleParent.data;
+    final children = parentData?.children ?? [];
+
+    if (children.isEmpty) {
+      return const Center(
+        child: Column(
+          children: [
+            Icon(Icons.child_care_outlined, size: 48, color: Colors.grey),
+            SizedBox(height: 16),
+            Text(
+              'No children enrolled',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'This parent has no children enrolled yet',
+              style: TextStyle(fontSize: 14, color: Colors.grey),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Column(
-      children: [
-        // Emma Johnson Card
-        _buildChildCard(
-          'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face',
-          'Emma Johnson',
-          'Grade 5-A • #12345',
-          true,
-        ),
-        const SizedBox(height: 16),
-        // Michael Johnson Card
-        _buildChildCard(
-          'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face',
-          'Michael Johnson',
-          'Grade 3-B • #12346',
-          true,
-        ),
-      ],
+      children:
+          children.map((child) {
+            final student = child.student;
+            final currentTerm = child.currentTerm;
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: _buildChildCard(
+                'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face',
+                '${student?.personalInfo?.firstName ?? ''} ${student?.personalInfo?.lastName ?? ''}',
+                '${student?.academicInfo?.currentClass?.name ?? 'No class'} • ${student?.admissionNumber ?? 'No admission number'}',
+                currentTerm?.status == 'active',
+              ),
+            );
+          }).toList(),
     );
   }
 

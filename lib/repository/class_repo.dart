@@ -5,21 +5,27 @@ import 'package:schmgtsystem/utils/response_model.dart';
 
 class ClassRepo {
   final _httpService = locator<HttpService>();
-// ✅ Get all classes
+  // ✅ Get all classes
   Future<HTTPResponseModel> getAllClasses() async {
-    return await _httpService.runApi(
-      type: ApiRequestType.get,
-      url: "/classes",
-    );
+    return await _httpService.runApi(type: ApiRequestType.get, url: "/classes");
   }
-// ✅ Get all classes
+
+  // ✅ Get all classes
   Future<HTTPResponseModel> getAllClassesWithMetrics() async {
     return await _httpService.runApi(
       type: ApiRequestType.get,
       url: "/classes/metrics",
     );
   }
-// ✅ Get all classes
+  // ✅ Get all classes
+  Future<HTTPResponseModel> getSingleClass(String classId) async {
+    return await _httpService.runApi(
+      type: ApiRequestType.get,
+      url: "/classes/$classId",
+    );
+  }
+
+  // ✅ Get all classes
   Future<HTTPResponseModel> createClass(Map<String, dynamic> body) async {
     return await _httpService.runApi(
       type: ApiRequestType.post,
@@ -29,13 +35,14 @@ class ClassRepo {
   }
 
   // ✅ Assign subject teacher to class
-  Future<HTTPResponseModel> getSubjectTeachers(String classId, Map<String, dynamic> body,
+  Future<HTTPResponseModel> getSubjectTeachers(
+    String classId,
+    Map<String, dynamic> body,
   ) async {
     return await _httpService.runApi(
       type: ApiRequestType.post,
       url: "/classes/$classId/subject-teachers",
       body: body,
-
     );
   }
 
@@ -46,6 +53,7 @@ class ClassRepo {
       url: "/classes/$classId/fee-structures",
     );
   }
+
   // ✅ add fee structure to a class
   Future<HTTPResponseModel> addFeeStructureToClass(String classId) async {
     return await _httpService.runApi(
@@ -101,4 +109,16 @@ class ClassRepo {
     );
   }
 
+  // ✅ Remove teacher from class
+  Future<HTTPResponseModel> removeTeacherFromClass(
+    String classId,
+    String teacherId,
+    String role,
+  ) async {
+    return await _httpService.runApi(
+      type: ApiRequestType.delete,
+      url: "/classes/$classId/teachers/$teacherId?role=$role",
+      params: {'role': role},  
+    );
+  }
 }

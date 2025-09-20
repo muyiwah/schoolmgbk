@@ -1,17 +1,14 @@
-import 'dart:convert';
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_styled_toast/flutter_styled_toast.dart';
 import 'package:schmgtsystem/home3.dart';
 import 'package:schmgtsystem/models/user_model.dart';
-import 'package:schmgtsystem/providers/provider.dart';
+import 'package:schmgtsystem/models/parent_login_model.dart';
 import 'package:schmgtsystem/repository/auth_repo.dart';
 
 import 'package:schmgtsystem/providers/profile_provider.dart';
-import 'package:schmgtsystem/services/navigator_service.dart';
-import 'package:schmgtsystem/utils/constants.dart';
+import 'package:schmgtsystem/providers/provider.dart';
 import 'package:schmgtsystem/utils/locator.dart';
 import 'package:schmgtsystem/utils/response_model.dart';
 import 'package:schmgtsystem/widgets/custom_toast_notification.dart';
@@ -20,7 +17,6 @@ import 'package:go_router/go_router.dart';
 
 class AuthProvider extends ChangeNotifier {
   final _authRepo = locator<AuthRepo>();
-  final _navigatorService = locator<NavigatorService>();
 
   UserModel? user;
   DateTime? kycSubmissionTime;
@@ -91,10 +87,7 @@ class AuthProvider extends ChangeNotifier {
         res.message ?? 'Password reset link sent!',
         type: ToastType.success,
       );
-   
-    } else {
-    
-    }
+    } else {}
 
     EasyLoading.dismiss();
   }
@@ -117,7 +110,6 @@ class AuthProvider extends ChangeNotifier {
         res.message ?? 'Password reset link sent!',
         type: ToastType.success,
       );
-   
     } else {
       CustomToastNotification.show(
         'Please check your email and try again',
@@ -171,10 +163,32 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
     profileProvider.setUserProfile(userData);
 
+    // Set the user role in the provider
+    final container = ProviderScope.containerOf(context);
+    container.read(currentUserRoleProvider.notifier).state =
+        userData.role?.toLowerCase() ?? 'admin';
+
+    // If user is a parent, set the parent login data
+    if (userData.role?.toLowerCase() == 'parent') {
+      try {
+        final parentLoginData = ParentLoginModel.fromJson(res.data);
+        container
+            .read(RiverpodProvider.parentLoginProvider.notifier)
+            .setParentLoginData(parentLoginData);
+        print('Parent login data set successfully');
+      } catch (e) {
+        print('Error setting parent login data: $e');
+      }
+    }
 
     EasyLoading.dismiss();
-  context.go('/dashboard');
-  
+
+    // Navigate based on user role
+    if (userData.role?.toLowerCase() == 'parent') {
+      context.go('/parent');
+    } else {
+      context.go('/dashboard');
+    }
   }
 
   requestOtpCode(String email) async {
@@ -197,8 +211,6 @@ class AuthProvider extends ChangeNotifier {
     EasyLoading.dismiss();
 
     if (HTTPResponseModel.isApiCallSuccess(res)) {
-      String? token = res.data['token']['token'];
-
       return true;
     }
     return false;

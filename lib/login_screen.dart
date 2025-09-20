@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:provider/provider.dart';
 import 'package:schmgtsystem/constants/appcolor.dart';
 import 'package:schmgtsystem/home3.dart';
 import 'package:schmgtsystem/providers/provider.dart';
-import 'package:schmgtsystem/widgets/success_snack.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 enum userRole { Admin, Parent, Teacher }
 
@@ -25,10 +24,69 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _obscurePassword = true;
 
   @override
+  void initState() {
+    super.initState();
+    _loadSavedCredentials();
+  }
+
+  @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  // Load saved credentials from SharedPreferences
+  Future<void> _loadSavedCredentials() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedEmail = prefs.getString('saved_email');
+      final savedPassword = prefs.getString('saved_password');
+      final rememberMe = prefs.getBool('remember_me') ?? false;
+      final savedRole = prefs.getString('saved_role');
+
+      if (rememberMe && savedEmail != null && savedPassword != null) {
+        setState(() {
+          _emailController.text = savedEmail;
+          _passwordController.text = savedPassword;
+          _rememberMe = rememberMe;
+          _selectedRole = savedRole ?? 'Admin';
+        });
+
+        // Set the role in the provider if credentials are loaded
+        if (savedRole != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            ref.read(currentUserRoleProvider.notifier).state =
+                savedRole.toLowerCase();
+          });
+        }
+      }
+    } catch (e) {
+      // Handle error silently
+      print('Error loading saved credentials: $e');
+    }
+  }
+
+  // Save credentials to SharedPreferences
+  Future<void> _saveCredentials() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (_rememberMe) {
+        await prefs.setString('saved_email', _emailController.text);
+        await prefs.setString('saved_password', _passwordController.text);
+        await prefs.setBool('remember_me', true);
+        await prefs.setString('saved_role', _selectedRole);
+      } else {
+        // Clear saved credentials if remember me is unchecked
+        await prefs.remove('saved_email');
+        await prefs.remove('saved_password');
+        await prefs.setBool('remember_me', false);
+        await prefs.remove('saved_role');
+      }
+    } catch (e) {
+      // Handle error silently
+      print('Error saving credentials: $e');
+    }
   }
 
   @override
@@ -364,38 +422,47 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Widget _buildLoginButton() {
- 
-        return SizedBox(
-          width: double.infinity,
-          height: 52,
-          child: ElevatedButton(
-            onPressed: () async{
-              if (_formKey.currentState!.validate()) {
-                // Handle login
-               Map<String, String> body = {
+    return SizedBox(
+      width: double.infinity,
+      height: 52,
+      child: ElevatedButton(
+        onPressed: () async {
+          if (_formKey.currentState!.validate()) {
+            // Handle login
+            Map<String, String> body = {
               'email': _emailController.text,
-            
-              'password': _passwordController.text
+
+              'password': _passwordController.text,
             };
-                  ref.read(RiverpodProvider.authProvider).login(context, 
-                  ref.read(RiverpodProvider.profileProvider),body: body);
-                
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.secondary,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              elevation: 0,
-            ),
-            child: const Text(
-              'Login',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
-          ),
-        );
-      
-    
+
+            // Save credentials if remember me is checked
+            await _saveCredentials();
+
+            // Set the selected role in the provider (this will be overridden by API response)
+            ref.read(currentUserRoleProvider.notifier).state =
+                _selectedRole.toLowerCase();
+
+            ref
+                .read(RiverpodProvider.authProvider)
+                .login(
+                  context,
+                  ref.read(RiverpodProvider.profileProvider),
+                  body: body,
+                );
+          }
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.secondary,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          elevation: 0,
+        ),
+        child: const Text(
+          'Login',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+      ),
+    );
   }
 
   Widget _buildSupportLink() {
@@ -419,21 +486,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  void _handleLogin()async {
-
-
-
-    
-                                    }
-    // Navigator.push(
-    //   context,
-    //   MaterialPageRoute(builder: (_) => SchoolAdminDashboard3()),
-    // );
-    // Implement login logic here
-    
-    // You would typically call an authentication service here
-  }
-
+  // You would typically call an authentication service here
+}
 
 // Example usage in main.dart
 class MyApp extends StatelessWidget {

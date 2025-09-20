@@ -16,7 +16,6 @@ import 'package:schmgtsystem/home3.dart';
 import 'package:schmgtsystem/login_screen.dart';
 import 'package:schmgtsystem/utils/locator.dart';
 
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await setupLocator();
@@ -45,13 +44,14 @@ class MyApp extends StatelessWidget {
       splitScreenMode: true,
       child: StyledToast(
         locale: Locale('en', 'US'),
-        toastAnimation: StyledToastAnimation.slideFromTop,
+        toastAnimation: StyledToastAnimation.fadeScale,
         reverseAnimation: StyledToastAnimation.fade,
         toastPositions: StyledToastPosition.top,
-        animDuration: Duration(seconds: 1),
+        animDuration: Duration(milliseconds: 300),
         duration: Duration(seconds: 3),
-        curve: Curves.elasticOut,
-        reverseCurve: Curves.fastLinearToSlowEaseIn,
+        fullWidth: false,
+        curve: Curves.easeOut,
+        reverseCurve: Curves.easeIn,
         dismissOtherOnShow: true,
         child: MaterialApp.router(
           routerConfig: router, // Use the simple router directly

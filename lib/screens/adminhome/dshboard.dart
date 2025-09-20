@@ -10,131 +10,296 @@ class MetricScreen extends StatefulWidget {
   State<MetricScreen> createState() => _MetricScreenState();
 }
 
-class _MetricScreenState extends State<MetricScreen> {
+class _MetricScreenState extends State<MetricScreen>
+    with TickerProviderStateMixin {
+  late AnimationController _animationController;
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _slideAnimation;
 
-@override
+  @override
   void initState() {
-    // TODO: implement initState
     super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
+    );
+    _slideAnimation = Tween<double>(begin: 50.0, end: 0.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
+    );
+    
+    _fadeController.forward();
+    _animationController.forward();
   }
 
+  @override
+  void dispose() {
+    _animationController.dispose();
+    _fadeController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              _buildHeader(),
-
-              const SizedBox(height: 32),
-              _buildStatsCards(),
-              const SizedBox(height: 32),
-              _buildChartsSection(),
-              const SizedBox(height: 32),
-              _buildFeatureCards(),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.secondary, Color(0xFF8B5CF6)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'School Management Made Simple',
-            style: TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-              height: 1.2,
-            ),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Get real-time insights into your school\'s performance, manage students and staff efficiently, and make data-driven decisions.',
-            style: TextStyle(fontSize: 16, color: Colors.white, height: 1.5),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: () {
-              widget.navigateTo();
-            },
-            icon: const Icon(Icons.bar_chart, size: 20),
-            label: const Text('View Detailed Reports'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: AppColors.primary,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final screenWidth = constraints.maxWidth;
+            final isMobile = screenWidth < 768;
+            final isTablet = screenWidth >= 768 && screenWidth < 1024;
+            final isDesktop = screenWidth >= 1024;
+            
+            return SingleChildScrollView(
+              padding: EdgeInsets.all(isMobile ? 16 : 20),
+              child: Column(
+                children: [
+                  _buildHeader(isMobile),
+                  SizedBox(height: isMobile ? 24 : 32),
+                  _buildStatsCards(isMobile, isTablet, isDesktop),
+                  SizedBox(height: isMobile ? 24 : 32),
+                  _buildChartsSection(isMobile, isTablet),
+                  SizedBox(height: isMobile ? 24 : 32),
+                  _buildQuickActions(isMobile),
+                  SizedBox(height: isMobile ? 24 : 32),
+                  _buildFeatureCards(isMobile, isTablet),
+                  SizedBox(height: isMobile ? 24 : 32),
+                  _buildRecentActivity(isMobile),
+                ],
               ),
-              elevation: 0,
-            ),
-          ),
-        ],
+            );
+          },
+        ),
       ),
     );
   }
 
-  Widget _buildStatsCards() {
-    return GridView.count(
-      crossAxisCount: 4,
+  Widget _buildHeader(bool isMobile) {
+    return AnimatedBuilder(
+      animation: _fadeAnimation,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, _slideAnimation.value),
+          child: Opacity(
+            opacity: _fadeAnimation.value,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Dashboard',
+                          style: TextStyle(
+                            fontSize: isMobile ? 20 : 24,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF111827),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'School Management System',
+                          style: TextStyle(
+                            fontSize: isMobile ? 12 : 14,
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        IconButton(
+                          onPressed: () {},
+                          icon: Icon(
+                            Icons.notifications_outlined,
+                            color: Colors.grey[600],
+                            size: isMobile ? 20 : 24,
+                          ),
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.grey[100],
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: EdgeInsets.all(isMobile ? 8 : 12),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          width: isMobile ? 36 : 40,
+                          height: isMobile ? 36 : 40,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            Icons.person,
+                            color: Colors.grey[600],
+                            size: isMobile ? 18 : 20,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                SizedBox(height: isMobile ? 16 : 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          widget.navigateTo();
+                        },
+                        icon: Icon(Icons.analytics, size: isMobile ? 16 : 18),
+                        label: Text(isMobile ? 'Analytics' : 'View Analytics'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF6366F1),
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isMobile ? 16 : 20,
+                            vertical: isMobile ? 10 : 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          elevation: 0,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    OutlinedButton.icon(
+                      onPressed: () {},
+                      icon: Icon(Icons.refresh, size: isMobile ? 16 : 18),
+                      label: Text(isMobile ? 'Refresh' : 'Refresh'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.grey[700],
+                        side: BorderSide(color: Colors.grey[300]!),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isMobile ? 12 : 16,
+                          vertical: isMobile ? 10 : 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildStatsCards(bool isMobile, bool isTablet, bool isDesktop) {
+    final statsData = [
+      {
+        'title': 'Total Students',
+        'value': '1,247',
+        'change': '+12%',
+        'changeText': 'from last month',
+        'changeColor': const Color(0xFF10B981),
+        'icon': Icons.people,
+        'iconColor': const Color(0xFF6366F1),
+        'gradient': [const Color(0xFF6366F1), const Color(0xFF8B5CF6)],
+      },
+      {
+        'title': 'Active Teachers',
+        'value': '87',
+        'change': '+3%',
+        'changeText': 'from last month',
+        'changeColor': const Color(0xFF10B981),
+        'icon': Icons.school,
+        'iconColor': const Color(0xFF8B5CF6),
+        'gradient': [const Color(0xFF8B5CF6), const Color(0xFFEC4899)],
+      },
+      {
+        'title': 'Today\'s Attendance',
+        'value': '94.2%',
+        'change': '-2%',
+        'changeText': 'from yesterday',
+        'changeColor': const Color(0xFFEF4444),
+        'icon': Icons.assignment_turned_in,
+        'iconColor': const Color(0xFF06B6D4),
+        'gradient': [const Color(0xFF06B6D4), const Color(0xFF0891B2)],
+      },
+      {
+        'title': 'Monthly Revenue',
+        'value': '\$48,320',
+        'change': '+8%',
+        'changeText': 'from last month',
+        'changeColor': const Color(0xFF10B981),
+        'icon': Icons.attach_money,
+        'iconColor': const Color(0xFF10B981),
+        'gradient': [const Color(0xFF10B981), const Color(0xFF059669)],
+      },
+    ];
+
+    int crossAxisCount;
+    double childAspectRatio;
+    double spacing;
+
+    if (isMobile) {
+      crossAxisCount = 2;
+      childAspectRatio = 1.2;
+      spacing = 12;
+    } else if (isTablet) {
+      crossAxisCount = 3;
+      childAspectRatio = 1.1;
+      spacing = 16;
+    } else {
+      crossAxisCount = 4;
+      childAspectRatio = 1.1;
+      spacing = 20;
+    }
+
+    return GridView.builder(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        crossAxisSpacing: spacing,
+        mainAxisSpacing: spacing,
+        childAspectRatio: childAspectRatio,
+      ),
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 24,
-      mainAxisSpacing: 24,
-      childAspectRatio: 1.2,
-      children: [
-        _buildStatCard(
-          title: 'Total Students',
-          value: '1,247',
-          change: '↑ 12% from last month',
-          changeColor: AppColors.primary,
-          icon: Icons.people,
-          iconColor: AppColors.secondary,
-        ),
-        _buildStatCard(
-          title: 'Active Teachers',
-          value: '87',
-          change: '↑ 3% from last month',
-          changeColor: AppColors.primary,
-          icon: Icons.school,
-          iconColor: const Color(0xFF8B5CF6),
-        ),
-        _buildStatCard(
-          title: 'Today\'s Attendance',
-          value: '94.2%',
-          change: '↓ 2% from yesterday',
-          changeColor: Colors.red,
-          icon: Icons.assignment_turned_in,
-          iconColor: AppColors.primary,
-        ),
-        _buildStatCard(
-          title: 'Monthly Revenue',
-          value: '\$48,320',
-          change: '↑ 8% from last month',
-          changeColor: AppColors.primary,
-          icon: Icons.attach_money,
-          iconColor: const Color(0xFF10B981),
-        ),
-      ],
+      itemCount: statsData.length,
+      itemBuilder: (context, index) {
+        return AnimatedBuilder(
+          animation: _fadeAnimation,
+          builder: (context, child) {
+            return Transform.translate(
+              offset: Offset(0, _slideAnimation.value * (index + 1)),
+              child: Opacity(
+                opacity: _fadeAnimation.value,
+                child: _buildStatCard(
+                  title: statsData[index]['title'] as String,
+                  value: statsData[index]['value'] as String,
+                  change: statsData[index]['change'] as String,
+                  changeText: statsData[index]['changeText'] as String,
+                  changeColor: statsData[index]['changeColor'] as Color,
+                  icon: statsData[index]['icon'] as IconData,
+                  iconColor: statsData[index]['iconColor'] as Color,
+                  gradient: statsData[index]['gradient'] as List<Color>,
+                  isMobile: isMobile,
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -142,20 +307,23 @@ class _MetricScreenState extends State<MetricScreen> {
     required String title,
     required String value,
     required String change,
+    required String changeText,
     required Color changeColor,
     required IconData icon,
     required Color iconColor,
+    required List<Color> gradient,
+    required bool isMobile,
   }) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(isMobile ? 16 : 20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -165,60 +333,107 @@ class _MetricScreenState extends State<MetricScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF6B7280),
-                  fontWeight: FontWeight.w500,
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: isMobile ? 12 : 14,
+                    color: const Color(0xFF6B7280),
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.all(isMobile ? 8 : 12),
                 decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  gradient: LinearGradient(
+                    colors: gradient,
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: iconColor.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                child: Icon(icon, size: 20, color: iconColor),
+                child: Icon(icon, size: isMobile ? 16 : 20, color: Colors.white),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: isMobile ? 12 : 16),
           Text(
             value,
-            style: const TextStyle(
-              fontSize: 28,
+            style: TextStyle(
+              fontSize: isMobile ? 20 : 24,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF111827),
+              color: const Color(0xFF111827),
             ),
           ),
           const SizedBox(height: 8),
-          Text(
-            change,
-            style: TextStyle(
-              fontSize: 12,
-              color: changeColor,
-              fontWeight: FontWeight.w500,
-            ),
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isMobile ? 6 : 8, 
+                  vertical: isMobile ? 3 : 4,
+                ),
+                decoration: BoxDecoration(
+                  color: changeColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  change,
+                  style: TextStyle(
+                    fontSize: isMobile ? 10 : 12,
+                    color: changeColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  changeText,
+                  style: TextStyle(
+                    fontSize: isMobile ? 10 : 12,
+                    color: const Color(0xFF6B7280),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildChartsSection() {
-    return Row(
-      children: [
-        Expanded(child: _buildAttendanceChart()),
-        const SizedBox(width: 24),
-        Expanded(child: _buildRevenueChart()),
-      ],
-    );
+  Widget _buildChartsSection(bool isMobile, bool isTablet) {
+    if (isMobile) {
+      return Column(
+        children: [
+          _buildAttendanceChart(isMobile),
+          const SizedBox(height: 16),
+          _buildRevenueChart(isMobile),
+        ],
+      );
+    } else {
+      return Row(
+        children: [
+          Expanded(child: _buildAttendanceChart(isMobile)),
+          SizedBox(width: isTablet ? 16 : 24),
+          Expanded(child: _buildRevenueChart(isMobile)),
+        ],
+      );
+    }
   }
 
-  Widget _buildAttendanceChart() {
+  Widget _buildAttendanceChart(bool isMobile) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(isMobile ? 16 : 24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -233,17 +448,17 @@ class _MetricScreenState extends State<MetricScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Weekly Attendance Trends',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: isMobile ? 16 : 18,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF111827),
+              color: const Color(0xFF111827),
             ),
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: isMobile ? 16 : 24),
           SizedBox(
-            height: 200,
+            height: isMobile ? 150 : 200,
             child: LineChart(
               LineChartData(
                 gridData: FlGridData(
@@ -352,9 +567,9 @@ class _MetricScreenState extends State<MetricScreen> {
     );
   }
 
-  Widget _buildRevenueChart() {
+  Widget _buildRevenueChart(bool isMobile) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(isMobile ? 16 : 24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -369,17 +584,17 @@ class _MetricScreenState extends State<MetricScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Revenue vs Expenses',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: isMobile ? 16 : 18,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF111827),
+              color: const Color(0xFF111827),
             ),
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: isMobile ? 16 : 24),
           SizedBox(
-            height: 200,
+            height: isMobile ? 150 : 200,
             child: BarChart(
               BarChartData(
                 alignment: BarChartAlignment.spaceAround,
@@ -518,50 +733,53 @@ class _MetricScreenState extends State<MetricScreen> {
     );
   }
 
-  Widget _buildFeatureCards() {
-    return GridView.count(
-      crossAxisCount: 3,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 24,
-      mainAxisSpacing: 24,
-      childAspectRatio: 1.1,
+  Widget _buildQuickActions(bool isMobile) {
+    final actions = [
+      {'title': 'Add Student', 'icon': Icons.person_add, 'color': const Color(0xFF6366F1)},
+      {'title': 'Mark Attendance', 'icon': Icons.check_circle, 'color': const Color(0xFF10B981)},
+      {'title': 'Create Exam', 'icon': Icons.quiz, 'color': const Color(0xFF8B5CF6)},
+      {'title': 'View Reports', 'icon': Icons.analytics, 'color': const Color(0xFF06B6D4)},
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildFeatureCard(
-          title: 'Student Management',
-          description:
-              'Comprehensive student records, enrollment tracking, and academic progress monitoring.',
-          icon: Icons.people,
-          iconColor: const Color(0xFF6366F1),
+        Text(
+          'Quick Actions',
+          style: TextStyle(
+            fontSize: isMobile ? 18 : 20,
+            fontWeight: FontWeight.bold,
+            color: const Color(0xFF111827),
+          ),
         ),
-        _buildFeatureCard(
-          title: 'Academic Tracking',
-          description:
-              'Real-time grade tracking, assignment management, and performance analytics.',
-          icon: Icons.assignment,
-          iconColor: const Color(0xFF8B5CF6),
-        ),
-        _buildFeatureCard(
-          title: 'Financial Management',
-          description:
-              'Fee collection, expense tracking, and comprehensive financial reporting.',
-          icon: Icons.account_balance,
-          iconColor: const Color(0xFF06B6D4),
-          hasAction: false,
+        SizedBox(height: isMobile ? 12 : 16),
+        Row(
+          children: actions.map((action) {
+            return Expanded(
+              child: Container(
+                margin: EdgeInsets.only(right: isMobile ? 8 : 12),
+                child: _buildQuickActionCard(
+                  title: action['title'] as String,
+                  icon: action['icon'] as IconData,
+                  color: action['color'] as Color,
+                  isMobile: isMobile,
+                ),
+              ),
+            );
+          }).toList(),
         ),
       ],
     );
   }
 
-  Widget _buildFeatureCard({
+  Widget _buildQuickActionCard({
     required String title,
-    required String description,
     required IconData icon,
-    required Color iconColor,
-    bool hasAction = false,
+    required Color color,
+    required bool isMobile,
   }) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(isMobile ? 12 : 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -574,32 +792,238 @@ class _MetricScreenState extends State<MetricScreen> {
         ],
       ),
       child: Column(
+        children: [
+          Container(
+            padding: EdgeInsets.all(isMobile ? 8 : 12),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: isMobile ? 16 : 20, color: color),
+          ),
+          SizedBox(height: isMobile ? 6 : 8),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: isMobile ? 10 : 12,
+              fontWeight: FontWeight.w500,
+              color: const Color(0xFF6B7280),
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecentActivity(bool isMobile) {
+    final activities = [
+      {'title': 'New student enrolled', 'time': '2 hours ago', 'icon': Icons.person_add},
+      {'title': 'Exam results published', 'time': '4 hours ago', 'icon': Icons.assignment_turned_in},
+      {'title': 'Fee payment received', 'time': '6 hours ago', 'icon': Icons.payment},
+      {'title': 'Staff meeting scheduled', 'time': '1 day ago', 'icon': Icons.event},
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Recent Activity',
+          style: TextStyle(
+            fontSize: isMobile ? 18 : 20,
+            fontWeight: FontWeight.bold,
+            color: const Color(0xFF111827),
+          ),
+        ),
+        SizedBox(height: isMobile ? 12 : 16),
+        Container(
+          padding: EdgeInsets.all(isMobile ? 16 : 20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            children: activities.map((activity) {
+              return Container(
+                padding: EdgeInsets.symmetric(vertical: isMobile ? 8 : 12),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(isMobile ? 6 : 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF6366F1).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        activity['icon'] as IconData,
+                        size: isMobile ? 14 : 16,
+                        color: const Color(0xFF6366F1),
+                      ),
+                    ),
+                    SizedBox(width: isMobile ? 8 : 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            activity['title'] as String,
+                            style: TextStyle(
+                              fontSize: isMobile ? 13 : 14,
+                              fontWeight: FontWeight.w500,
+                              color: const Color(0xFF111827),
+                            ),
+                          ),
+                          Text(
+                            activity['time'] as String,
+                            style: TextStyle(
+                              fontSize: isMobile ? 11 : 12,
+                              color: const Color(0xFF6B7280),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFeatureCards(bool isMobile, bool isTablet) {
+    int crossAxisCount;
+    double childAspectRatio;
+    double spacing;
+
+    if (isMobile) {
+      crossAxisCount = 1;
+      childAspectRatio = 1.3;
+      spacing = 12;
+    } else if (isTablet) {
+      crossAxisCount = 2;
+      childAspectRatio = 1.2;
+      spacing = 16;
+    } else {
+      crossAxisCount = 3;
+      childAspectRatio = 1.1;
+      spacing = 20;
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Key Features',
+          style: TextStyle(
+            fontSize: isMobile ? 18 : 20,
+            fontWeight: FontWeight.bold,
+            color: const Color(0xFF111827),
+          ),
+        ),
+        SizedBox(height: isMobile ? 12 : 16),
+        GridView.count(
+          crossAxisCount: crossAxisCount,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisSpacing: spacing,
+          mainAxisSpacing: spacing,
+          childAspectRatio: childAspectRatio,
+          children: [
+            _buildFeatureCard(
+              title: 'Student Management',
+              description:
+                  'Comprehensive student records, enrollment tracking, and academic progress monitoring.',
+              icon: Icons.people,
+              iconColor: const Color(0xFF6366F1),
+              isMobile: isMobile,
+            ),
+            _buildFeatureCard(
+              title: 'Academic Tracking',
+              description:
+                  'Real-time grade tracking, assignment management, and performance analytics.',
+              icon: Icons.assignment,
+              iconColor: const Color(0xFF8B5CF6),
+              isMobile: isMobile,
+            ),
+            _buildFeatureCard(
+              title: 'Financial Management',
+              description:
+                  'Fee collection, expense tracking, and comprehensive financial reporting.',
+              icon: Icons.account_balance,
+              iconColor: const Color(0xFF06B6D4),
+              isMobile: isMobile,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFeatureCard({
+    required String title,
+    required String description,
+    required IconData icon,
+    required Color iconColor,
+    required bool isMobile,
+    bool hasAction = false,
+  }) {
+    return Container(
+      padding: EdgeInsets.all(isMobile ? 16 : 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(isMobile ? 12 : 16),
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
+              gradient: LinearGradient(
+                colors: [
+                  iconColor.withOpacity(0.1),
+                  iconColor.withOpacity(0.05),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, size: 24, color: iconColor),
+            child: Icon(icon, size: isMobile ? 20 : 24, color: iconColor),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: isMobile ? 12 : 16),
           Text(
             title,
-            style: const TextStyle(
-              fontSize: 18,
+            style: TextStyle(
+              fontSize: isMobile ? 14 : 16,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF111827),
+              color: const Color(0xFF111827),
             ),
           ),
           const SizedBox(height: 8),
           Text(
             description,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Color(0xFF6B7280),
-              height: 1.5,
+            style: TextStyle(
+              fontSize: isMobile ? 12 : 13,
+              color: const Color(0xFF6B7280),
+              height: 1.4,
             ),
           ),
           if (hasAction) ...[

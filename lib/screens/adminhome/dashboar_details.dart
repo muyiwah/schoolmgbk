@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:schmgtsystem/constants/appcolor.dart';
 
 class DashboardDetails extends StatefulWidget {
   final Function navigateBack;
@@ -30,140 +29,210 @@ class _DashboardDetailsState extends State<DashboardDetails>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SizedBox(
-        height: double.infinity,
-        child: ListView(
-          children: [
-            _buildHeader(),
-            _buildFilters(),
-            _buildMetricsRow(),
-            _buildTabBar(),
-            SizedBox(height: 800, child: _buildTabContent()),
-          ],
-        ),
+      backgroundColor: const Color(0xFFF8F9FA),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final screenWidth = constraints.maxWidth;
+          final isMobile = screenWidth < 768;
+          final isTablet = screenWidth >= 768 && screenWidth < 1024;
+          final isDesktop = screenWidth >= 1024;
+          
+          return SingleChildScrollView(
+            child: Column(
+              children: [
+                _buildHeader(isMobile),
+                _buildFilters(isMobile),
+                _buildMetricsRow(isMobile, isTablet, isDesktop),
+                _buildTabBar(isMobile),
+                SizedBox(height: isMobile ? 600 : 800, child: _buildTabContent(isMobile, isTablet)),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(bool isMobile) {
     return Container(
       width: double.infinity,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        gradient: LinearGradient(
-          colors: [AppColors.secondary, Color(0xFF8B7CF6)],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
-      ),
-      padding: EdgeInsets.all(32),
+      padding: EdgeInsets.all(isMobile ? 20 : 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'School Performance Dashboard',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Analytics Dashboard',
+                    style: TextStyle(
+                      fontSize: isMobile ? 24 : 32,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF111827),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Comprehensive school performance insights',
+                    style: TextStyle(
+                      fontSize: isMobile ? 14 : 16,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  IconButton(
+                    onPressed: () {},
+                    icon: Icon(
+                      Icons.notifications_outlined,
+                      color: Colors.grey[600],
+                      size: isMobile ? 20 : 24,
+                    ),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.grey[100],
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: EdgeInsets.all(isMobile ? 8 : 12),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    width: isMobile ? 36 : 40,
+                    height: isMobile ? 36 : 40,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.person,
+                      color: Colors.grey[600],
+                      size: isMobile ? 18 : 20,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          SizedBox(height: isMobile ? 20 : 24),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    widget.navigateBack();
+                  },
+                  icon: Icon(Icons.home, size: isMobile ? 16 : 18),
+                  label: Text(isMobile ? 'Back' : 'Back to Home'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF6366F1),
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isMobile ? 16 : 20,
+                      vertical: isMobile ? 10 : 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    elevation: 0,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              OutlinedButton.icon(
+                onPressed: () {},
+                icon: Icon(Icons.download, size: isMobile ? 16 : 18),
+                label: Text(isMobile ? 'Export' : 'Export Report'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.grey[700],
+                  side: BorderSide(color: Colors.grey[300]!),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isMobile ? 12 : 16,
+                    vertical: isMobile ? 10 : 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
               ),
             ],
           ),
-          SizedBox(height: 8),
-          Text(
-            'Detailed insights into student, staff, academic, and financial data',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.9),
-              fontSize: 16,
+        ],
+      ),
+    );
+  }
+
+
+  Widget _buildFilters(bool isMobile) {
+    if (isMobile) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Expanded(child: _buildDropdown('All Classes', [
+                  'All Classes',
+                  'Grade 1',
+                  'Grade 2',
+                  'Grade 3',
+                ])),
+                const SizedBox(width: 12),
+                Expanded(child: _buildDropdown('All Departments', [
+                  'All Departments',
+                  'Mathematics',
+                  'Science',
+                  'English',
+                ])),
+              ],
             ),
-          ),
-          SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              _buildHeaderButton(
-                'Back to Home',
-                Icons.home,
-                Colors.transparent,
-                Colors.white,
-                hasBorder: true,
-              ),
-              SizedBox(width: 16),
-
-              _buildHeaderButton(
-                'Export Report',
-                Icons.download,
-                Colors.white,
-                Color(0xFF6C5CE7),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeaderButton(
-    String text,
-    IconData icon,
-    Color backgroundColor,
-    Color textColor, {
-    bool hasBorder = false,
-  }) {
-    return ElevatedButton.icon(
-      onPressed: () {
-        widget.navigateBack();
-      },
-      icon: Icon(icon, color: textColor, size: 18),
-      label: Text(
-        text,
-        style: TextStyle(color: textColor, fontWeight: FontWeight.w600),
-      ),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: backgroundColor,
-        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-          side:
-              hasBorder
-                  ? BorderSide(color: Colors.white, width: 1.5)
-                  : BorderSide.none,
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(child: _buildDatePicker()),
+                const SizedBox(width: 12),
+                _buildActionButton('Refresh', Icons.refresh, const Color(0xFF6C5CE7)),
+                const SizedBox(width: 8),
+                _buildActionButton('Print', Icons.print, Colors.grey[600]!),
+              ],
+            ),
+          ],
         ),
-        elevation: 0,
-      ),
-    );
-  }
-
-  Widget _buildFilters() {
-    return Container(
-      padding: EdgeInsets.all(16),
-      child: Row(
-        children: [
-          _buildDropdown('All Classes', [
-            'All Classes',
-            'Grade 1',
-            'Grade 2',
-            'Grade 3',
-          ]),
-          SizedBox(width: 16),
-          _buildDropdown('All Departments', [
-            'All Departments',
-            'Mathematics',
-            'Science',
-            'English',
-          ]),
-          SizedBox(width: 16),
-          _buildDatePicker(),
-          Spacer(),
-          _buildActionButton('Refresh', Icons.refresh, Color(0xFF6C5CE7)),
-          SizedBox(width: 12),
-          _buildActionButton('Print', Icons.print, Colors.grey[600]!),
-        ],
-      ),
-    );
+      );
+    } else {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            _buildDropdown('All Classes', [
+              'All Classes',
+              'Grade 1',
+              'Grade 2',
+              'Grade 3',
+            ]),
+            const SizedBox(width: 16),
+            _buildDropdown('All Departments', [
+              'All Departments',
+              'Mathematics',
+              'Science',
+              'English',
+            ]),
+            const SizedBox(width: 16),
+            _buildDatePicker(),
+            const Spacer(),
+            _buildActionButton('Refresh', Icons.refresh, const Color(0xFF6C5CE7)),
+            const SizedBox(width: 12),
+            _buildActionButton('Print', Icons.print, Colors.grey[600]!),
+          ],
+        ),
+      );
+    }
   }
 
   Widget _buildDropdown(String value, List<String> items) {
@@ -223,71 +292,52 @@ class _DashboardDetailsState extends State<DashboardDetails>
     );
   }
 
-  Widget _buildMetricsRow() {
+  Widget _buildMetricsRow(bool isMobile, bool isTablet, bool isDesktop) {
+    final metrics = [
+      {'title': 'Total Students', 'value': '1,247', 'change': '+5.2%', 'icon': Icons.people, 'color': Colors.blue},
+      {'title': 'Total Teachers', 'value': '67', 'change': 'Active', 'icon': Icons.school, 'color': Colors.purple},
+      {'title': 'Support Staff', 'value': '23', 'change': 'Active', 'icon': Icons.support_agent, 'color': Colors.teal},
+      {'title': 'Term Income', 'value': '\$487K', 'change': '+12.3%', 'icon': Icons.attach_money, 'color': Colors.green},
+      {'title': 'Attendance Rate', 'value': '94.2%', 'change': '+2.1%', 'icon': Icons.check_circle, 'color': Colors.blue},
+      {'title': 'Avg Performance', 'value': '87.5%', 'change': '+3.2%', 'icon': Icons.trending_up, 'color': Colors.indigo},
+    ];
+
+    int crossAxisCount;
+    double spacing;
+
+    if (isMobile) {
+      crossAxisCount = 2;
+      spacing = 12;
+    } else if (isTablet) {
+      crossAxisCount = 3;
+      spacing = 16;
+    } else {
+      crossAxisCount = 6;
+      spacing = 16;
+    }
+
     return Padding(
-      padding: EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildMetricCard(
-              'Total Students',
-              '1,247',
-              '+5.2%',
-              Icons.people,
-              Colors.blue,
-            ),
-          ),
-          SizedBox(width: 16),
-          Expanded(
-            child: _buildMetricCard(
-              'Total Teachers',
-              '67',
-              'Active',
-              Icons.school,
-              Colors.purple,
-            ),
-          ),
-          SizedBox(width: 16),
-          Expanded(
-            child: _buildMetricCard(
-              'Support Staff',
-              '23',
-              'Active',
-              Icons.support_agent,
-              Colors.teal,
-            ),
-          ),
-          SizedBox(width: 16),
-          Expanded(
-            child: _buildMetricCard(
-              'Term Income',
-              '\$487K',
-              '+12.3%',
-              Icons.attach_money,
-              Colors.green,
-            ),
-          ),
-          SizedBox(width: 16),
-          Expanded(
-            child: _buildMetricCard(
-              'Attendance Rate',
-              '94.2%',
-              '+2.1%',
-              Icons.check_circle,
-              Colors.blue,
-            ),
-          ),
-          SizedBox(width: 16),
-          Expanded(
-            child: _buildMetricCard(
-              'Avg Performance',
-              '87.5%',
-              '+3.2%',
-              Icons.trending_up,
-              Colors.indigo,
-            ),
-          ),
-        ],
+      padding: const EdgeInsets.all(16),
+      child: GridView.builder(
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: crossAxisCount,
+          crossAxisSpacing: spacing,
+          mainAxisSpacing: spacing,
+          childAspectRatio: isMobile ? 1.2 : 1.1,
+        ),
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: metrics.length,
+        itemBuilder: (context, index) {
+          return _buildMetricCard(
+            metrics[index]['title'] as String,
+            metrics[index]['value'] as String,
+            metrics[index]['change'] as String,
+            metrics[index]['icon'] as IconData,
+            metrics[index]['color'] as Color,
+            isMobile: isMobile,
+          );
+        },
       ),
     );
   }
@@ -297,10 +347,11 @@ class _DashboardDetailsState extends State<DashboardDetails>
     String value,
     String change,
     IconData icon,
-    Color color,
-  ) {
+    Color color, {
+    required bool isMobile,
+  }) {
     return Container(
-      padding: EdgeInsets.all(20),
+      padding: EdgeInsets.all(isMobile ? 16 : 20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -308,7 +359,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -318,28 +369,33 @@ class _DashboardDetailsState extends State<DashboardDetails>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                title,
-                style: TextStyle(color: Colors.grey[600], fontSize: 13),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    color: Colors.grey[600], 
+                    fontSize: isMobile ? 11 : 13,
+                  ),
+                ),
               ),
-              Icon(icon, color: color, size: 24),
+              Icon(icon, color: color, size: isMobile ? 20 : 24),
             ],
           ),
-          SizedBox(height: 12),
+          SizedBox(height: isMobile ? 8 : 12),
           Text(
             value,
             style: TextStyle(
-              fontSize: 24,
+              fontSize: isMobile ? 20 : 24,
               fontWeight: FontWeight.bold,
               color: Colors.grey[800],
             ),
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           Text(
             change,
             style: TextStyle(
               color: change.startsWith('+') ? Colors.green : Colors.grey[600],
-              fontSize: 12,
+              fontSize: isMobile ? 10 : 12,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -348,23 +404,24 @@ class _DashboardDetailsState extends State<DashboardDetails>
     );
   }
 
-  Widget _buildTabBar() {
+  Widget _buildTabBar(bool isMobile) {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 16),
+      margin: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 16),
       child: TabBar(
         controller: _tabController,
-        labelColor: Color(0xFF6C5CE7),
+        labelColor: const Color(0xFF6C5CE7),
         unselectedLabelColor: Colors.grey[600],
-        indicatorColor: Color(0xFF6C5CE7),
+        indicatorColor: const Color(0xFF6C5CE7),
         indicatorWeight: 3,
+        isScrollable: isMobile,
         tabs: [
           Tab(
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.people, size: 18),
-                SizedBox(width: 8),
-                Text('Students'),
+                Icon(Icons.people, size: isMobile ? 16 : 18),
+                SizedBox(width: isMobile ? 6 : 8),
+                Text(isMobile ? 'Students' : 'Students'),
               ],
             ),
           ),
@@ -372,9 +429,9 @@ class _DashboardDetailsState extends State<DashboardDetails>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.school, size: 18),
-                SizedBox(width: 8),
-                Text('Teachers & Staff'),
+                Icon(Icons.school, size: isMobile ? 16 : 18),
+                SizedBox(width: isMobile ? 6 : 8),
+                Text(isMobile ? 'Staff' : 'Teachers & Staff'),
               ],
             ),
           ),
@@ -382,8 +439,8 @@ class _DashboardDetailsState extends State<DashboardDetails>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.account_balance_wallet, size: 18),
-                SizedBox(width: 8),
+                Icon(Icons.account_balance_wallet, size: isMobile ? 16 : 18),
+                SizedBox(width: isMobile ? 6 : 8),
                 Text('Accounts'),
               ],
             ),
@@ -392,8 +449,8 @@ class _DashboardDetailsState extends State<DashboardDetails>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.event_available, size: 18),
-                SizedBox(width: 8),
+                Icon(Icons.event_available, size: isMobile ? 16 : 18),
+                SizedBox(width: isMobile ? 6 : 8),
                 Text('Attendance'),
               ],
             ),
@@ -402,8 +459,8 @@ class _DashboardDetailsState extends State<DashboardDetails>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.settings, size: 18),
-                SizedBox(width: 8),
+                Icon(Icons.settings, size: isMobile ? 16 : 18),
+                SizedBox(width: isMobile ? 6 : 8),
                 Text('Operations'),
               ],
             ),
@@ -413,173 +470,241 @@ class _DashboardDetailsState extends State<DashboardDetails>
     );
   }
 
-  Widget _buildTabContent() {
+  Widget _buildTabContent(bool isMobile, bool isTablet) {
     return Padding(
-      padding: EdgeInsets.all(16),
+      padding: EdgeInsets.all(isMobile ? 12 : 16),
       child: TabBarView(
         controller: _tabController,
         children: [
-          _buildStudentsTab(),
-          _buildTeachersStaffTab(),
-          _buildAccountsTab(),
-          _buildAttendanceTab(),
-          _buildOperationsTab(),
+          _buildStudentsTab(isMobile, isTablet),
+          _buildTeachersStaffTab(isMobile, isTablet),
+          _buildAccountsTab(isMobile, isTablet),
+          _buildAttendanceTab(isMobile, isTablet),
+          _buildOperationsTab(isMobile, isTablet),
         ],
       ),
     );
   }
 
-  Widget _buildStudentsTab() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          flex: 2,
-          child: Column(
-            children: [
-              _buildEnrollmentCard(),
-              SizedBox(height: 16),
-              _buildNewAdmissionsCard(),
-            ],
+  Widget _buildStudentsTab(bool isMobile, bool isTablet) {
+    if (isMobile) {
+      return Column(
+        children: [
+          _buildEnrollmentCard(isMobile),
+          const SizedBox(height: 16),
+          _buildNewAdmissionsCard(isMobile),
+          const SizedBox(height: 16),
+          _buildLowAttendanceCard(isMobile),
+          const SizedBox(height: 16),
+          _buildOutstandingFeesCard(isMobile),
+        ],
+      );
+    } else {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 2,
+            child: Column(
+              children: [
+                _buildEnrollmentCard(isMobile),
+                const SizedBox(height: 16),
+                _buildNewAdmissionsCard(isMobile),
+              ],
+            ),
           ),
-        ),
-        SizedBox(width: 16),
-        Expanded(
-          flex: 2,
-          child: Column(
-            children: [
-              _buildLowAttendanceCard(),
-              SizedBox(height: 16),
-              _buildOutstandingFeesCard(),
-            ],
+          const SizedBox(width: 16),
+          Expanded(
+            flex: 2,
+            child: Column(
+              children: [
+                _buildLowAttendanceCard(isMobile),
+                const SizedBox(height: 16),
+                _buildOutstandingFeesCard(isMobile),
+              ],
+            ),
           ),
-        ),
-      ],
-    );
+        ],
+      );
+    }
   }
 
-  Widget _buildTeachersStaffTab() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          flex: 2,
-          child: Column(
-            children: [
-              _buildTeachersByDepartmentCard(),
-              SizedBox(height: 16),
-              _buildRecentHiresCard(),
-            ],
+  Widget _buildTeachersStaffTab(bool isMobile, bool isTablet) {
+    if (isMobile) {
+      return Column(
+        children: [
+          _buildTeachersByDepartmentCard(isMobile),
+          const SizedBox(height: 16),
+          _buildRecentHiresCard(isMobile),
+          const SizedBox(height: 16),
+          _buildStaffPerformanceCard(isMobile),
+          const SizedBox(height: 16),
+          _buildUpcomingEvaluationsCard(isMobile),
+        ],
+      );
+    } else {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 2,
+            child: Column(
+              children: [
+                _buildTeachersByDepartmentCard(isMobile),
+                const SizedBox(height: 16),
+                _buildRecentHiresCard(isMobile),
+              ],
+            ),
           ),
-        ),
-        SizedBox(width: 16),
-        Expanded(
-          flex: 2,
-          child: Column(
-            children: [
-              _buildStaffPerformanceCard(),
-              SizedBox(height: 16),
-              _buildUpcomingEvaluationsCard(),
-            ],
+          const SizedBox(width: 16),
+          Expanded(
+            flex: 2,
+            child: Column(
+              children: [
+                _buildStaffPerformanceCard(isMobile),
+                const SizedBox(height: 16),
+                _buildUpcomingEvaluationsCard(isMobile),
+              ],
+            ),
           ),
-        ),
-      ],
-    );
+        ],
+      );
+    }
   }
 
-  Widget _buildAccountsTab() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          flex: 2,
-          child: Column(
-            children: [
-              _buildRevenueBreakdownCard(),
-              SizedBox(height: 16),
-              _buildMonthlyExpensesCard(),
-            ],
+  Widget _buildAccountsTab(bool isMobile, bool isTablet) {
+    if (isMobile) {
+      return Column(
+        children: [
+          _buildRevenueBreakdownCard(isMobile),
+          const SizedBox(height: 16),
+          _buildMonthlyExpensesCard(isMobile),
+          const SizedBox(height: 16),
+          _buildPendingPaymentsCard(isMobile),
+          const SizedBox(height: 16),
+          _buildBudgetOverviewCard(isMobile),
+        ],
+      );
+    } else {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 2,
+            child: Column(
+              children: [
+                _buildRevenueBreakdownCard(isMobile),
+                const SizedBox(height: 16),
+                _buildMonthlyExpensesCard(isMobile),
+              ],
+            ),
           ),
-        ),
-        SizedBox(width: 16),
-        Expanded(
-          flex: 2,
-          child: Column(
-            children: [
-              _buildPendingPaymentsCard(),
-              SizedBox(height: 16),
-              _buildBudgetOverviewCard(),
-            ],
+          const SizedBox(width: 16),
+          Expanded(
+            flex: 2,
+            child: Column(
+              children: [
+                _buildPendingPaymentsCard(isMobile),
+                const SizedBox(height: 16),
+                _buildBudgetOverviewCard(isMobile),
+              ],
+            ),
           ),
-        ),
-      ],
-    );
+        ],
+      );
+    }
   }
 
-  Widget _buildAttendanceTab() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          flex: 2,
-          child: Column(
-            children: [
-              _buildAttendanceTrendsCard(),
-              SizedBox(height: 16),
-              SizedBox(
-                child: _buildClassAttendanceCard()),
-            ],
+  Widget _buildAttendanceTab(bool isMobile, bool isTablet) {
+    if (isMobile) {
+      return Column(
+        children: [
+          _buildAttendanceTrendsCard(isMobile),
+          const SizedBox(height: 16),
+          _buildClassAttendanceCard(isMobile),
+          const SizedBox(height: 16),
+          _buildAbsentStudentsCard(isMobile),
+          const SizedBox(height: 16),
+          _buildAttendanceAlertsCard(isMobile),
+        ],
+      );
+    } else {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 2,
+            child: Column(
+              children: [
+                _buildAttendanceTrendsCard(isMobile),
+                const SizedBox(height: 16),
+                _buildClassAttendanceCard(isMobile),
+              ],
+            ),
           ),
-        ),
-        SizedBox(width: 16),
-        Expanded(
-          flex: 2,
-          child: Column(
-            children: [
-              _buildAbsentStudentsCard(),
-              SizedBox(height: 16),
-              _buildAttendanceAlertsCard(),
-
-            ],
+          const SizedBox(width: 16),
+          Expanded(
+            flex: 2,
+            child: Column(
+              children: [
+                _buildAbsentStudentsCard(isMobile),
+                const SizedBox(height: 16),
+                _buildAttendanceAlertsCard(isMobile),
+              ],
+            ),
           ),
-        ),
-      ],
-    );
+        ],
+      );
+    }
   }
 
-  Widget _buildOperationsTab() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          flex: 2,
-          child: Column(
-            children: [
-              _buildFacilitiesStatusCard(),
-              SizedBox(height: 16),
-              _buildMaintenanceRequestsCard(),
-            ],
+  Widget _buildOperationsTab(bool isMobile, bool isTablet) {
+    if (isMobile) {
+      return Column(
+        children: [
+          _buildFacilitiesStatusCard(isMobile),
+          const SizedBox(height: 16),
+          _buildMaintenanceRequestsCard(isMobile),
+          const SizedBox(height: 16),
+          _buildTransportationCard(isMobile),
+          const SizedBox(height: 16),
+          _buildInventoryStatusCard(isMobile),
+        ],
+      );
+    } else {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 2,
+            child: Column(
+              children: [
+                _buildFacilitiesStatusCard(isMobile),
+                const SizedBox(height: 16),
+                _buildMaintenanceRequestsCard(isMobile),
+              ],
+            ),
           ),
-        ),
-        SizedBox(width: 16),
-        Expanded(
-          flex: 2,
-          child: Column(
-            children: [
-              _buildTransportationCard(),
-              SizedBox(height: 16),
-              _buildInventoryStatusCard(),
-            ],
+          const SizedBox(width: 16),
+          Expanded(
+            flex: 2,
+            child: Column(
+              children: [
+                _buildTransportationCard(isMobile),
+                const SizedBox(height: 16),
+                _buildInventoryStatusCard(isMobile),
+              ],
+            ),
           ),
-        ),
-      ],
-    );
+        ],
+      );
+    }
   }
 
   // Students Tab Cards (existing)
-  Widget _buildEnrollmentCard() {
+  Widget _buildEnrollmentCard(bool isMobile) {
     return Container(
-      padding: EdgeInsets.all(24),
+      padding: EdgeInsets.all(isMobile ? 16 : 24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -587,7 +712,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -597,31 +722,37 @@ class _DashboardDetailsState extends State<DashboardDetails>
           Text(
             'Enrollment by Class',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: isMobile ? 16 : 18,
               fontWeight: FontWeight.bold,
               color: Colors.grey[800],
             ),
           ),
-          SizedBox(height: 20),
-          _buildEnrollmentRow('Grade 1', 142),
-          _buildEnrollmentRow('Grade 2', 138),
-          _buildEnrollmentRow('Grade 3', 145),
+          SizedBox(height: isMobile ? 16 : 20),
+          _buildEnrollmentRow('Grade 1', 142, isMobile),
+          _buildEnrollmentRow('Grade 2', 138, isMobile),
+          _buildEnrollmentRow('Grade 3', 145, isMobile),
         ],
       ),
     );
   }
 
-  Widget _buildEnrollmentRow(String grade, int students) {
+  Widget _buildEnrollmentRow(String grade, int students, bool isMobile) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8),
+      padding: EdgeInsets.symmetric(vertical: isMobile ? 6 : 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(grade, style: TextStyle(fontSize: 16, color: Colors.grey[700])),
+          Text(
+            grade, 
+            style: TextStyle(
+              fontSize: isMobile ? 14 : 16, 
+              color: Colors.grey[700],
+            ),
+          ),
           Text(
             '$students students',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: isMobile ? 14 : 16,
               fontWeight: FontWeight.w600,
               color: Colors.grey[800],
             ),
@@ -631,9 +762,9 @@ class _DashboardDetailsState extends State<DashboardDetails>
     );
   }
 
-  Widget _buildNewAdmissionsCard() {
+  Widget _buildNewAdmissionsCard(bool isMobile) {
     return Container(
-      padding: EdgeInsets.all(24),
+      padding: EdgeInsets.all(isMobile ? 16 : 24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -641,7 +772,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -651,32 +782,35 @@ class _DashboardDetailsState extends State<DashboardDetails>
           Text(
             'New Admissions',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: isMobile ? 16 : 18,
               fontWeight: FontWeight.bold,
               color: Colors.grey[800],
             ),
           ),
-          SizedBox(height: 16),
+          SizedBox(height: isMobile ? 12 : 16),
           Text(
             '67',
             style: TextStyle(
-              fontSize: 36,
+              fontSize: isMobile ? 28 : 36,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF6C5CE7),
+              color: const Color(0xFF6C5CE7),
             ),
           ),
           Text(
             'This term',
-            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            style: TextStyle(
+              fontSize: isMobile ? 12 : 14, 
+              color: Colors.grey[600],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildLowAttendanceCard() {
+  Widget _buildLowAttendanceCard(bool isMobile) {
     return Container(
-      padding: EdgeInsets.all(24),
+      padding: EdgeInsets.all(isMobile ? 16 : 24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -684,7 +818,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -694,31 +828,39 @@ class _DashboardDetailsState extends State<DashboardDetails>
           Text(
             'Low Attendance Students',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: isMobile ? 16 : 18,
               fontWeight: FontWeight.bold,
               color: Colors.grey[800],
             ),
           ),
-          SizedBox(height: 20),
-          _buildAttendanceRow('John Smith', '67%'),
-          _buildAttendanceRow('Sarah Johnson', '72%'),
-          _buildAttendanceRow('Mike Davis', '69%'),
+          SizedBox(height: isMobile ? 16 : 20),
+          _buildAttendanceRow('John Smith', '67%', isMobile),
+          _buildAttendanceRow('Sarah Johnson', '72%', isMobile),
+          _buildAttendanceRow('Mike Davis', '69%', isMobile),
         ],
       ),
     );
   }
 
-  Widget _buildAttendanceRow(String name, String percentage) {
+  Widget _buildAttendanceRow(String name, String percentage, bool isMobile) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8),
+      padding: EdgeInsets.symmetric(vertical: isMobile ? 6 : 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(name, style: TextStyle(fontSize: 16, color: Colors.grey[700])),
+          Expanded(
+            child: Text(
+              name, 
+              style: TextStyle(
+                fontSize: isMobile ? 14 : 16, 
+                color: Colors.grey[700],
+              ),
+            ),
+          ),
           Text(
             percentage,
             style: TextStyle(
-              fontSize: 16,
+              fontSize: isMobile ? 14 : 16,
               fontWeight: FontWeight.w600,
               color: Colors.red[600],
             ),
@@ -728,9 +870,9 @@ class _DashboardDetailsState extends State<DashboardDetails>
     );
   }
 
-  Widget _buildOutstandingFeesCard() {
+  Widget _buildOutstandingFeesCard(bool isMobile) {
     return Container(
-      padding: EdgeInsets.all(24),
+      padding: EdgeInsets.all(isMobile ? 16 : 24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -738,7 +880,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -748,23 +890,26 @@ class _DashboardDetailsState extends State<DashboardDetails>
           Text(
             'Outstanding Fees',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: isMobile ? 16 : 18,
               fontWeight: FontWeight.bold,
               color: Colors.grey[800],
             ),
           ),
-          SizedBox(height: 16),
+          SizedBox(height: isMobile ? 12 : 16),
           Text(
             '\$23,450',
             style: TextStyle(
-              fontSize: 32,
+              fontSize: isMobile ? 24 : 32,
               fontWeight: FontWeight.bold,
               color: Colors.red[600],
             ),
           ),
           Text(
             '42 students',
-            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            style: TextStyle(
+              fontSize: isMobile ? 12 : 14, 
+              color: Colors.grey[600],
+            ),
           ),
         ],
       ),
@@ -772,9 +917,9 @@ class _DashboardDetailsState extends State<DashboardDetails>
   }
 
   // Teachers & Staff Tab Cards
-  Widget _buildTeachersByDepartmentCard() {
+  Widget _buildTeachersByDepartmentCard(bool isMobile) {
     return Container(
-      padding: EdgeInsets.all(24),
+      padding: EdgeInsets.all(isMobile ? 16 : 24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -782,7 +927,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -792,49 +937,52 @@ class _DashboardDetailsState extends State<DashboardDetails>
           Text(
             'Teachers by Department',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: isMobile ? 16 : 18,
               fontWeight: FontWeight.bold,
               color: Colors.grey[800],
             ),
           ),
-          SizedBox(height: 20),
-          _buildDepartmentRow('Mathematics', 2, Colors.blue),
-          _buildDepartmentRow('Science', 5, Colors.green),
-          _buildDepartmentRow('English', 8, Colors.purple),
-          _buildDepartmentRow('Basic Science', 1, Colors.red),
-          _buildDepartmentRow('Social Tech', 3, Colors.yellow),
-          _buildDepartmentRow('Culture', 4, Colors.green),
-          _buildDepartmentRow('Agric Studies', 2, Colors.pink),
-          _buildDepartmentRow('Rural Studies', 1, Colors.deepPurpleAccent),
+          SizedBox(height: isMobile ? 16 : 20),
+          _buildDepartmentRow('Mathematics', 2, Colors.blue, isMobile),
+          _buildDepartmentRow('Science', 5, Colors.green, isMobile),
+          _buildDepartmentRow('English', 8, Colors.purple, isMobile),
+          _buildDepartmentRow('Basic Science', 1, Colors.red, isMobile),
+          _buildDepartmentRow('Social Tech', 3, Colors.yellow, isMobile),
+          _buildDepartmentRow('Culture', 4, Colors.green, isMobile),
+          _buildDepartmentRow('Agric Studies', 2, Colors.pink, isMobile),
+          _buildDepartmentRow('Rural Studies', 1, Colors.deepPurpleAccent, isMobile),
         ],
       ),
     );
   }
 
-  Widget _buildDepartmentRow(String department, int count, Color color) {
+  Widget _buildDepartmentRow(String department, int count, Color color, bool isMobile) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8),
+      padding: EdgeInsets.symmetric(vertical: isMobile ? 6 : 8),
       child: Row(
         children: [
           Container(
-            width: 12,
-            height: 12,
+            width: isMobile ? 10 : 12,
+            height: isMobile ? 10 : 12,
             decoration: BoxDecoration(
               color: color,
               borderRadius: BorderRadius.circular(6),
             ),
           ),
-          SizedBox(width: 12),
+          SizedBox(width: isMobile ? 8 : 12),
           Expanded(
             child: Text(
               department,
-              style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+              style: TextStyle(
+                fontSize: isMobile ? 14 : 16, 
+                color: Colors.grey[700],
+              ),
             ),
           ),
           Text(
             '$count teachers',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: isMobile ? 14 : 16,
               fontWeight: FontWeight.w600,
               color: Colors.grey[800],
             ),
@@ -844,9 +992,9 @@ class _DashboardDetailsState extends State<DashboardDetails>
     );
   }
 
-  Widget _buildRecentHiresCard() {
+  Widget _buildRecentHiresCard(bool isMobile) {
     return Container(
-      padding: EdgeInsets.all(24),
+      padding: EdgeInsets.all(isMobile ? 16 : 24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -854,7 +1002,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -864,45 +1012,51 @@ class _DashboardDetailsState extends State<DashboardDetails>
           Text(
             'Recent Hires',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: isMobile ? 16 : 18,
               fontWeight: FontWeight.bold,
               color: Colors.grey[800],
             ),
           ),
-          SizedBox(height: 20),
-          _buildStaffRow('Dr. Emily Watson', 'Mathematics', 'Jan 2025'),
-          _buildStaffRow('Mr. James Liu', 'Science', 'Dec 2024'),
-          _buildStaffRow('Ms. Anna Rodriguez', 'English', 'Nov 2024'),
+          SizedBox(height: isMobile ? 16 : 20),
+          _buildStaffRow('Dr. Emily Watson', 'Mathematics', 'Jan 2025', isMobile),
+          _buildStaffRow('Mr. James Liu', 'Science', 'Dec 2024', isMobile),
+          _buildStaffRow('Ms. Anna Rodriguez', 'English', 'Nov 2024', isMobile),
         ],
       ),
     );
   }
 
-  Widget _buildStaffRow(String name, String department, String date) {
+  Widget _buildStaffRow(String name, String department, String date, bool isMobile) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8),
+      padding: EdgeInsets.symmetric(vertical: isMobile ? 6 : 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             name,
             style: TextStyle(
-              fontSize: 16,
+              fontSize: isMobile ? 14 : 16,
               fontWeight: FontWeight.w600,
               color: Colors.grey[800],
             ),
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 department,
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: isMobile ? 12 : 14, 
+                  color: Colors.grey[600],
+                ),
               ),
               Text(
                 date,
-                style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                style: TextStyle(
+                  fontSize: isMobile ? 10 : 12, 
+                  color: Colors.grey[500],
+                ),
               ),
             ],
           ),
@@ -911,9 +1065,9 @@ class _DashboardDetailsState extends State<DashboardDetails>
     );
   }
 
-  Widget _buildStaffPerformanceCard() {
+  Widget _buildStaffPerformanceCard(bool isMobile) {
     return Container(
-      padding: EdgeInsets.all(24),
+      padding: EdgeInsets.all(isMobile ? 16 : 24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -921,7 +1075,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -931,44 +1085,47 @@ class _DashboardDetailsState extends State<DashboardDetails>
           Text(
             'Staff Performance',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: isMobile ? 16 : 18,
               fontWeight: FontWeight.bold,
               color: Colors.grey[800],
             ),
           ),
-          SizedBox(height: 20),
-          _buildPerformanceRow('Excellent', 45, Colors.green),
-          _buildPerformanceRow('Good', 18, Colors.blue),
-          _buildPerformanceRow('Needs Improvement', 4, Colors.orange),
+          SizedBox(height: isMobile ? 16 : 20),
+          _buildPerformanceRow('Excellent', 45, Colors.green, isMobile),
+          _buildPerformanceRow('Good', 18, Colors.blue, isMobile),
+          _buildPerformanceRow('Needs Improvement', 4, Colors.orange, isMobile),
         ],
       ),
     );
   }
 
-  Widget _buildPerformanceRow(String rating, int count, Color color) {
+  Widget _buildPerformanceRow(String rating, int count, Color color, bool isMobile) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8),
+      padding: EdgeInsets.symmetric(vertical: isMobile ? 6 : 8),
       child: Row(
         children: [
           Container(
-            width: 12,
-            height: 12,
+            width: isMobile ? 10 : 12,
+            height: isMobile ? 10 : 12,
             decoration: BoxDecoration(
               color: color,
               borderRadius: BorderRadius.circular(6),
             ),
           ),
-          SizedBox(width: 12),
+          SizedBox(width: isMobile ? 8 : 12),
           Expanded(
             child: Text(
               rating,
-              style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+              style: TextStyle(
+                fontSize: isMobile ? 14 : 16, 
+                color: Colors.grey[700],
+              ),
             ),
           ),
           Text(
             '$count staff',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: isMobile ? 14 : 16,
               fontWeight: FontWeight.w600,
               color: Colors.grey[800],
             ),
@@ -978,9 +1135,9 @@ class _DashboardDetailsState extends State<DashboardDetails>
     );
   }
 
-  Widget _buildUpcomingEvaluationsCard() {
+  Widget _buildUpcomingEvaluationsCard(bool isMobile) {
     return Container(
-      padding: EdgeInsets.all(24),
+      padding: EdgeInsets.all(isMobile ? 16 : 24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -988,7 +1145,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -998,23 +1155,26 @@ class _DashboardDetailsState extends State<DashboardDetails>
           Text(
             'Upcoming Evaluations',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: isMobile ? 16 : 18,
               fontWeight: FontWeight.bold,
               color: Colors.grey[800],
             ),
           ),
-          SizedBox(height: 16),
+          SizedBox(height: isMobile ? 12 : 16),
           Text(
             '12',
             style: TextStyle(
-              fontSize: 36,
+              fontSize: isMobile ? 28 : 36,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF6C5CE7),
+              color: const Color(0xFF6C5CE7),
             ),
           ),
           Text(
             'This month',
-            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            style: TextStyle(
+              fontSize: isMobile ? 12 : 14, 
+              color: Colors.grey[600],
+            ),
           ),
         ],
       ),
@@ -1022,9 +1182,9 @@ class _DashboardDetailsState extends State<DashboardDetails>
   }
 
   // Accounts Tab Cards
-  Widget _buildRevenueBreakdownCard() {
+  Widget _buildRevenueBreakdownCard(bool isMobile) {
     return Container(
-      padding: EdgeInsets.all(24),
+      padding: EdgeInsets.all(isMobile ? 16 : 24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -1032,7 +1192,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -1042,44 +1202,47 @@ class _DashboardDetailsState extends State<DashboardDetails>
           Text(
             'Revenue Breakdown',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: isMobile ? 16 : 18,
               fontWeight: FontWeight.bold,
               color: Colors.grey[800],
             ),
           ),
-          SizedBox(height: 20),
-          _buildRevenueRow('Tuition Fees', '\$420,000', Colors.green),
-          _buildRevenueRow('Activity Fees', '\$45,000', Colors.blue),
-          _buildRevenueRow('Transport Fees', '\$22,000', Colors.orange),
+          SizedBox(height: isMobile ? 16 : 20),
+          _buildRevenueRow('Tuition Fees', '\$420,000', Colors.green, isMobile),
+          _buildRevenueRow('Activity Fees', '\$45,000', Colors.blue, isMobile),
+          _buildRevenueRow('Transport Fees', '\$22,000', Colors.orange, isMobile),
         ],
       ),
     );
   }
 
-  Widget _buildRevenueRow(String source, String amount, Color color) {
+  Widget _buildRevenueRow(String source, String amount, Color color, bool isMobile) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8),
+      padding: EdgeInsets.symmetric(vertical: isMobile ? 6 : 8),
       child: Row(
         children: [
           Container(
-            width: 12,
-            height: 12,
+            width: isMobile ? 10 : 12,
+            height: isMobile ? 10 : 12,
             decoration: BoxDecoration(
               color: color,
               borderRadius: BorderRadius.circular(6),
             ),
           ),
-          SizedBox(width: 12),
+          SizedBox(width: isMobile ? 8 : 12),
           Expanded(
             child: Text(
               source,
-              style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+              style: TextStyle(
+                fontSize: isMobile ? 14 : 16, 
+                color: Colors.grey[700],
+              ),
             ),
           ),
           Text(
             amount,
             style: TextStyle(
-              fontSize: 16,
+              fontSize: isMobile ? 14 : 16,
               fontWeight: FontWeight.w600,
               color: Colors.grey[800],
             ),
@@ -1089,9 +1252,9 @@ class _DashboardDetailsState extends State<DashboardDetails>
     );
   }
 
-  Widget _buildMonthlyExpensesCard() {
+  Widget _buildMonthlyExpensesCard(bool isMobile) {
     return Container(
-      padding: EdgeInsets.all(24),
+      padding: EdgeInsets.all(isMobile ? 16 : 24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -1099,7 +1262,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -1109,35 +1272,37 @@ class _DashboardDetailsState extends State<DashboardDetails>
           Text(
             'Monthly Expenses',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: isMobile ? 16 : 18,
               fontWeight: FontWeight.bold,
               color: Colors.grey[800],
             ),
           ),
-          SizedBox(height: 20),
-          _buildExpenseRow('Salaries', '\$125,000'),
-          _buildExpenseRow('Utilities', '\$15,500'),
-          _buildExpenseRow('Maintenance', '\$8,200'),
-          // _buildExpenseRow('Supplies', '\$12,800'),
+          SizedBox(height: isMobile ? 16 : 20),
+          _buildExpenseRow('Salaries', '\$125,000', isMobile),
+          _buildExpenseRow('Utilities', '\$15,500', isMobile),
+          _buildExpenseRow('Maintenance', '\$8,200', isMobile),
         ],
       ),
     );
   }
 
-  Widget _buildExpenseRow(String category, String amount) {
+  Widget _buildExpenseRow(String category, String amount, bool isMobile) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8),
+      padding: EdgeInsets.symmetric(vertical: isMobile ? 6 : 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             category,
-            style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+            style: TextStyle(
+              fontSize: isMobile ? 14 : 16, 
+              color: Colors.grey[700],
+            ),
           ),
           Text(
             amount,
             style: TextStyle(
-              fontSize: 16,
+              fontSize: isMobile ? 14 : 16,
               fontWeight: FontWeight.w600,
               color: Colors.red[600],
             ),
@@ -1147,9 +1312,9 @@ class _DashboardDetailsState extends State<DashboardDetails>
     );
   }
 
-  Widget _buildPendingPaymentsCard() {
+  Widget _buildPendingPaymentsCard(bool isMobile) {
     return Container(
-      padding: EdgeInsets.all(24),
+      padding: EdgeInsets.all(isMobile ? 16 : 24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -1157,7 +1322,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -1167,60 +1332,65 @@ class _DashboardDetailsState extends State<DashboardDetails>
           Text(
             'Pending Payments',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: isMobile ? 16 : 18,
               fontWeight: FontWeight.bold,
               color: Colors.grey[800],
             ),
           ),
-          SizedBox(height: 20),
-          _buildPaymentRow('Vendor Payments', '\$8,450', 'Due in 5 days'),
-          _buildPaymentRow('Staff Bonuses', '\$15,200', 'Due in 2 days'),
-          _buildPaymentRow('Equipment Purchase', '\$32,100', 'Due in 10 days'),
+          SizedBox(height: isMobile ? 16 : 20),
+          _buildPaymentRow('Vendor Payments', '\$8,450', 'Due in 5 days', isMobile),
+          _buildPaymentRow('Staff Bonuses', '\$15,200', 'Due in 2 days', isMobile),
+          _buildPaymentRow('Equipment Purchase', '\$32,100', 'Due in 10 days', isMobile),
         ],
       ),
     );
   }
 
-  Widget _buildPaymentRow(String description, String amount, String dueDate) {
+  Widget _buildPaymentRow(String description, String amount, String dueDate, bool isMobile) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8),
+      padding: EdgeInsets.symmetric(vertical: isMobile ? 6 : 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                description,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey[800],
+              Expanded(
+                child: Text(
+                  description,
+                  style: TextStyle(
+                    fontSize: isMobile ? 14 : 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[800],
+                  ),
                 ),
               ),
               Text(
                 amount,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: isMobile ? 14 : 16,
                   fontWeight: FontWeight.w600,
                   color: Colors.orange[600],
                 ),
               ),
             ],
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           Text(
             dueDate,
-            style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+            style: TextStyle(
+              fontSize: isMobile ? 10 : 12, 
+              color: Colors.grey[500],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildBudgetOverviewCard() {
+  Widget _buildBudgetOverviewCard(bool isMobile) {
     return Container(
-      padding: EdgeInsets.all(24),
+      padding: EdgeInsets.all(isMobile ? 16 : 24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -1228,7 +1398,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -1238,29 +1408,32 @@ class _DashboardDetailsState extends State<DashboardDetails>
           Text(
             'Budget Overview',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: isMobile ? 16 : 18,
               fontWeight: FontWeight.bold,
               color: Colors.grey[800],
             ),
           ),
-          SizedBox(height: 16),
+          SizedBox(height: isMobile ? 12 : 16),
           Text(
             '78%',
             style: TextStyle(
-              fontSize: 36,
+              fontSize: isMobile ? 28 : 36,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF6C5CE7),
+              color: const Color(0xFF6C5CE7),
             ),
           ),
           Text(
             'Budget utilized',
-            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            style: TextStyle(
+              fontSize: isMobile ? 12 : 14, 
+              color: Colors.grey[600],
+            ),
           ),
-          SizedBox(height: 12),
+          SizedBox(height: isMobile ? 8 : 12),
           LinearProgressIndicator(
             value: 0.78,
             backgroundColor: Colors.grey[200],
-            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6C5CE7)),
+            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF6C5CE7)),
           ),
         ],
       ),
@@ -1268,9 +1441,9 @@ class _DashboardDetailsState extends State<DashboardDetails>
   }
 
   // Attendance Tab Cards
-  Widget _buildAttendanceTrendsCard() {
+  Widget _buildAttendanceTrendsCard(bool isMobile) {
     return Container(
-      padding: EdgeInsets.all(24),
+      padding: EdgeInsets.all(isMobile ? 16 : 24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -1278,7 +1451,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -1288,38 +1461,41 @@ class _DashboardDetailsState extends State<DashboardDetails>
           Text(
             'Weekly Attendance Trends',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: isMobile ? 16 : 18,
               fontWeight: FontWeight.bold,
               color: Colors.grey[800],
             ),
           ),
-          SizedBox(height: 20),
-          _buildTrendRow('Monday', '96.2%', Colors.green),
-          _buildTrendRow('Tuesday', '94.8%', Colors.green),
-          _buildTrendRow('Wednesday', '93.1%', Colors.orange),
-          _buildTrendRow('Thursday', '95.5%', Colors.green),
-          _buildTrendRow('Friday', '89.3%', Colors.red),
+          SizedBox(height: isMobile ? 16 : 20),
+          _buildTrendRow('Monday', '96.2%', Colors.green, isMobile),
+          _buildTrendRow('Tuesday', '94.8%', Colors.green, isMobile),
+          _buildTrendRow('Wednesday', '93.1%', Colors.orange, isMobile),
+          _buildTrendRow('Thursday', '95.5%', Colors.green, isMobile),
+          _buildTrendRow('Friday', '89.3%', Colors.red, isMobile),
         ],
       ),
     );
   }
 
-  Widget _buildTrendRow(String day, String percentage, Color color) {
+  Widget _buildTrendRow(String day, String percentage, Color color, bool isMobile) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 6),
+      padding: EdgeInsets.symmetric(vertical: isMobile ? 4 : 6),
       child: Row(
         children: [
           SizedBox(
-            width: 80,
+            width: isMobile ? 60 : 80,
             child: Text(
               day,
-              style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+              style: TextStyle(
+                fontSize: isMobile ? 14 : 16, 
+                color: Colors.grey[700],
+              ),
             ),
           ),
           Expanded(
             child: Container(
-              height: 8,
-              margin: EdgeInsets.symmetric(horizontal: 12),
+              height: isMobile ? 6 : 8,
+              margin: EdgeInsets.symmetric(horizontal: isMobile ? 8 : 12),
               decoration: BoxDecoration(
                 color: Colors.grey[200],
                 borderRadius: BorderRadius.circular(4),
@@ -1339,7 +1515,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
           Text(
             percentage,
             style: TextStyle(
-              fontSize: 16,
+              fontSize: isMobile ? 14 : 16,
               fontWeight: FontWeight.w600,
               color: color,
             ),
@@ -1349,9 +1525,9 @@ class _DashboardDetailsState extends State<DashboardDetails>
     );
   }
 
-  Widget _buildClassAttendanceCard() {
+  Widget _buildClassAttendanceCard(bool isMobile) {
     return Container(
-      padding: EdgeInsets.all(24),
+      padding: EdgeInsets.all(isMobile ? 16 : 24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -1359,7 +1535,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -1369,44 +1545,50 @@ class _DashboardDetailsState extends State<DashboardDetails>
           Text(
             'Class Attendance Today',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: isMobile ? 16 : 18,
               fontWeight: FontWeight.bold,
               color: Colors.grey[800],
             ),
           ),
-          SizedBox(height: 20),
-          _buildClassAttendanceRow('Grade 1A', 28, 32),
-          _buildClassAttendanceRow('Grade 1B', 30, 32),
-          _buildClassAttendanceRow('Grade 2A', 29, 31),
-          _buildClassAttendanceRow('Grade 2B', 27, 30),
+          SizedBox(height: isMobile ? 16 : 20),
+          _buildClassAttendanceRow('Grade 1A', 28, 32, isMobile),
+          _buildClassAttendanceRow('Grade 1B', 30, 32, isMobile),
+          _buildClassAttendanceRow('Grade 2A', 29, 31, isMobile),
+          _buildClassAttendanceRow('Grade 2B', 27, 30, isMobile),
         ],
       ),
     );
   }
 
-  Widget _buildClassAttendanceRow(String className, int present, int total) {
+  Widget _buildClassAttendanceRow(String className, int present, int total, bool isMobile) {
     double percentage = (present / total) * 100;
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8),
+      padding: EdgeInsets.symmetric(vertical: isMobile ? 6 : 8),
       child: Row(
         children: [
           SizedBox(
-            width: 80,
+            width: isMobile ? 60 : 80,
             child: Text(
               className,
-              style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+              style: TextStyle(
+                fontSize: isMobile ? 14 : 16, 
+                color: Colors.grey[700],
+              ),
             ),
           ),
           Expanded(
             child: Text(
               '$present/$total',
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+              style: TextStyle(
+                fontSize: isMobile ? 14 : 16, 
+                color: Colors.grey[600],
+              ),
             ),
           ),
           Text(
             '${percentage.toStringAsFixed(1)}%',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: isMobile ? 14 : 16,
               fontWeight: FontWeight.w600,
               color:
                   percentage >= 90
@@ -1421,9 +1603,9 @@ class _DashboardDetailsState extends State<DashboardDetails>
     );
   }
 
-  Widget _buildAbsentStudentsCard() {
+  Widget _buildAbsentStudentsCard(bool isMobile) {
     return Container(
-      padding: EdgeInsets.all(24),
+      padding: EdgeInsets.all(isMobile ? 16 : 24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -1431,7 +1613,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -1441,49 +1623,56 @@ class _DashboardDetailsState extends State<DashboardDetails>
           Text(
             'Absent Students Today',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: isMobile ? 16 : 18,
               fontWeight: FontWeight.bold,
               color: Colors.grey[800],
             ),
           ),
-          SizedBox(height: 20),
-          _buildAbsentStudentRow('Emma Wilson', 'Grade 2A', 'Sick Leave'),
-          _buildAbsentStudentRow('David Chen', 'Grade 1B', 'Family Emergency'),
+          SizedBox(height: isMobile ? 16 : 20),
+          _buildAbsentStudentRow('Emma Wilson', 'Grade 2A', 'Sick Leave', isMobile),
+          _buildAbsentStudentRow('David Chen', 'Grade 1B', 'Family Emergency', isMobile),
           _buildAbsentStudentRow(
             'Lisa Brown',
             'Grade 2B',
             'Medical Appointment',
+            isMobile,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildAbsentStudentRow(String name, String className, String reason) {
+  Widget _buildAbsentStudentRow(String name, String className, String reason, bool isMobile) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8),
+      padding: EdgeInsets.symmetric(vertical: isMobile ? 6 : 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             name,
             style: TextStyle(
-              fontSize: 16,
+              fontSize: isMobile ? 14 : 16,
               fontWeight: FontWeight.w600,
               color: Colors.grey[800],
             ),
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 className,
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: isMobile ? 12 : 14, 
+                  color: Colors.grey[600],
+                ),
               ),
               Text(
                 reason,
-                style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                style: TextStyle(
+                  fontSize: isMobile ? 10 : 12, 
+                  color: Colors.grey[500],
+                ),
               ),
             ],
           ),
@@ -1492,9 +1681,9 @@ class _DashboardDetailsState extends State<DashboardDetails>
     );
   }
 
-  Widget _buildAttendanceAlertsCard() {
+  Widget _buildAttendanceAlertsCard(bool isMobile) {
     return Container(
-      padding: EdgeInsets.all(24),
+      padding: EdgeInsets.all(isMobile ? 16 : 24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -1502,7 +1691,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -1512,23 +1701,26 @@ class _DashboardDetailsState extends State<DashboardDetails>
           Text(
             'Attendance Alerts',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: isMobile ? 16 : 18,
               fontWeight: FontWeight.bold,
               color: Colors.grey[800],
             ),
           ),
-          SizedBox(height: 16),
+          SizedBox(height: isMobile ? 12 : 16),
           Text(
             '8',
             style: TextStyle(
-              fontSize: 36,
+              fontSize: isMobile ? 28 : 36,
               fontWeight: FontWeight.bold,
               color: Colors.red[600],
             ),
           ),
           Text(
             'Students below 75%',
-            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            style: TextStyle(
+              fontSize: isMobile ? 12 : 14, 
+              color: Colors.grey[600],
+            ),
           ),
         ],
       ),
@@ -1536,9 +1728,9 @@ class _DashboardDetailsState extends State<DashboardDetails>
   }
 
   // Operations Tab Cards
-  Widget _buildFacilitiesStatusCard() {
+  Widget _buildFacilitiesStatusCard(bool isMobile) {
     return Container(
-      padding: EdgeInsets.all(24),
+      padding: EdgeInsets.all(isMobile ? 16 : 24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -1546,7 +1738,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -1556,45 +1748,48 @@ class _DashboardDetailsState extends State<DashboardDetails>
           Text(
             'Facilities Status',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: isMobile ? 16 : 18,
               fontWeight: FontWeight.bold,
               color: Colors.grey[800],
             ),
           ),
-          SizedBox(height: 20),
-          _buildFacilityRow('Classrooms', 'Operational', Colors.green),
-          _buildFacilityRow('Library', 'Operational', Colors.green),
-          _buildFacilityRow('Cafeteria', 'Under Maintenance', Colors.orange),
-          _buildFacilityRow('Playground', 'Operational', Colors.green),
+          SizedBox(height: isMobile ? 16 : 20),
+          _buildFacilityRow('Classrooms', 'Operational', Colors.green, isMobile),
+          _buildFacilityRow('Library', 'Operational', Colors.green, isMobile),
+          _buildFacilityRow('Cafeteria', 'Under Maintenance', Colors.orange, isMobile),
+          _buildFacilityRow('Playground', 'Operational', Colors.green, isMobile),
         ],
       ),
     );
   }
 
-  Widget _buildFacilityRow(String facility, String status, Color color) {
+  Widget _buildFacilityRow(String facility, String status, Color color, bool isMobile) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8),
+      padding: EdgeInsets.symmetric(vertical: isMobile ? 6 : 8),
       child: Row(
         children: [
           Container(
-            width: 12,
-            height: 12,
+            width: isMobile ? 10 : 12,
+            height: isMobile ? 10 : 12,
             decoration: BoxDecoration(
               color: color,
               borderRadius: BorderRadius.circular(6),
             ),
           ),
-          SizedBox(width: 12),
+          SizedBox(width: isMobile ? 8 : 12),
           Expanded(
             child: Text(
               facility,
-              style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+              style: TextStyle(
+                fontSize: isMobile ? 14 : 16, 
+                color: Colors.grey[700],
+              ),
             ),
           ),
           Text(
             status,
             style: TextStyle(
-              fontSize: 14,
+              fontSize: isMobile ? 12 : 14,
               fontWeight: FontWeight.w600,
               color: color,
             ),
@@ -1604,9 +1799,9 @@ class _DashboardDetailsState extends State<DashboardDetails>
     );
   }
 
-  Widget _buildMaintenanceRequestsCard() {
+  Widget _buildMaintenanceRequestsCard(bool isMobile) {
     return Container(
-      padding: EdgeInsets.all(24),
+      padding: EdgeInsets.all(isMobile ? 16 : 24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -1614,7 +1809,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -1624,21 +1819,21 @@ class _DashboardDetailsState extends State<DashboardDetails>
           Text(
             'Maintenance Requests',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: isMobile ? 16 : 18,
               fontWeight: FontWeight.bold,
               color: Colors.grey[800],
             ),
           ),
-          SizedBox(height: 20),
-          _buildMaintenanceRow('AC Unit Repair', 'Room 12', 'High'),
-          _buildMaintenanceRow('Plumbing Issue', 'Restroom B', 'Medium'),
-          _buildMaintenanceRow('Light Fixture', 'Hallway', 'Low'),
+          SizedBox(height: isMobile ? 16 : 20),
+          _buildMaintenanceRow('AC Unit Repair', 'Room 12', 'High', isMobile),
+          _buildMaintenanceRow('Plumbing Issue', 'Restroom B', 'Medium', isMobile),
+          _buildMaintenanceRow('Light Fixture', 'Hallway', 'Low', isMobile),
         ],
       ),
     );
   }
 
-  Widget _buildMaintenanceRow(String issue, String location, String priority) {
+  Widget _buildMaintenanceRow(String issue, String location, String priority, bool isMobile) {
     Color priorityColor =
         priority == 'High'
             ? Colors.red
@@ -1647,28 +1842,34 @@ class _DashboardDetailsState extends State<DashboardDetails>
             : Colors.green;
 
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8),
+      padding: EdgeInsets.symmetric(vertical: isMobile ? 6 : 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             issue,
             style: TextStyle(
-              fontSize: 16,
+              fontSize: isMobile ? 14 : 16,
               fontWeight: FontWeight.w600,
               color: Colors.grey[800],
             ),
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 location,
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: isMobile ? 12 : 14, 
+                  color: Colors.grey[600],
+                ),
               ),
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: EdgeInsets.symmetric(
+                  horizontal: isMobile ? 6 : 8, 
+                  vertical: isMobile ? 1 : 2,
+                ),
                 decoration: BoxDecoration(
                   color: priorityColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
@@ -1676,7 +1877,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
                 child: Text(
                   priority,
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: isMobile ? 10 : 12,
                     fontWeight: FontWeight.w600,
                     color: priorityColor,
                   ),
@@ -1689,9 +1890,9 @@ class _DashboardDetailsState extends State<DashboardDetails>
     );
   }
 
-  Widget _buildTransportationCard() {
+  Widget _buildTransportationCard(bool isMobile) {
     return Container(
-      padding: EdgeInsets.all(24),
+      padding: EdgeInsets.all(isMobile ? 16 : 24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -1699,7 +1900,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -1709,48 +1910,51 @@ class _DashboardDetailsState extends State<DashboardDetails>
           Text(
             'Transportation',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: isMobile ? 16 : 18,
               fontWeight: FontWeight.bold,
               color: Colors.grey[800],
             ),
           ),
-          SizedBox(height: 20),
-          _buildTransportRow('Bus Route A', '45 students', 'On Time'),
-          _buildTransportRow('Bus Route B', '38 students', 'Delayed'),
-          _buildTransportRow('Bus Route C', '42 students', 'On Time'),
+          SizedBox(height: isMobile ? 16 : 20),
+          _buildTransportRow('Bus Route A', '45 students', 'On Time', isMobile),
+          _buildTransportRow('Bus Route B', '38 students', 'Delayed', isMobile),
+          _buildTransportRow('Bus Route C', '42 students', 'On Time', isMobile),
         ],
       ),
     );
   }
 
-  Widget _buildTransportRow(String route, String capacity, String status) {
+  Widget _buildTransportRow(String route, String capacity, String status, bool isMobile) {
     Color statusColor = status == 'On Time' ? Colors.green : Colors.red;
 
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8),
+      padding: EdgeInsets.symmetric(vertical: isMobile ? 6 : 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             route,
             style: TextStyle(
-              fontSize: 16,
+              fontSize: isMobile ? 14 : 16,
               fontWeight: FontWeight.w600,
               color: Colors.grey[800],
             ),
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 capacity,
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: isMobile ? 12 : 14, 
+                  color: Colors.grey[600],
+                ),
               ),
               Text(
                 status,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: isMobile ? 12 : 14,
                   fontWeight: FontWeight.w600,
                   color: statusColor,
                 ),
@@ -1762,9 +1966,9 @@ class _DashboardDetailsState extends State<DashboardDetails>
     );
   }
 
-  Widget _buildInventoryStatusCard() {
+  Widget _buildInventoryStatusCard(bool isMobile) {
     return Container(
-      padding: EdgeInsets.all(24),
+      padding: EdgeInsets.all(isMobile ? 16 : 24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -1772,7 +1976,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -1782,28 +1986,34 @@ class _DashboardDetailsState extends State<DashboardDetails>
           Text(
             'Inventory Status',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: isMobile ? 16 : 18,
               fontWeight: FontWeight.bold,
               color: Colors.grey[800],
             ),
           ),
-          SizedBox(height: 16),
+          SizedBox(height: isMobile ? 12 : 16),
           Text(
             '5',
             style: TextStyle(
-              fontSize: 36,
+              fontSize: isMobile ? 28 : 36,
               fontWeight: FontWeight.bold,
               color: Colors.orange[600],
             ),
           ),
           Text(
             'Items low in stock',
-            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            style: TextStyle(
+              fontSize: isMobile ? 12 : 14, 
+              color: Colors.grey[600],
+            ),
           ),
-          SizedBox(height: 12),
+          SizedBox(height: isMobile ? 8 : 12),
           Text(
             'Textbooks, Stationery, Cleaning Supplies',
-            style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+            style: TextStyle(
+              fontSize: isMobile ? 10 : 12, 
+              color: Colors.grey[500],
+            ),
           ),
         ],
       ),

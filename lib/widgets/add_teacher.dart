@@ -1,612 +1,721 @@
 import 'package:flutter/material.dart';
-import 'package:schmgtsystem/widgets/subject_dropdown.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:schmgtsystem/constants/appcolor.dart';
+import 'package:schmgtsystem/models/class_metrics_model.dart';
+import 'package:schmgtsystem/models/staff_model.dart' as staff;
+import 'package:schmgtsystem/providers/provider.dart';
+import 'package:schmgtsystem/providers/staff_provider.dart';
 
-import '../models/subject_model.dart';
+class AssignNewTeacherDialog extends ConsumerStatefulWidget {
+  final Class? classData;
 
-class AssignNewTeacherDialog extends StatefulWidget {
-  const AssignNewTeacherDialog({Key? key}) : super(key: key);
+  const AssignNewTeacherDialog({super.key, this.classData});
 
   @override
-  State<AssignNewTeacherDialog> createState() => _AssignNewTeacherDialogState();
+  ConsumerState<AssignNewTeacherDialog> createState() =>
+      _AssignNewTeacherDialogState();
 }
 
-class _AssignNewTeacherDialogState extends State<AssignNewTeacherDialog> {
-  String? selectedTeacher;
-  Set<String> selectedClasses = {};
-  Set<String> selectedSubjects = {};
-  DateTime? assignmentStartDate;
+class _AssignNewTeacherDialogState
+    extends ConsumerState<AssignNewTeacherDialog> {
+  staff.Staff? selectedTeacher;
+  bool _isLoading = false;
+  List<staff.Staff> teachers = [];
 
-  final List<String> teachers = [
-    'John Smith',
-    'Sarah Johnson',
-    'Michael Brown',
-    'Emily Davis',
-    'David Wilson',
-  ];
+  @override
+  void initState() {
+    super.initState();
+    // Use post-frame callback to avoid setState during build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadTeachers();
+    });
+  }
 
-  final List<String> classes = [
-    'JSS1A',
-    'JSS1B',
-    'JSS2A',
-    'JSS2B',
-    'SS1A',
-    'SS1B',
-  ];
+  Future<void> _loadTeachers() async {
+    try {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = true;
+      });
 
-  final List<String> subjects = [
-    'Mathematics',
-    'Physics',
-    'Chemistry',
-    'Biology',
-    'English',
-    'Geography',
-  ];
+      // Get all staff and filter for teachers
+      await ref.read(staffNotifierProvider.notifier).getAllStaff();
+
+      if (!mounted) return;
+      final staffState = ref.read(staffNotifierProvider);
+      final allStaff = staffState.staff;
+
+      // Filter staff to get only teachers
+      teachers =
+          allStaff.where((staffMember) {
+            // Check if staff has teacher role
+            final role = staffMember.user?.role?.toLowerCase();
+            return role == 'teacher';
+          }).toList();
+
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading teachers: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _assignTeacher() async {
+    if (selectedTeacher == null) return;
+
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+
+      // Prepare the assignment data
+      final assignmentData = {
+        "teacherId": selectedTeacher!.id,
+        "assignmentDate": DateTime.now().toIso8601String(),
+        "term": "First Term", // Default term, can be made dynamic
+        "academicYear":
+            "2025/2026", // Default academic year, can be made dynamic
+        "notes": "Class teacher assignment",
+      };
+
+      // Call the assignment method only if classData is provided
+      if (widget.classData != null) {
+        await ref
+            .read(RiverpodProvider.classProvider)
+            .assignClassTeacherToClass(
+              context,
+              assignmentData,
+              widget.classData!.id ?? '',
+            );
+      }
+
+      // Store context before async operation
+      final currentContext = context;
+
+      // Refresh the class list to show the updated teacher
+      await ref
+          .read(RiverpodProvider.classProvider)
+          .getAllClassesWithMetric(currentContext);
+
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '${selectedTeacher!.personalInfo?.firstName} ${selectedTeacher!.personalInfo?.lastName} assigned as class teacher successfully!',
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error assigning teacher: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Widget _buildStyledInput({
+    required String label,
+    required String value,
+    IconData? icon,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TextFormField(
+        initialValue: value,
+        enabled: false,
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon:
+              icon != null ? Icon(icon, color: AppColors.primary) : null,
+          filled: true,
+          fillColor: Colors.grey.shade50,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          labelStyle: TextStyle(color: Colors.grey.shade700, fontSize: 14),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 16,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStyledDropdown({
+    required String label,
+    required List<staff.Staff> items,
+    required staff.Staff? value,
+    required Function(staff.Staff?) onChanged,
+    IconData? icon,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: DropdownButtonFormField<staff.Staff>(
+        value: value,
+        dropdownColor: Colors.white,
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon:
+              icon != null ? Icon(icon, color: AppColors.primary) : null,
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: AppColors.primary, width: 2),
+          ),
+          labelStyle: TextStyle(color: Colors.grey.shade700, fontSize: 14),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 16,
+          ),
+        ),
+        items:
+            items.map((staff.Staff teacher) {
+              final fullName =
+                  '${teacher.personalInfo?.firstName ?? ''} ${teacher.personalInfo?.lastName ?? ''}'
+                      .trim();
+              final position = teacher.employmentInfo?.position ?? 'Teacher';
+              final email = teacher.contactInfo?.email ?? 'N/A';
+              return DropdownMenuItem<staff.Staff>(
+                value: teacher,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      fullName,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Text(
+                      position,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    Text(
+                      email,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+        onChanged: onChanged,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      elevation: 16,
       child: Container(
-        width: 600,
-        padding: const EdgeInsets.all(0),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        width: MediaQuery.of(context).size.width * 0.6,
+        constraints: const BoxConstraints(maxHeight: 700),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Header with close button
+            // Header
             Container(
-              padding: const EdgeInsets.fromLTRB(24, 20, 16, 20),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(8),
-                  topRight: Radius.circular(8),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.primary,
+                    AppColors.primary.withValues(alpha: 0.8),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
                 ),
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  const Icon(Icons.person_add, color: Colors.white, size: 28),
+                  const SizedBox(width: 12),
                   const Text(
-                    'Assign New Teacher',
+                    'Assign Class Teacher',
                     style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF1a1a1a),
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
+                  const Spacer(),
                   IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close, size: 20),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(
-                      minWidth: 24,
-                      minHeight: 24,
-                    ),
-                    color: Colors.grey.shade600,
+                    onPressed:
+                        _isLoading ? null : () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close, color: Colors.white),
                   ),
                 ],
               ),
             ),
 
-            // Divider
-            Container(height: 1, color: Colors.grey.shade200),
-
             // Content
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Choose a Teacher Section
-                  Row(
-                    children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Class Information Section (only show if classData is provided)
+                    if (widget.classData != null)
                       Container(
-                        width: 16,
-                        height: 16,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF6366f1),
-                          shape: BoxShape.circle,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.blue.shade200),
                         ),
-                        child: const Icon(
-                          Icons.person,
-                          size: 10,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'Choose a Teacher',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF6366f1),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    width: double.infinity,
-                    height: 48,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
-                      border: Border.all(color: Colors.grey.shade300),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: selectedTeacher,
-                        hint: Text(
-                          'Select a teacher...',
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                            fontSize: 14,
-                          ),
-                        ),
-                        isExpanded: true,
-                        icon: Icon(
-                          Icons.keyboard_arrow_down,
-                          color: Colors.grey.shade600,
-                        ),
-                        items:
-                            teachers.map((teacher) {
-                              return DropdownMenuItem(
-                                value: teacher,
-                                child: Text(
-                                  teacher,
-                                  style: const TextStyle(fontSize: 14),
-                                ),
-                              );
-                            }).toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            selectedTeacher = value;
-                          });
-                        },
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Assign to Classes Section
-                  Row(
-                    children: [
-                      Container(
-                        width: 16,
-                        height: 16,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF8b5cf6),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.school,
-                          size: 10,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'Assign to Classes',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF8b5cf6),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  _buildClassCheckboxes(),
-                  const SizedBox(height: 24),
-
-                  // Subjects to Teach Section
-                  Row(
-                    children: [
-                      Container(
-                        width: 16,
-                        height: 16,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF06b6d4),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.menu_book,
-                          size: 10,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'Subjects to Teach',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF06b6d4),
-                        ),
-                      ),
-                    ],
-                  ),
-                  // In your teacher assignment screen
-SubjectDropdown(
-  onSubjectSelected: (Subject? subject) {
-    if (subject != null) {
-      // Assign this subject to the teacher
-      // _selectedSubjectId = subject.id;
-    }
-  },
-  departmentFilter: 'Science', // Optional filter
-),
-                  const SizedBox(height: 16),
-                  _buildSubjectCheckboxes(),
-                  const SizedBox(height: 24),
-
-                  // Assignment Start Date Section
-                  Row(
-                    children: [
-                      Container(
-                        width: 16,
-                        height: 16,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF10b981),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.calendar_today,
-                          size: 10,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'Assignment Start Date',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF10b981),
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      const Text(
-                        '(Optional)',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  InkWell(
-                    onTap: _selectDate,
-                    child: Container(
-                      width: double.infinity,
-                      height: 48,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade50,
-                        border: Border.all(color: Colors.grey.shade300),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            assignmentStartDate != null
-                                ? '${assignmentStartDate!.month.toString().padLeft(2, '0')}/${assignmentStartDate!.day.toString().padLeft(2, '0')}/${assignmentStartDate!.year}'
-                                : 'mm/dd/yyyy',
-                            style: TextStyle(
-                              color:
-                                  assignmentStartDate != null
-                                      ? Colors.black87
-                                      : Colors.grey.shade600,
-                              fontSize: 14,
-                            ),
-                          ),
-                          Icon(
-                            Icons.calendar_today,
-                            size: 16,
-                            color: Colors.grey.shade600,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-
-                  // Action Buttons
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 12,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                        ),
-                        child: const Text(
-                          'Cancel',
-                          style: TextStyle(
-                            color: Colors.grey,
-                            fontWeight: FontWeight.w500,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      ElevatedButton(
-                        onPressed: _canAssign() ? _assignTeacher : null,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF6366f1),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 12,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          elevation: 0,
-                          disabledBackgroundColor: Colors.grey.shade300,
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Icon(Icons.person_add, size: 16),
-                            const SizedBox(width: 6),
-                            const Text(
-                              'Assign Teacher',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w500,
-                                fontSize: 14,
-                              ),
+                            Row(
+                              children: [
+                                Icon(Icons.school, color: Colors.blue.shade600),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Class Information',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.blue.shade800,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildStyledInput(
+                                    label: 'Class Name',
+                                    value: widget.classData!.name ?? 'N/A',
+                                    icon: Icons.class_,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: _buildStyledInput(
+                                    label: 'Level',
+                                    value: widget.classData!.level ?? 'N/A',
+                                    icon: Icons.grade,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildStyledInput(
+                                    label: 'Section',
+                                    value: widget.classData!.section ?? 'N/A',
+                                    icon: Icons.segment,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: _buildStyledInput(
+                                    label: 'Capacity',
+                                    value:
+                                        '${widget.classData!.capacity ?? 0} students',
+                                    icon: Icons.groups,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildStyledInput(
+                                    label: 'Current Students',
+                                    value:
+                                        '${widget.classData!.students?.length ?? 0} students',
+                                    icon: Icons.people,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: _buildStyledInput(
+                                    label: 'Current Teacher',
+                                    value:
+                                        widget.classData!.classTeacher != null
+                                            ? '${widget.classData!.classTeacher?.personalInfo?.firstName ?? ''} ${widget.classData!.classTeacher?.personalInfo?.lastName ?? ''}'
+                                                .trim()
+                                            : 'No teacher assigned',
+                                    icon: Icons.person,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
                       ),
+                    const SizedBox(height: 24),
+
+                    // Teacher Selection Section
+                    Text(
+                      'Select New Class Teacher',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey.shade800,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    if (_isLoading)
+                      const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(20),
+                          child: CircularProgressIndicator(),
+                        ),
+                      )
+                    else if (teachers.isEmpty)
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.orange.shade200),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.warning, color: Colors.orange.shade600),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'No teachers found. Please add teachers first.',
+                                style: TextStyle(
+                                  color: Colors.orange.shade800,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      _buildStyledDropdown(
+                        label: 'Choose Teacher *',
+                        items: teachers,
+                        value: selectedTeacher,
+                        onChanged: (staff.Staff? teacher) {
+                          setState(() {
+                            selectedTeacher = teacher;
+                          });
+                        },
+                        icon: Icons.person,
+                      ),
+
+                    const SizedBox(height: 24),
+
+                    // Assignment Details Section
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.orange.shade200),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.calendar_today,
+                                color: Colors.orange.shade600,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Assignment Details',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.orange.shade800,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildStyledInput(
+                                  label: 'Term',
+                                  value: 'First Term',
+                                  icon: Icons.schedule,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: _buildStyledInput(
+                                  label: 'Academic Year',
+                                  value: '2025/2026',
+                                  icon: Icons.calendar_month,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Selected Teacher Details
+                    if (selectedTeacher != null) ...[
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.green.shade200),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.check_circle,
+                                  color: Colors.green.shade600,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Selected Teacher',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.green.shade800,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildStyledInput(
+                                    label: 'Teacher Name',
+                                    value:
+                                        '${selectedTeacher!.personalInfo?.firstName ?? ''} ${selectedTeacher!.personalInfo?.lastName ?? ''}'
+                                            .trim(),
+                                    icon: Icons.person,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: _buildStyledInput(
+                                    label: 'Position',
+                                    value:
+                                        selectedTeacher!
+                                            .employmentInfo
+                                            ?.position ??
+                                        'Teacher',
+                                    icon: Icons.work,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildStyledInput(
+                                    label: 'Email',
+                                    value:
+                                        selectedTeacher!.contactInfo?.email ??
+                                        'N/A',
+                                    icon: Icons.email,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: _buildStyledInput(
+                                    label: 'Phone',
+                                    value:
+                                        selectedTeacher!
+                                            .contactInfo
+                                            ?.primaryPhone ??
+                                        'N/A',
+                                    icon: Icons.phone,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
                     ],
+
+                    // Info Card
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.blue.shade200),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.info_outline, color: Colors.blue.shade600),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'The selected teacher will become the primary class teacher responsible for this class. This will replace any existing class teacher assignment.',
+                              style: TextStyle(
+                                color: Colors.blue.shade800,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Action Buttons
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(20),
+                  bottomRight: Radius.circular(20),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed:
+                          _isLoading ? null : () => Navigator.of(context).pop(),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed:
+                          (_isLoading || selectedTeacher == null)
+                              ? null
+                              : _assignTeacher,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 2,
+                      ),
+                      child:
+                          _isLoading
+                              ? const CircularProgressIndicator(
+                                color: Colors.white,
+                              )
+                              : const Text(
+                                'Assign Teacher',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                    ),
                   ),
                 ],
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildClassCheckboxes() {
-    return Column(
-      children: [
-        // First row: JSS1A, JSS1B, JSS2A
-        Row(
-          children: [
-            Expanded(child: _buildCheckboxItem('JSS1A', selectedClasses)),
-            Expanded(child: _buildCheckboxItem('JSS1B', selectedClasses)),
-            Expanded(child: _buildCheckboxItem('JSS2A', selectedClasses)),
-          ],
-        ),
-        const SizedBox(height: 12),
-        // Second row: JSS2B, SS1A, SS1B
-        Row(
-          children: [
-            Expanded(child: _buildCheckboxItem('JSS2B', selectedClasses)),
-            Expanded(child: _buildCheckboxItem('SS1A', selectedClasses)),
-            Expanded(child: _buildCheckboxItem('SS1B', selectedClasses)),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSubjectCheckboxes() {
-    return Column(
-      children: [
-        // First row: Mathematics, Physics
-        Row(
-          children: [
-            Expanded(
-              child: _buildSubjectCheckboxItem('Mathematics', Icons.calculate),
-            ),
-            Expanded(
-              child: _buildSubjectCheckboxItem('Physics', Icons.science),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        // Second row: Chemistry, Biology
-        Row(
-          children: [
-            Expanded(
-              child: _buildSubjectCheckboxItem('Chemistry', Icons.biotech),
-            ),
-            Expanded(
-              child: _buildSubjectCheckboxItem('Biology', Icons.local_florist),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        // Third row: English, Geography
-        Row(
-          children: [
-            Expanded(child: _buildSubjectCheckboxItem('English', Icons.book)),
-            Expanded(
-              child: _buildSubjectCheckboxItem('Geography', Icons.public),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCheckboxItem(String item, Set<String> selectedSet) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      margin: const EdgeInsets.only(right: 16),
-      padding: EdgeInsets.all(6),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            width: 12,
-            height: 12,
-            child: Checkbox(
-              shape: OvalBorder(),
-              value: selectedSet.contains(item),
-              onChanged: (value) {
-                setState(() {
-                  if (value ?? false) {
-                    selectedSet.add(item);
-                  } else {
-                    selectedSet.remove(item);
-                  }
-                });
-              },
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              visualDensity: VisualDensity.compact,
-              activeColor: const Color(0xFF6366f1),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            item,
-            style: const TextStyle(fontSize: 12, color: Colors.black87),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSubjectCheckboxItem(String subject, IconData icon) {
-    return Container(
-       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      margin: const EdgeInsets.only(right: 16),
-      padding: EdgeInsets.all(6),
-
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            width: 12,
-            height: 12,
-            child: Checkbox(
-              shape: OvalBorder(),
-              value: selectedSubjects.contains(subject),
-              onChanged: (value) {
-                setState(() {
-                  if (value ?? false) {
-                    selectedSubjects.add(subject);
-                  } else {
-                    selectedSubjects.remove(subject);
-                  }
-                });
-              },
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              visualDensity: VisualDensity.compact,
-              activeColor: const Color(0xFF6366f1),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Icon(icon, size: 16, color: _getSubjectIconColor(subject)),
-          const SizedBox(width: 6),
-          Text(
-            subject,
-            style: const TextStyle(fontSize: 14, color: Colors.black87),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Color _getSubjectIconColor(String subject) {
-    switch (subject) {
-      case 'Mathematics':
-        return const Color(0xFF3b82f6); // Blue
-      case 'Physics':
-        return const Color(0xFF8b5cf6); // Purple
-      case 'Chemistry':
-        return const Color(0xFF06b6d4); // Cyan
-      case 'Biology':
-        return const Color(0xFF10b981); // Green
-      case 'English':
-        return const Color(0xFFf59e0b); // Yellow/Orange
-      case 'Geography':
-        return const Color(0xFF06b6d4); // Cyan
-      default:
-        return Colors.grey;
-    }
-  }
-
-  Future<void> _selectDate() async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: assignmentStartDate ?? DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-    );
-    if (picked != null && picked != assignmentStartDate) {
-      setState(() {
-        assignmentStartDate = picked;
-      });
-    }
-  }
-
-  bool _canAssign() {
-    return selectedTeacher != null &&
-        selectedClasses.isNotEmpty &&
-        selectedSubjects.isNotEmpty;
-  }
-
-  void _assignTeacher() {
-    final assignment = {
-      'teacher': selectedTeacher,
-      'classes': selectedClasses.toList(),
-      'subjects': selectedSubjects.toList(),
-      'startDate': assignmentStartDate,
-    };
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Teacher ${selectedTeacher} assigned successfully!'),
-        backgroundColor: Colors.green,
-      ),
-    );
-
-    Navigator.of(context).pop(assignment);
-  }
-}
-
-// Example usage
-class HomePage extends StatelessWidget {
-  const HomePage({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('School Management'),
-        backgroundColor: const Color(0xFF6366f1),
-        foregroundColor: Colors.white,
-      ),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            showDialog(
-              context: context,
-              builder: (context) => const AssignNewTeacherDialog(),
-            );
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF6366f1),
-            foregroundColor: Colors.white,
-          ),
-          child: const Text('Assign New Teacher'),
         ),
       ),
     );

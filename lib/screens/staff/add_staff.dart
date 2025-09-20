@@ -1,716 +1,720 @@
-// import 'dart:io';
-
-// import 'package:file_picker/file_picker.dart';
-// import 'package:flutter/material.dart';
-// import 'package:intl/intl.dart';
-
-// import 'package:schmgtsystem/color_pallete.dart';
-// import 'package:schmgtsystem/widgets/custom_datepicker.dart';
-// import 'package:schmgtsystem/widgets/custom_doc_pick.dart';
-// import 'package:schmgtsystem/widgets/custom_dropdown_select.dart';
-// import 'package:schmgtsystem/widgets/custom_textfield.dart';
-// import 'package:schmgtsystem/widgets/fancy_image_pick.dart'; // Uncomment if used
-// import 'package:schmgtsystem/widgets/image_pick.dart'; // Uncomment if used
-// import 'package:schmgtsystem/widgets/screen_header.dart';
-
-// class AddStaff extends StatefulWidget {
-//   const AddStaff({super.key});
-
-//   @override
-//   State<AddStaff> createState() => _AddStaffState();
-// }
-
-// class _AddStaffState extends State<AddStaff>
-//     with SingleTickerProviderStateMixin {
-//   late TabController _tabController;
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     _tabController = TabController(length: 4, vsync: this);
-//   }
-
-//   @override
-//   void dispose() {
-//     // TODO: implement dispose
-//     super.dispose();
-//     _tabController.dispose();
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       body: Container(
-//         width: double.infinity,
-//         height: double.infinity,
-//         padding: const EdgeInsets.all(10),
-//         decoration: BoxDecoration(
-
-//           borderRadius: BorderRadius.circular(14),
-//         ),
-//         child: Column(
-//           children: [
-//              ScreenHeader(group: 'Staff',subgroup: 'Add Staff',),
-//             const SizedBox(height: 10),
-//             Expanded(
-//               child: Container(
-//                 width: double.infinity,
-//                 decoration: BoxDecoration(
-//                   color: Colors.transparent,
-//                   border: Border.all(color: Colors.white),
-//                   borderRadius: BorderRadius.circular(14),
-//                 ),
-//                 padding: const EdgeInsets.all(10),
-//                 child: Column(
-//                   crossAxisAlignment: CrossAxisAlignment.start,
-//                   children: [
-//                     Row(
-//                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                       children: [
-//                         const Padding(
-//                           padding: EdgeInsets.only(bottom: 20.0),
-//                           child: Text('Staff Information', style: TextStyle()),
-//                         ),
-//                         ElevatedButton(
-//                           style: ElevatedButton.styleFrom(
-//                             backgroundColor: homeColor,
-//                             // minimumSize: const Size(1, 50),
-//                             shape: BeveledRectangleBorder(
-//                               borderRadius: BorderRadius.circular(4),
-//                             ),
-//                           ),
-//                           onPressed: () {
-//                             clear();
-//                             setState(() {});
-//                           },
-//                           child: const Text(
-//                             'Clear All',
-//                             style: TextStyle(color: Colors.white),
-//                           ),
-//                         ),
-//                       ],
-//                     ),
-//                     TabBar(
-//                       controller: _tabController,
-//                       labelColor: Colors.black,
-//                       unselectedLabelColor: Colors.grey,
-//                       indicatorColor: Colors.blueAccent,
-
-//                       tabs: const [
-//                         Tab(text: "Basic Info"),
-//                         Tab(text: "Pay Info"),
-//                         Tab(text: "Bank Info"),
-//                         Tab(text: "Documents"),
-//                       ],
-//                     ),
-//                     const SizedBox(height: 10),
-//                     Expanded(
-//                       child: TabBarView(
-//                         controller: _tabController,
-//                         children: [
-//                           BasicInfo(controller: _tabController),
-//                           PayInfo(),
-//                           BankInfo(),
-//                           Document(),
-//                         ],
-//                       ),
-//                     ),
-//                   ],
-//                 ),
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
-
-// bool validatePressed = false;
-
-// class Document extends StatefulWidget {
-//   const Document({super.key});
-
-//   @override
-//   State<Document> createState() => _DocumentState();
-// }
-
-// PlatformFile? myDoc;
-
-// class _DocumentState extends State<Document> {
-//   @override
-//   Widget build(BuildContext context) {
-//     return Wrap(
-//       children: [
-//         // DocumentPicker(
-//         //     onFilePicked: (file) {
-//         //       print('Picked file: ${file.name}');
-//         //     },
-//         //   ),
-//         Center(
-//           child: Column(
-//             mainAxisAlignment: MainAxisAlignment.center,
-//             children: [
-//               DocumentPickerWithValidator(
-//                 clearFile: () {},
-//                 initialFile: myDoc,
-//                 validateTrigger: validatePressed,
-//                 onFilePicked: (file) {
-//                   myDoc = file;
-//                   print('Picked file: ${file.name}');
-//                 },
-//               ),
-//               SizedBox(height: 20),
-//               ElevatedButton(
-//                 onPressed: () {
-//                   setState(() {
-//                     validatePressed = true;
-//                   });
-//                 },
-//                 child: Text('Submit'),
-//               ),
-//             ],
-//           ),
-//         ),
-//       ],
-//     );
-//   }
-// }
-
-// final _bankController = TextEditingController();
-// final _accountController = TextEditingController();
-// final _accountNpController = TextEditingController();
-
-// final _totalController = TextEditingController();
-
-// class BankInfo extends StatelessWidget {
-//   const BankInfo({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Wrap(
-//       spacing: 20,
-//       runSpacing: 20,
-//       children: [
-//         CustomInput(title: 'bank Name', controller: _bankController),
-//         CustomInput(title: 'Account Name', controller: _accountController),
-//         CustomInput(title: 'Account Number', controller: _accountNpController),
-
-//         CustomDropdown(
-//           allValues: ['Permanent', 'Contract', 'Others'],
-//           title: 'Contract Type',
-//           onChanged: (p0) {},
-//         ),
-//       ],
-//     );
-//   }
-// }
-
-// final _basicSalaryController = TextEditingController();
-
-// final _insuranceController = TextEditingController();
-// final _othersController = TextEditingController();
-
-// class PayInfo extends StatelessWidget {
-//   const PayInfo({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Wrap(
-//       spacing: 20,
-//       runSpacing: 20,
-//       children: [
-//         CustomInput(title: 'Basic Salary', controller: _basicSalaryController),
-//         CustomInput(title: 'Insurance', controller: _insuranceController),
-//         CustomInput(title: 'Others', controller: _othersController),
-
-//         CustomInput(title: 'Total', controller: _totalController),
-//       ],
-//     );
-//   }
-// }
-
-// final _nameController = TextEditingController();
-// final _lastnameController = TextEditingController();
-// final _maidenNameController = TextEditingController();
-// final _emailController = TextEditingController();
-// final _phoneController = TextEditingController();
-// final _nokController = TextEditingController();
-// final _nokNoController = TextEditingController();
-// final _dobController = TextEditingController();
-// final _dateOfJoiningController = TextEditingController();
-// final _currentAddressController = TextEditingController();
-// final _permanentAddressController = TextEditingController();
-// final _qualificationController = TextEditingController();
-// final _experienceController = TextEditingController();
-// bool _fristnameRequired = false;
-// bool _lasstnameRequired = false;
-// bool _emailRequired = false;
-// bool _genderRequired = false;
-// clear() {
-//   _nameController.text =
-//       _lastnameController.text =
-//           _emailController.text =
-//               _maidenNameController.text =
-//                   _phoneController.text =
-//                       _nokController.text =
-//                           _nokNoController.text =
-//                               _dobController.text =
-//                                   _dateOfJoiningController.text =
-//                                       _currentAddressController.text =
-//                                           _permanentAddressController.text =
-//                                               _qualificationController.text =
-//                                                   _experienceController.text =
-//                                                       _basicSalaryController
-//                                                               .text =
-//                                                           _insuranceController
-//                                                                   .text =
-//                                                               _othersController.text =
-//                                                                   _bankController.text = _accountController.text = _accountNpController.text = '';
-//   _fristnameRequired =
-//       _lasstnameRequired = _emailRequired = _genderRequired = false;
-//   myDoc = null;
-// }
-
-// class BasicInfo extends StatefulWidget {
-//   BasicInfo({super.key, required this.controller});
-//   final TabController controller;
-//   @override
-//   State<BasicInfo> createState() => _BasicInfoState();
-// }
-
-// class _BasicInfoState extends State<BasicInfo> {
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       backgroundColor: Colors.transparent,
-//       body: SingleChildScrollView(
-//         child: Wrap(
-//           spacing: 20,
-//           runSpacing: 20,
-//           children: [
-//             CustomInput(
-//               title: 'First Name',
-//               controller: _nameController,
-//               showError: _fristnameRequired,
-//             ),
-//             CustomInput(
-//               title: 'Last Name',
-//               controller: _lastnameController,
-//               showError: _lasstnameRequired,
-//             ),
-//             CustomInput(
-//               title: 'Maiden Name',
-//               controller: _maidenNameController,
-//             ),
-//             CustomInput(
-//               title: 'Email',
-//               controller: _emailController,
-//               showError: _emailRequired,
-//             ),
-//             CustomInput(title: 'Mobile No', controller: _phoneController),
-//             CustomInput(title: 'NOK', controller: _nokController),
-//             CustomInput(title: 'NOK No', controller: _nokNoController),
-//             CustomDropdown(
-//               allValues: ['Male', 'Female'],
-//               title: 'Select Gender',
-//               showError: _genderRequired,
-//               onChanged: (value) => print('Selected gender: $value'),
-//             ),
-//             CustomDropdown(
-//               allValues: ['Single', 'Married', 'Other'],
-//               title: 'Marital Status',
-//               onChanged: (value) => print('Selected status: $value'),
-//             ),
-//             CustomDatePicker(type: 'Date of Birth', controller: _dobController),
-//             CustomDatePicker(
-//               type: 'Date of Joining',
-//               controller: _dateOfJoiningController,
-//             ),
-//             CustomDropdown(
-//               allValues: const [
-//                  "admin",
-//         "teacher",
-//         "accountant",
-//         "security",
-//         "cleaner",
-//         "stock-keeper",
-//         "librarian",
-//         "secretary",
-//         "others",
-//               ],
-//               title: 'Select Role',
-//               onChanged: (value) => print('Selected role: $value'),
-//             ),
-//             CustomDropdown(
-//               allValues: const [
-//                 "admin",
-//                 "teacher",
-//                 "accountant",
-//                 "security",
-//                 "cleaner",
-//                 "stock-keeper",
-//                 "librarian",
-//                 "secretary",
-//                 "others",
-//               ],
-//               title: 'Select Role',
-//               onChanged: (value) => print('Selected role: $value'),
-//             ),
-//             CustomDropdown(
-//               allValues: const [
-//                  "admin",
-//                 "teacher",
-//                 "accountant",
-//                 "security",
-//                 "cleaner",
-//                 "stock-keeper",
-//                 "librarian",
-//                 "secretary",
-//                 "others",
-//               ],
-//               title: 'Select Role',
-//               onChanged: (value) => print('Selected role: $value'),
-//             ),
-//             _customField(
-//               context,
-//               title: 'CURRENT ADDRESS',
-//               controller: _currentAddressController,
-//             ),
-//             _customField(
-//               context,
-//               title: 'PERMANENT ADDRESS',
-//               controller: _permanentAddressController,
-//             ),
-//             _customField(
-//               context,
-//               title: 'QUALIFICATIONS',
-//               controller: _qualificationController,
-//             ),
-//             _customField(
-//               context,
-//               title: 'EXPERIENCE',
-//               controller: _experienceController,
-//             ),
-//             ElevatedButton(
-//               onPressed: () {
-//                 setState(() {
-//                   _fristnameRequired =
-//                       _lasstnameRequired =
-//                           _emailRequired = _genderRequired = true;
-//                 });
-//                 if (_nameController.text.isNotEmpty) {
-//                   // Proceed with form submission
-//                   print("Form submitted with: ${_nameController.text}");
-//                 } else {
-//                   // Show error
-//                   print("Please fill all fields");
-//                 }
-//               },
-//               child: const Text('Submit'),
-//             ),
-//             ElevatedButton(
-//               style: ElevatedButton.styleFrom(
-//                 backgroundColor: homeColor,
-//                 minimumSize: const Size(150, 50),
-//                 shape: BeveledRectangleBorder(
-//                   borderRadius: BorderRadius.circular(4),
-//                 ),
-//               ),
-//               onPressed: () {
-//                 widget.controller.animateTo(1);
-//               },
-//               child: const Text('Next', style: TextStyle(color: Colors.white)),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-
-//   SizedBox _customField(
-//     BuildContext context, {
-//     required String title,
-//     required TextEditingController controller,
-//   }) {
-//     return SizedBox(
-//       width: MediaQuery.sizeOf(context).width * 0.3,
-//       height: 200,
-//       child: TextField(
-//         controller: controller,
-//         maxLines: 20,
-//         decoration: InputDecoration(
-//           labelText: title,
-//           labelStyle: const TextStyle(fontSize: 12),
-//           filled: true,
-//           fillColor: Colors.white,
-//           enabledBorder: OutlineInputBorder(
-//             borderRadius: BorderRadius.circular(12),
-//             borderSide: const BorderSide(color: Colors.grey),
-//           ),
-//           focusedBorder: OutlineInputBorder(
-//             borderRadius: BorderRadius.circular(12),
-//             borderSide: BorderSide(color: Colors.blue.withOpacity(.4)),
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-// }
-
-import 'dart:io';
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:schmgtsystem/color_pallete.dart';
+import 'package:schmgtsystem/constants/appcolor.dart';
+import 'package:schmgtsystem/providers/staff_provider.dart';
 import 'package:schmgtsystem/widgets/custom_datepicker.dart';
-import 'package:schmgtsystem/widgets/custom_doc_pick.dart';
 import 'package:schmgtsystem/widgets/custom_dropdown_select.dart';
-import 'package:schmgtsystem/widgets/custom_textfield.dart';
-import 'package:schmgtsystem/widgets/fancy_image_pick.dart'; // Uncomment if used
-import 'package:schmgtsystem/widgets/image_pick.dart'; // Uncomment if used
-import 'package:schmgtsystem/widgets/screen_header.dart';
 
-class AddStaff extends StatefulWidget {
+class AddStaff extends ConsumerStatefulWidget {
   const AddStaff({super.key});
 
   @override
-  State<AddStaff> createState() => _AddStaffState();
+  ConsumerState<AddStaff> createState() => _AddStaffState();
 }
 
-class _AddStaffState extends State<AddStaff>
+class _AddStaffState extends ConsumerState<AddStaff>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 4, vsync: this);
-  }
+  // Controllers for Personal Information
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
+  final TextEditingController _middleNameController = TextEditingController();
+  final TextEditingController _dobController = TextEditingController();
+  final TextEditingController _nationalityController = TextEditingController();
+  final TextEditingController _stateOfOriginController =
+      TextEditingController();
 
-  @override
-  void dispose() {
-    // TODO: implement dispose
-    super.dispose();
-    _tabController.dispose();
-  }
+  // Controllers for Contact Information
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _primaryPhoneController = TextEditingController();
+  final TextEditingController _secondaryPhoneController =
+      TextEditingController();
+  final TextEditingController _streetController = TextEditingController();
+  final TextEditingController _cityController = TextEditingController();
+  final TextEditingController _stateController = TextEditingController();
+  final TextEditingController _countryController = TextEditingController();
+  final TextEditingController _postalCodeController = TextEditingController();
 
-  // Store selected values from dropdowns
+  // Controllers for Employment Information
+  final TextEditingController _positionController = TextEditingController();
+  final TextEditingController _joinDateController = TextEditingController();
+  final TextEditingController _contractEndDateController =
+      TextEditingController();
+  final TextEditingController _salaryController = TextEditingController();
+
+  // Controllers for Bank Details
+  final TextEditingController _bankNameController = TextEditingController();
+  final TextEditingController _accountNumberController =
+      TextEditingController();
+  final TextEditingController _accountNameController = TextEditingController();
+
+  // Controllers for Emergency Contact
+  final TextEditingController _emergencyNameController =
+      TextEditingController();
+  final TextEditingController _emergencyRelationshipController =
+      TextEditingController();
+  final TextEditingController _emergencyPhoneController =
+      TextEditingController();
+  final TextEditingController _emergencyAddressController =
+      TextEditingController();
+
+  // Controllers for Qualifications
+  final List<TextEditingController> _qualificationDegreeControllers = [];
+  final List<TextEditingController> _qualificationInstitutionControllers = [];
+  final List<TextEditingController> _qualificationYearControllers = [];
+  final List<TextEditingController> _qualificationGradeControllers = [];
+
+  // Selected values
+  String? _selectedTitle;
   String? _selectedGender;
   String? _selectedMaritalStatus;
   String? _selectedRole;
   String? _selectedDepartment;
   String? _selectedEmployeeType;
-  String? _selectedContractType;
-  // Method to structure data for backend
+
+  // Documents
+  List<PlatformFile> _selectedDocuments = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 5, vsync: this);
+    _nationalityController.text = 'Nigerian';
+    _countryController.text = 'Nigeria';
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _middleNameController.dispose();
+    _dobController.dispose();
+    _nationalityController.dispose();
+    _stateOfOriginController.dispose();
+    _emailController.dispose();
+    _primaryPhoneController.dispose();
+    _secondaryPhoneController.dispose();
+    _streetController.dispose();
+    _cityController.dispose();
+    _stateController.dispose();
+    _countryController.dispose();
+    _postalCodeController.dispose();
+    _positionController.dispose();
+    _joinDateController.dispose();
+    _contractEndDateController.dispose();
+    _salaryController.dispose();
+    _bankNameController.dispose();
+    _accountNumberController.dispose();
+    _accountNameController.dispose();
+    _emergencyNameController.dispose();
+    _emergencyRelationshipController.dispose();
+    _emergencyPhoneController.dispose();
+    _emergencyAddressController.dispose();
+
+    // Dispose qualification controllers
+    for (var controller in _qualificationDegreeControllers) {
+      controller.dispose();
+    }
+    for (var controller in _qualificationInstitutionControllers) {
+      controller.dispose();
+    }
+    for (var controller in _qualificationYearControllers) {
+      controller.dispose();
+    }
+    for (var controller in _qualificationGradeControllers) {
+      controller.dispose();
+    }
+
+    super.dispose();
+  }
+
+  // Method to prepare data in the new format
   Map<String, dynamic> _prepareStaffData() {
     return {
       "personalInfo": {
-        "title": _nameController.text.isNotEmpty ? _nameController.text : null,
-        "firstName": _nameController.text,
-        "lastName": _lastnameController.text,
+        "title": _selectedTitle,
+        "firstName": _firstNameController.text.trim(),
+        "lastName": _lastNameController.text.trim(),
         "middleName":
-            _maidenNameController.text.isNotEmpty
-                ? _maidenNameController.text
+            _middleNameController.text.trim().isNotEmpty
+                ? _middleNameController.text.trim()
                 : null,
         "dateOfBirth":
-            _dobController.text.isNotEmpty ? _dobController.text : null,
-        // "gender": _selectedGender?.toLowerCase(),
-        // "maritalStatus": _selectedMaritalStatus?.toLowerCase(),
-        "nationality": "Nigerian", // You might want to make this dynamic
-        "stateOfOrigin":
-            _currentAddressController.text.isNotEmpty
-                ? _currentAddressController.text
+            _dobController.text.trim().isNotEmpty
+                ? _dobController.text.trim()
                 : null,
+        "gender": _selectedGender?.toLowerCase(),
+        "maritalStatus": _selectedMaritalStatus,
+        "nationality":
+            _nationalityController.text.trim().isNotEmpty
+                ? _nationalityController.text.trim()
+                : "Nigerian",
+        "stateOfOrigin":
+            _stateOfOriginController.text.trim().isNotEmpty
+                ? _stateOfOriginController.text.trim()
+                : null,
+        "profilePhoto": null, // Will be set after file upload
       },
       "contactInfo": {
-        "primaryPhone": _phoneController.text,
+        "primaryPhone": _primaryPhoneController.text.trim(),
         "secondaryPhone":
-            _nokNoController.text.isNotEmpty ? _nokNoController.text : null,
-        "email": _emailController.text,
+            _secondaryPhoneController.text.trim().isNotEmpty
+                ? _secondaryPhoneController.text.trim()
+                : null,
+        "email": _emailController.text.trim(),
         "address": {
           "street":
-              _currentAddressController.text.isNotEmpty
-                  ? _currentAddressController.text
-                  : "",
-          "city": "", // Add city field if needed
-          "state": "", // Add state field if needed
-          "country": "Nigeria", // Default or make dynamic
-          "postalCode": "", // Add postal code if needed
+              _streetController.text.trim().isNotEmpty
+                  ? _streetController.text.trim()
+                  : null,
+          "city":
+              _cityController.text.trim().isNotEmpty
+                  ? _cityController.text.trim()
+                  : null,
+          "state":
+              _stateController.text.trim().isNotEmpty
+                  ? _stateController.text.trim()
+                  : null,
+          "country":
+              _countryController.text.trim().isNotEmpty
+                  ? _countryController.text.trim()
+                  : "Nigeria",
+          "postalCode":
+              _postalCodeController.text.trim().isNotEmpty
+                  ? _postalCodeController.text.trim()
+                  : null,
         },
       },
       "employmentInfo": {
-        "employeeType": _selectedEmployeeType?.toLowerCase(),
+        "employeeType": _selectedEmployeeType,
         "department": _selectedDepartment,
-        "position":
-            _qualificationController.text.isNotEmpty
-                ? _qualificationController.text
-                : null,
+        "position": _positionController.text.trim(),
         "joinDate":
-            _dateOfJoiningController.text.isNotEmpty
-                ? _dateOfJoiningController.text
+            _joinDateController.text.trim().isNotEmpty
+                ? _joinDateController.text.trim()
                 : null,
-        "contractEndDate": null, // You might want to add this field
-        "salary":
-            _basicSalaryController.text.isNotEmpty
-                ? double.parse(_basicSalaryController.text)
+        "contractEndDate":
+            _contractEndDateController.text.trim().isNotEmpty
+                ? _contractEndDateController.text.trim()
                 : null,
+        "salary": _parseSalary(),
         "bankDetails": {
           "bankName":
-              _bankController.text.isNotEmpty ? _bankController.text : null,
+              _bankNameController.text.trim().isNotEmpty
+                  ? _bankNameController.text.trim()
+                  : null,
           "accountNumber":
-              _accountNpController.text.isNotEmpty
-                  ? _accountNpController.text
+              _accountNumberController.text.trim().isNotEmpty
+                  ? _accountNumberController.text.trim()
                   : null,
           "accountName":
-              _accountController.text.isNotEmpty
-                  ? _accountController.text
+              _accountNameController.text.trim().isNotEmpty
+                  ? _accountNameController.text.trim()
                   : null,
         },
       },
-      "qualifications":
-          _experienceController.text.isNotEmpty
-              ? [
-                {
-                  "degree": _qualificationController.text,
-                  "institution": "", // Add institution field if needed
-                  "yearCompleted":
-                      DateTime.now().year, // Default to current year
-                  "grade": "", // Add grade field if needed
-                  "certificateUrl": null,
-                },
-              ]
-              : [],
-      "subjects": [], // Empty array for now - you can add subject selection
+      "qualifications": _buildQualificationsList(),
+      "subjects": [], // Will be populated from backend
+      "classes": [], // Will be populated from backend
       "emergencyContact": {
-        "name": _nokController.text.isNotEmpty ? _nokController.text : null,
-        "relationship": "Next of Kin", // Default or make dynamic
-        "phone":
-            _nokNoController.text.isNotEmpty ? _nokNoController.text : null,
+        "name":
+            _emergencyNameController.text.trim().isNotEmpty
+                ? _emergencyNameController.text.trim()
+                : null,
+        "relationship":
+            _emergencyRelationshipController.text.trim().isNotEmpty
+                ? _emergencyRelationshipController.text.trim()
+                : null,
+        "phone": _emergencyPhoneController.text.trim(),
       },
-      "documents":
-          myDoc != null
-              ? [
-                {
-                  "name": myDoc!.name,
-                  "type": myDoc!.extension,
-                  "url": null, // This would be set after file upload
-                  "uploadDate": DateTime.now().toIso8601String(),
-                },
-              ]
-              : [],
-      "role": _selectedRole?.toLowerCase() ?? "teacher",
+      "documents": _buildDocumentsList(),
+      "status": "active", // Default status
     };
   }
 
-  // Method to submit data to backend
-  Future<void> _submitStaffData() async {
-    print(_prepareStaffData);
-    // if (!_formKey.currentState!.validate()) {
-    // setState(() {
-    //   _fristnameRequired = _nameController.text.isEmpty;
-    //   _lasstnameRequired = _lastnameController.text.isEmpty;
-    //   _emailRequired = _emailController.text.isEmpty;
-    //   _genderRequired = _selectedGender == null;
-    // });
-    // return;
-    // }
-    //
+  List<Map<String, dynamic>> _buildQualificationsList() {
+    List<Map<String, dynamic>> qualifications = [];
+    for (int i = 0; i < _qualificationDegreeControllers.length; i++) {
+      if (_qualificationDegreeControllers[i].text.trim().isNotEmpty) {
+        // Safely parse year with error handling
+        int? year;
+        final yearText = _qualificationYearControllers[i].text.trim();
+        if (yearText.isNotEmpty) {
+          try {
+            year = int.parse(yearText);
+          } catch (e) {
+            print('Warning: Could not parse year "$yearText" as integer: $e');
+            // If parsing fails, we'll set it to null
+            year = null;
+          }
+        }
+
+        qualifications.add({
+          "degree": _qualificationDegreeControllers[i].text.trim(),
+          "institution": _qualificationInstitutionControllers[i].text.trim(),
+          "yearCompleted": year,
+          "grade":
+              _qualificationGradeControllers[i].text.trim().isNotEmpty
+                  ? _qualificationGradeControllers[i].text.trim()
+                  : null,
+          "certificateUrl": null, // Will be set after file upload
+        });
+      }
+    }
+    return qualifications;
+  }
+
+  List<Map<String, dynamic>> _buildDocumentsList() {
+    List<Map<String, dynamic>> documents = [];
+    for (var doc in _selectedDocuments) {
+      documents.add({
+        "name": doc.name,
+        "type": doc.name.split('.').last.toUpperCase(),
+        "url": null, // This would be set after file upload
+        "uploadDate": DateTime.now().toIso8601String(),
+      });
+    }
+    return documents;
+  }
+
+  // Helper method to safely parse salary
+  int? _parseSalary() {
+    final salaryText = _salaryController.text.trim();
+    if (salaryText.isEmpty) return null;
+
+    try {
+      return int.parse(salaryText);
+    } catch (e) {
+      print('Warning: Could not parse salary "$salaryText" as integer: $e');
+      return null;
+    }
+  }
+
+  void _addQualification() {
+    setState(() {
+      _qualificationDegreeControllers.add(TextEditingController());
+      _qualificationInstitutionControllers.add(TextEditingController());
+      _qualificationYearControllers.add(TextEditingController());
+      _qualificationGradeControllers.add(TextEditingController());
+    });
+  }
+
+  void _removeQualification(int index) {
+    setState(() {
+      _qualificationDegreeControllers[index].dispose();
+      _qualificationInstitutionControllers[index].dispose();
+      _qualificationYearControllers[index].dispose();
+      _qualificationGradeControllers[index].dispose();
+      _qualificationDegreeControllers.removeAt(index);
+      _qualificationInstitutionControllers.removeAt(index);
+      _qualificationYearControllers.removeAt(index);
+      _qualificationGradeControllers.removeAt(index);
+    });
+  }
+
+  Future<void> _pickDocuments() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        allowMultiple: true,
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
+      );
+
+      if (result != null) {
+        setState(() {
+          _selectedDocuments.addAll(result.files);
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error picking documents: $e')));
+    }
+  }
+
+  void _removeDocument(int index) {
+    setState(() {
+      _selectedDocuments.removeAt(index);
+    });
+  }
+
+  Future<void> _submitForm() async {
+    // Basic validation
+    if (_firstNameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please enter first name')));
+      return;
+    }
+    if (_lastNameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please enter last name')));
+      return;
+    }
+    if (_selectedGender == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please select gender')));
+      return;
+    }
+    if (_selectedRole == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please select role')));
+      return;
+    }
+    if (_primaryPhoneController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter primary phone number')),
+      );
+      return;
+    }
+    if (_emailController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter email address')),
+      );
+      return;
+    }
+    if (_emergencyPhoneController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter emergency contact phone')),
+      );
+      return;
+    }
+
+    // Validate salary field if provided
+    final salaryText = _salaryController.text.trim();
+    if (salaryText.isNotEmpty) {
+      try {
+        int.parse(salaryText);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please enter a valid salary amount')),
+        );
+        return;
+      }
+    }
+
+    // Validate qualification years if provided
+    for (int i = 0; i < _qualificationYearControllers.length; i++) {
+      final yearText = _qualificationYearControllers[i].text.trim();
+      if (yearText.isNotEmpty) {
+        try {
+          final year = int.parse(yearText);
+          if (year < 1900 || year > DateTime.now().year + 10) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Please enter a valid year for qualification ${i + 1}',
+                ),
+              ),
+            );
+            return;
+          }
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Please enter a valid year for qualification ${i + 1}',
+              ),
+            ),
+          );
+          return;
+        }
+      }
+    }
+
     try {
       final staffData = _prepareStaffData();
-    } catch (error) {}
+      print('Staff Data to be sent: ${staffData.toString()}');
+
+      // Call createStaff from staff provider
+      final staffProvider = ref.read(staffNotifierProvider.notifier);
+      final result = await staffProvider.createStaff(context, staffData);
+
+      if (result != null) {
+        // Staff created successfully
+        _clearForm();
+        // Navigator.of(context).pop(); // Navigate back to previous screen
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error creating staff: $e')));
+    }
+  }
+
+  // Method to clear all form fields after successful submission
+  void _clearForm() {
+    // Clear all text controllers
+    _firstNameController.clear();
+    _lastNameController.clear();
+    _middleNameController.clear();
+    _dobController.clear();
+    _nationalityController.clear();
+    _stateOfOriginController.clear();
+    _emailController.clear();
+    _primaryPhoneController.clear();
+    _secondaryPhoneController.clear();
+    _streetController.clear();
+    _cityController.clear();
+    _stateController.clear();
+    _countryController.clear();
+    _postalCodeController.clear();
+    _positionController.clear();
+    _joinDateController.clear();
+    _contractEndDateController.clear();
+    _salaryController.clear();
+    _bankNameController.clear();
+    _accountNumberController.clear();
+    _accountNameController.clear();
+    _emergencyNameController.clear();
+    _emergencyRelationshipController.clear();
+    _emergencyPhoneController.clear();
+    _emergencyAddressController.clear();
+
+    // Clear dropdown selections
+    setState(() {
+      _selectedGender = null;
+      _selectedTitle = null;
+      _selectedMaritalStatus = null;
+      _selectedRole = null;
+      _selectedDepartment = null;
+      _selectedEmployeeType = null;
+    });
+
+    // Clear qualifications
+    setState(() {
+      _qualificationDegreeControllers.clear();
+      _qualificationInstitutionControllers.clear();
+      _qualificationYearControllers.clear();
+      _qualificationGradeControllers.clear();
+    });
+
+    // Clear documents
+    setState(() {
+      _selectedDocuments.clear();
+    });
+
+    // Reset tab to first tab
+    _tabController.animateTo(0);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(14)),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [AppColors.primary.withOpacity(0.1), AppColors.background],
+          ),
+        ),
         child: Column(
           children: [
-            ScreenHeader(group: 'Staff', subgroup: 'Add Staff'),
-            const SizedBox(height: 10),
+            // Header Section
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.shadowGrey.withOpacity(0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: homeColor,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.person_add,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Add Staff Member',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Add new staff member to the system',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: AppColors.textPrimary.withOpacity(0.7),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  // Custom Tab Bar
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.background,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: TabBar(
+                      controller: _tabController,
+                      isScrollable: true,
+                      indicator: BoxDecoration(
+                        color: homeColor,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      indicatorSize: TabBarIndicatorSize.tab,
+                      labelColor: Colors.white,
+                      unselectedLabelColor: AppColors.textPrimary,
+                      labelStyle: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                      unselectedLabelStyle: const TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14,
+                      ),
+                      tabs: const [
+                        Tab(text: 'Personal Info'),
+                        Tab(text: 'Contact Info'),
+                        Tab(text: 'Employment Info'),
+                        Tab(text: 'Qualifications'),
+                        Tab(text: 'Documents'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Form Content
             Expanded(
               child: Container(
-                width: double.infinity,
+                margin: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.transparent,
-                  border: Border.all(color: Colors.white),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                padding: const EdgeInsets.all(10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Padding(
-                          padding: EdgeInsets.only(bottom: 20.0),
-                          child: Text('Staff Information', style: TextStyle()),
-                        ),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: homeColor,
-                            // minimumSize: const Size(1, 50),
-                            shape: BeveledRectangleBorder(
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          ),
-                          onPressed: () {
-                            clear();
-                            setState(() {});
-                          },
-                          child: const Text(
-                            'Clear All',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        ),
-                      ],
-                    ),
-                    TabBar(
-                      controller: _tabController,
-                      labelColor: Colors.black,
-                      unselectedLabelColor: Colors.grey,
-                      indicatorColor: Colors.blueAccent,
-
-                      tabs: const [
-                        Tab(text: "Basic Info"),
-                        Tab(text: "Pay Info"),
-                        Tab(text: "Bank Info"),
-                        Tab(text: "Documents"),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Expanded(
-                      child: TabBarView(
-                        controller: _tabController,
-                        children: [
-                          BasicInfo(
-                            controller: _tabController,
-                            onGenderSelected:
-                                (value) => _selectedGender = value,
-                            onMaritalStatusSelected:
-                                (value) => _selectedMaritalStatus = value,
-                            onRoleSelected: (value) => _selectedRole = value,
-                          ),
-                          PayInfo(),
-                          BankInfo(),
-                          Document(
-                            sumbitData: () {
-                              _submitStaffData();
-                            },
-                          ),
-                        ],
-                      ),
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.shadowGrey.withOpacity(0.2),
+                      blurRadius: 15,
+                      offset: const Offset(0, 5),
                     ),
                   ],
                 ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildPersonalInfoTab(),
+                      _buildContactInfoTab(),
+                      _buildEmploymentInfoTab(),
+                      _buildQualificationsTab(),
+                      _buildDocumentsTab(),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            // Navigation Buttons
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.shadowGrey.withOpacity(0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed:
+                        _tabController.index > 0
+                            ? () {
+                              _tabController.animateTo(
+                                _tabController.index - 1,
+                              );
+                            }
+                            : null,
+                    icon: const Icon(Icons.arrow_back),
+                    label: const Text('Previous'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.border,
+                      foregroundColor: AppColors.textPrimary,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      if (_tabController.index < _tabController.length - 1) {
+                        _tabController.animateTo(_tabController.index + 1);
+                      } else {
+                        _submitForm();
+                      }
+                    },
+                    icon: Icon(
+                      _tabController.index < _tabController.length - 1
+                          ? Icons.arrow_forward
+                          : Icons.check,
+                    ),
+                    label: Text(
+                      _tabController.index < _tabController.length - 1
+                          ? 'Next'
+                          : 'Submit',
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: homeColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      elevation: 3,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -718,357 +722,1019 @@ class _AddStaffState extends State<AddStaff>
       ),
     );
   }
-}
 
-bool validatePressed = false;
-
-class Document extends StatefulWidget {
-  Null Function() sumbitData;
-  Document({super.key, required this.sumbitData});
-
-  @override
-  State<Document> createState() => _DocumentState();
-}
-
-PlatformFile? myDoc;
-
-class _DocumentState extends State<Document> {
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      children: [
-        // DocumentPicker(
-        //     onFilePicked: (file) {
-        //       print('Picked file: ${file.name}');
-        //     },
-        //   ),
-        Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              DocumentPickerWithValidator(
-                clearFile: () {},
-                initialFile: myDoc,
-                validateTrigger: validatePressed,
-                onFilePicked: (file) {
-                  myDoc = file;
-                  print('Picked file: ${file.name}');
-                },
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    validatePressed = true;
-                  });
-                },
-                child: Text('Submit'),
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  widget.sumbitData();
-                },
-                child: Text('Submit'),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-final _bankController = TextEditingController();
-final _accountController = TextEditingController();
-final _accountNpController = TextEditingController();
-
-final _totalController = TextEditingController();
-
-class BankInfo extends StatelessWidget {
-  const BankInfo({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 20,
-      runSpacing: 20,
-      children: [
-        CustomInput(title: 'bank Name', controller: _bankController),
-        CustomInput(title: 'Account Name', controller: _accountController),
-        CustomInput(title: 'Account Number', controller: _accountNpController),
-
-        CustomDropdown(
-          allValues: ['Permanent', 'Contract', 'Others'],
-          title: 'Contract Type',
-          onChanged: (p0) {},
-        ),
-      ],
-    );
-  }
-}
-
-final _basicSalaryController = TextEditingController();
-
-final _insuranceController = TextEditingController();
-final _othersController = TextEditingController();
-
-class PayInfo extends StatelessWidget {
-  const PayInfo({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 20,
-      runSpacing: 20,
-      children: [
-        CustomInput(title: 'Basic Salary', controller: _basicSalaryController),
-        CustomInput(title: 'Insurance', controller: _insuranceController),
-        CustomInput(title: 'Others', controller: _othersController),
-
-        CustomInput(title: 'Total', controller: _totalController),
-      ],
-    );
-  }
-}
-
-final _nameController = TextEditingController();
-final _lastnameController = TextEditingController();
-final _maidenNameController = TextEditingController();
-final _emailController = TextEditingController();
-final _phoneController = TextEditingController();
-final _nokController = TextEditingController();
-final _nokNoController = TextEditingController();
-final _dobController = TextEditingController();
-final _dateOfJoiningController = TextEditingController();
-final _currentAddressController = TextEditingController();
-final _permanentAddressController = TextEditingController();
-final _qualificationController = TextEditingController();
-final _experienceController = TextEditingController();
-bool _fristnameRequired = false;
-bool _lasstnameRequired = false;
-bool _emailRequired = false;
-bool _genderRequired = false;
-clear() {
-  _nameController.text =
-      _lastnameController.text =
-          _emailController.text =
-              _maidenNameController.text =
-                  _phoneController.text =
-                      _nokController.text =
-                          _nokNoController.text =
-                              _dobController.text =
-                                  _dateOfJoiningController.text =
-                                      _currentAddressController.text =
-                                          _permanentAddressController.text =
-                                              _qualificationController.text =
-                                                  _experienceController.text =
-                                                      _basicSalaryController
-                                                              .text =
-                                                          _insuranceController
-                                                                  .text =
-                                                              _othersController.text =
-                                                                  _bankController.text = _accountController.text = _accountNpController.text = '';
-  _fristnameRequired =
-      _lasstnameRequired = _emailRequired = _genderRequired = false;
-  myDoc = null;
-}
-
-class BasicInfo extends StatefulWidget {
-  BasicInfo({
-    super.key,
-    required this.controller,
-    required this.onGenderSelected,
-    required this.onMaritalStatusSelected,
-    required this.onRoleSelected,
-  });
-
-  final TabController controller;
-  final Function(String?) onGenderSelected;
-  final Function(String?) onMaritalStatusSelected;
-  final Function(String?) onRoleSelected;
-
-  @override
-  State<BasicInfo> createState() => _BasicInfoState();
-}
-
-class _BasicInfoState extends State<BasicInfo> {
-  GlobalKey _formKey = GlobalKey();
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildPersonalInfoTab() {
     return SingleChildScrollView(
-      child: Wrap(
-        spacing: 20,
-        runSpacing: 20,
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CustomInput(
-            title: 'First Name *',
-            controller: _nameController,
-            showError: _fristnameRequired,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'First name is required';
-              }
-              return null;
-            },
-          ),
-          CustomInput(
-            title: 'Last Name *',
-            controller: _lastnameController,
-            showError: _lasstnameRequired,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Last name is required';
-              }
-              return null;
-            },
-          ),
-          CustomInput(title: 'Middle Name', controller: _maidenNameController),
-          CustomInput(
-            title: 'Email *',
-            controller: _emailController,
-            showError: _emailRequired,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Email is required';
-              }
-              if (!value.contains('@')) {
-                return 'Enter a valid email';
-              }
-              return null;
-            },
-          ),
-          CustomInput(
-            title: 'Mobile No *',
-            controller: _phoneController,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Mobile number is required';
-              }
-              return null;
-            },
-          ),
-          CustomInput(title: 'Next of Kin Name', controller: _nokController),
-          CustomInput(title: 'Next of Kin Phone', controller: _nokNoController),
-
-          CustomDropdown(
-            allValues: ['Male', 'Female'],
-            title: 'Select Gender *',
-            showError: _genderRequired,
-            onChanged: (value) {
-              widget.onGenderSelected(value);
-              setState(() {
-                _genderRequired = value == null;
-              });
-            },
-            // validator: (value) {
-            //   if (value == null) {
-            //     return 'Gender is required';
-            //   }
-            //   return null;
-            // },
-          ),
-
-          CustomDropdown(
-            allValues: ['Single', 'Married', 'Other'],
-            title: 'Marital Status',
-            onChanged: widget.onMaritalStatusSelected,
-          ),
-
-          CustomDatePicker(type: 'Date of Birth', controller: _dobController),
-          CustomDatePicker(
-            type: 'Date of Joining',
-            controller: _dateOfJoiningController,
-          ),
-
-          CustomDropdown(
-            allValues: const [
-              "admin",
-              "teacher",
-              "accountant",
-              "security",
-              "cleaner",
-              "stock-keeper",
-              "librarian",
-              "secretary",
-              "others",
-            ],
-            title: 'Select Role *',
-            onChanged: widget.onRoleSelected,
-            // validator: (value) {
-            //   if (value == null) {
-            //     return 'Role is required';
-            //   }
-            //   return null;
-            // },
-          ),
-
-          _customField(
-            context,
-            title: 'CURRENT ADDRESS',
-            controller: _currentAddressController,
-          ),
-
-          _customField(
-            context,
-            title: 'PERMANENT ADDRESS',
-            controller: _permanentAddressController,
-          ),
-
-          _customField(
-            context,
-            title: 'QUALIFICATIONS',
-            controller: _qualificationController,
-          ),
-
-          _customField(
-            context,
-            title: 'EXPERIENCE',
-            controller: _experienceController,
-          ),
-
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: homeColor,
-              minimumSize: const Size(150, 50),
+          // Section Header
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: homeColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: homeColor.withOpacity(0.3)),
             ),
-            onPressed: () {
-              widget.controller.animateTo(1);
-            },
-            child: const Text('Next', style: TextStyle(color: Colors.white)),
+            child: Row(
+              children: [
+                Icon(Icons.person_outline, color: homeColor, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'Personal Information',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: homeColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          // Form Fields
+          Row(
+            children: [
+              Expanded(
+                child: _buildStyledDropdown(
+                  title: 'Title',
+                  allValues: const ['Mr', 'Mrs', 'Ms', 'Dr', 'Prof'],
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedTitle = value;
+                    });
+                  },
+                  icon: Icons.title,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildStyledInput(
+                  title: 'First Name *',
+                  controller: _firstNameController,
+                  icon: Icons.person,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStyledInput(
+                  title: 'Last Name *',
+                  controller: _lastNameController,
+                  icon: Icons.person,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildStyledInput(
+                  title: 'Middle Name',
+                  controller: _middleNameController,
+                  icon: Icons.person_outline,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStyledDatePicker(
+                  title: 'Date of Birth',
+                  controller: _dobController,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildStyledDropdown(
+                  title: 'Gender *',
+                  allValues: const ['male', 'female'],
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedGender = value;
+                    });
+                  },
+                  icon: Icons.wc,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStyledDropdown(
+                  title: 'Marital Status',
+                  allValues: const ['single', 'married', 'divorced', 'widowed'],
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedMaritalStatus = value;
+                    });
+                  },
+                  icon: Icons.favorite,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildStyledInput(
+                  title: 'Nationality *',
+                  controller: _nationalityController,
+                  icon: Icons.flag,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _buildStyledInput(
+            title: 'State of Origin',
+            controller: _stateOfOriginController,
+            icon: Icons.location_city,
           ),
         ],
       ),
     );
   }
-}
 
-SizedBox _customField(
-  BuildContext context, {
-  required String title,
-  required TextEditingController controller,
-}) {
-  return SizedBox(
-    width: MediaQuery.sizeOf(context).width * 0.3,
-    height: 200,
-    child: TextField(
-      controller: controller,
-      maxLines: 20,
-      decoration: InputDecoration(
-        labelText: title,
-        labelStyle: const TextStyle(fontSize: 12),
-        filled: true,
-        fillColor: Colors.white,
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.grey),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.blue.withOpacity(.4)),
+  Widget _buildContactInfoTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section Header
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.secondaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: AppColors.secondaryColor.withOpacity(0.3),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.contact_phone,
+                  color: AppColors.secondaryColor,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Contact Information',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.secondaryColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          // Email
+          _buildStyledInput(
+            title: 'Email Address *',
+            controller: _emailController,
+            icon: Icons.email,
+            keyboardType: TextInputType.emailAddress,
+          ),
+          const SizedBox(height: 20),
+          // Phone Numbers
+          Row(
+            children: [
+              Expanded(
+                child: _buildStyledInput(
+                  title: 'Primary Phone *',
+                  controller: _primaryPhoneController,
+                  icon: Icons.phone,
+                  keyboardType: TextInputType.phone,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildStyledInput(
+                  title: 'Secondary Phone',
+                  controller: _secondaryPhoneController,
+                  icon: Icons.phone_android,
+                  keyboardType: TextInputType.phone,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          // Address Section Header
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.tertiary1.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.location_on, color: AppColors.tertiary1, size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  'Address Information',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.tertiary1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Street Address
+          _buildStyledInput(
+            title: 'Street Address *',
+            controller: _streetController,
+            icon: Icons.home,
+          ),
+          const SizedBox(height: 20),
+          // City and State
+          Row(
+            children: [
+              Expanded(
+                child: _buildStyledInput(
+                  title: 'City *',
+                  controller: _cityController,
+                  icon: Icons.location_city,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildStyledInput(
+                  title: 'State *',
+                  controller: _stateController,
+                  icon: Icons.map,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          // Country and Postal Code
+          Row(
+            children: [
+              Expanded(
+                child: _buildStyledInput(
+                  title: 'Country',
+                  controller: _countryController,
+                  icon: Icons.public,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildStyledInput(
+                  title: 'Postal Code',
+                  controller: _postalCodeController,
+                  icon: Icons.local_post_office,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmploymentInfoTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Employment Information Section Header
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: AppColors.primaryColor.withOpacity(0.3),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.work_outline,
+                  color: AppColors.primaryColor,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Employment Information',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primaryColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Role and Department Row
+          Row(
+            children: [
+              Expanded(
+                child: _buildStyledDropdown(
+                  title: 'Role *',
+                  allValues: const [
+                    "admin",
+                    "teacher",
+                    "accountant",
+                    "security",
+                    "cleaner",
+                    "stock-keeper",
+                    "librarian",
+                    "secretary",
+                    'principal',
+                    'support staff',
+                    "others",
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedRole = value;
+                    });
+                  },
+                  icon: Icons.badge,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildStyledDropdown(
+                  title: 'Department',
+                  allValues: const [
+                    'Science',
+                    'Arts',
+                    'Commerce',
+                    'Administration',
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedDepartment = value;
+                    });
+                  },
+                  icon: Icons.business,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // Position and Salary Row
+          Row(
+            children: [
+              Expanded(
+                child: _buildStyledInput(
+                  title: 'Position *',
+                  controller: _positionController,
+                  icon: Icons.title,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildStyledInput(
+                  title: 'Salary',
+                  controller: _salaryController,
+                  icon: Icons.attach_money,
+                  keyboardType: TextInputType.number,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // Join Date and Employee Type Row
+          Row(
+            children: [
+              Expanded(
+                child: _buildStyledDatePicker(
+                  title: 'Join Date',
+                  controller: _joinDateController,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildStyledDropdown(
+                  title: 'Employee Type',
+                  allValues: const ['permanent', 'contract', 'part-time'],
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedEmployeeType = value;
+                    });
+                  },
+                  icon: Icons.schedule,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // Contract End Date
+          _buildStyledDatePicker(
+            title: 'Contract End Date',
+            controller: _contractEndDateController,
+          ),
+          const SizedBox(height: 32),
+
+          // Bank Details Section Header
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.secondary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.secondary.withOpacity(0.3)),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.account_balance,
+                  color: AppColors.secondary,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Bank Details',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.secondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Bank Name and Account Number Row
+          Row(
+            children: [
+              Expanded(
+                child: _buildStyledInput(
+                  title: 'Bank Name',
+                  controller: _bankNameController,
+                  icon: Icons.account_balance,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildStyledInput(
+                  title: 'Account Number',
+                  controller: _accountNumberController,
+                  icon: Icons.numbers,
+                  keyboardType: TextInputType.number,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // Account Name
+          _buildStyledInput(
+            title: 'Account Name',
+            controller: _accountNameController,
+            icon: Icons.person,
+          ),
+          const SizedBox(height: 32),
+
+          // Emergency Contact Section Header
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.tertiary3.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.tertiary3.withOpacity(0.3)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.emergency, color: AppColors.tertiary3, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'Emergency Contact Information',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.tertiary3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Emergency Contact Name
+          _buildStyledInput(
+            title: 'Emergency Contact Name *',
+            controller: _emergencyNameController,
+            icon: Icons.person_pin,
+          ),
+          const SizedBox(height: 20),
+
+          // Relation and Phone Row
+          Row(
+            children: [
+              Expanded(
+                child: _buildStyledInput(
+                  title: 'Relationship *',
+                  controller: _emergencyRelationshipController,
+                  icon: Icons.family_restroom,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildStyledInput(
+                  title: 'Emergency Phone *',
+                  controller: _emergencyPhoneController,
+                  icon: Icons.phone_in_talk,
+                  keyboardType: TextInputType.phone,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // Emergency Address
+          _buildStyledInput(
+            title: 'Emergency Address',
+            controller: _emergencyAddressController,
+            icon: Icons.location_on,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQualificationsTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section Header with Add Button
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.school, color: AppColors.primary, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Educational Qualifications',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
+                ElevatedButton.icon(
+                  onPressed: _addQualification,
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('Add Qualification'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          if (_qualificationDegreeControllers.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.school_outlined,
+                    size: 48,
+                    color: AppColors.textPrimary.withOpacity(0.3),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No qualifications added yet',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textPrimary.withOpacity(0.7),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Click "Add Qualification" to add educational background',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textPrimary.withOpacity(0.5),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            )
+          else
+            ...List.generate(_qualificationDegreeControllers.length, (index) {
+              return Container(
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.shadowGrey.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                  border: Border.all(color: AppColors.border.withOpacity(0.5)),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  Icons.school,
+                                  color: AppColors.primary,
+                                  size: 16,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Qualification ${index + 1}',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ],
+                          ),
+                          IconButton(
+                            onPressed: () => _removeQualification(index),
+                            icon: const Icon(
+                              Icons.delete_outline,
+                              color: Colors.red,
+                            ),
+                            style: IconButton.styleFrom(
+                              backgroundColor: Colors.red.withOpacity(0.1),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      _buildStyledInput(
+                        title: 'Degree/Certificate *',
+                        controller: _qualificationDegreeControllers[index],
+                        icon: Icons.workspace_premium,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildStyledInput(
+                        title: 'Institution *',
+                        controller: _qualificationInstitutionControllers[index],
+                        icon: Icons.account_balance,
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildStyledInput(
+                              title: 'Year Completed',
+                              controller: _qualificationYearControllers[index],
+                              icon: Icons.calendar_today,
+                              keyboardType: TextInputType.number,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildStyledInput(
+                              title: 'Grade',
+                              controller: _qualificationGradeControllers[index],
+                              icon: Icons.grade,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDocumentsTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section Header with Upload Button
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.primaryColorAccent.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: AppColors.primaryColorAccent.withOpacity(0.3),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.folder_open,
+                      color: AppColors.primaryColorAccent,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Document Upload',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primaryColorAccent,
+                      ),
+                    ),
+                  ],
+                ),
+                ElevatedButton.icon(
+                  onPressed: _pickDocuments,
+                  icon: const Icon(Icons.upload_file, size: 18),
+                  label: const Text('Upload Documents'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryColorAccent,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          if (_selectedDocuments.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.cloud_upload_outlined,
+                    size: 48,
+                    color: AppColors.textPrimary.withOpacity(0.3),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No documents uploaded yet',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textPrimary.withOpacity(0.7),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Click "Upload Documents" to add files (PDF, DOC, Images)',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textPrimary.withOpacity(0.5),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            )
+          else
+            ...List.generate(_selectedDocuments.length, (index) {
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.shadowGrey.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                  border: Border.all(color: AppColors.border.withOpacity(0.5)),
+                ),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.all(16),
+                  leading: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryColorAccent.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      _getFileIcon(_selectedDocuments[index].name),
+                      color: AppColors.primaryColorAccent,
+                      size: 20,
+                    ),
+                  ),
+                  title: Text(
+                    _selectedDocuments[index].name,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textPrimary,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  subtitle: Text(
+                    '${(_selectedDocuments[index].size / 1024).toStringAsFixed(1)} KB',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textPrimary.withOpacity(0.6),
+                    ),
+                  ),
+                  trailing: IconButton(
+                    onPressed: () => _removeDocument(index),
+                    icon: const Icon(Icons.delete_outline, color: Colors.red),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.red.withOpacity(0.1),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }),
+        ],
+      ),
+    );
+  }
+
+  // Helper method to get file icon based on file extension
+  IconData _getFileIcon(String fileName) {
+    final extension = fileName.split('.').last.toLowerCase();
+    switch (extension) {
+      case 'pdf':
+        return Icons.picture_as_pdf;
+      case 'doc':
+      case 'docx':
+        return Icons.description;
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+        return Icons.image;
+      default:
+        return Icons.insert_drive_file;
+    }
+  }
+
+  // Styled Input Widget
+  Widget _buildStyledInput({
+    required String title,
+    required TextEditingController controller,
+    IconData? icon,
+    TextInputType? keyboardType,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadowGrey.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TextFormField(
+        controller: controller,
+        keyboardType: keyboardType,
+        decoration: InputDecoration(
+          labelText: title,
+          prefixIcon: icon != null ? Icon(icon, color: homeColor) : null,
+          filled: true,
+          fillColor: AppColors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: AppColors.border),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: AppColors.border),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: homeColor, width: 2),
+          ),
+          labelStyle: TextStyle(
+            color: AppColors.textPrimary.withOpacity(0.7),
+            fontSize: 14,
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 16,
+          ),
         ),
       ),
-    ),
-  );
+    );
+  }
+
+  // Styled Date Picker Widget
+  Widget _buildStyledDatePicker({
+    required String title,
+    required TextEditingController controller,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadowGrey.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: CustomDatePicker(type: title, controller: controller),
+    );
+  }
+
+  // Styled Dropdown Widget
+  Widget _buildStyledDropdown({
+    required String title,
+    required List<String> allValues,
+    required Function(String?) onChanged,
+    IconData? icon,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadowGrey.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: CustomDropdown(
+        title: title,
+        allValues: allValues,
+        onChanged: onChanged,
+      ),
+    );
+  }
 }

@@ -1,359 +1,332 @@
-// // To parse this JSON data, do
-// //
-// //     final welcome = welcomeFromJson(jsonString);
+class ClassResponse {
+  final bool success;
+  final String message;
+  final ClassData data;
 
-// import 'dart:convert';
+  ClassResponse({
+    required this.success,
+    required this.message,
+    required this.data,
+  });
 
+  factory ClassResponse.fromJson(Map<String, dynamic> json) {
+    return ClassResponse(
+      success: json['success'] ?? false,
+      message: json['message'] ?? '',
+      data: ClassData.fromJson(json['data'] ?? {}),
+    );
+  }
 
-// class ClassModel {
-//   List<Class>? classes;
-//   Pagination? pagination;
+  Map<String, dynamic> toJson() {
+    return {
+      'success': success,
+      'message': message,
+      'data': data.toJson(),
+    };
+  }
+}
 
-//   ClassModel({this.classes, this.pagination});
+class ClassData {
+  final List<ClassModel> classes;
+  final PaginationInfo pagination;
 
-//   factory ClassModel.fromJson(Map<String, dynamic> json) => ClassModel(
-//     classes:
-//         json["classes"] == null
-//             ? []
-//             : List<Class>.from(json["classes"]!.map((x) => Class.fromJson(x))),
-//     pagination:
-//         json["pagination"] == null
-//             ? null
-//             : Pagination.fromJson(json["pagination"]),
-//   );
+  ClassData({
+    required this.classes,
+    required this.pagination,
+  });
 
-//   Map<String, dynamic> toJson() => {
-//     "classes":
-//         classes == null
-//             ? []
-//             : List<dynamic>.from(classes!.map((x) => x.toJson())),
-//     "pagination": pagination?.toJson(),
-//   };
-// }
+  factory ClassData.fromJson(Map<String, dynamic> json) {
+    return ClassData(
+      classes: json['classes'] != null
+          ? List<ClassModel>.from(
+              json['classes'].map((x) => ClassModel.fromJson(x)))
+          : [],
+      pagination: PaginationInfo.fromJson(json['pagination'] ?? {}),
+    );
+  }
 
-// class Class {
-//   Classroom? classroom;
-//   Schedule? schedule;
-//   String? id;
-//   String? name;
-//   String? level;
-//   String? section;
-//   String? academicYear;
-//   List<SubjectTeacher>? subjectTeachers;
-//   List<String>? students;
-//   int? capacity;
-//   Fees? fees;
-//   List<String>? feeStructures;
-//   bool? isActive;
-//   DateTime? createdAt;
-//   DateTime? updatedAt;
-//   int? v;
-//   String? activeFeeStructure;
-//   Teacher? classTeacher;
-//   List<dynamic>? classDefault;
-//   int? totalFees;
-//   int? currentEnrollment;
-//   int? availableSlots;
-//   bool? hasFeeStructure;
-//   dynamic feeStructureDetails;
-//   String? classId;
-//   EnrollmentStats? enrollmentStats;
+  Map<String, dynamic> toJson() {
+    return {
+      'classes': classes.map((x) => x.toJson()).toList(),
+      'pagination': pagination.toJson(),
+    };
+  }
+}
 
-//   Class({
-//     this.classroom,
-//     this.schedule,
-//     this.id,
-//     this.name,
-//     this.level,
-//     this.section,
-//     this.academicYear,
-//     this.subjectTeachers,
-//     this.students,
-//     this.capacity,
-//     this.fees,
-//     this.feeStructures,
-//     this.isActive,
-//     this.createdAt,
-//     this.updatedAt,
-//     this.v,
-//     this.activeFeeStructure,
-//     this.classTeacher,
-//     this.classDefault,
-//     this.totalFees,
-//     this.currentEnrollment,
-//     this.availableSlots,
-//     this.hasFeeStructure,
-//     this.feeStructureDetails,
-//     this.classId,
-//     this.enrollmentStats,
-//   });
+class ClassModel {
+  final String id;
+  final String name;
+  final String level;
+  final String? section;
+  final String term;
+  final String academicYear;
+  final String? color;
+  final String? classTeacher;
+  final List<SubjectTeacher> subjectTeachers;
+  final List<String> students;
+  final List<String> subjects;
+  final int capacity;
+  final Classroom? classroom;
+  final Schedule? schedule;
+  final Map<String, dynamic>? fees;
+  final List<String> feeStructures;
+  final String? activeFeeStructure;
+  final bool isActive;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final int v;
 
-//   factory Class.fromJson(Map<String, dynamic> json) => Class(
-//     classroom:
-//         json["classroom"] == null
-//             ? null
-//             : Classroom.fromJson(json["classroom"]),
-//     schedule:
-//         json["schedule"] == null ? null : Schedule.fromJson(json["schedule"]),
-//     id: json["_id"],
-//     name: json["name"],
-//     level: json["level"],
-//     section: json["section"],
-//     academicYear: json["academicYear"],
-//     subjectTeachers:
-//         json["subjectTeachers"] == null
-//             ? []
-//             : List<SubjectTeacher>.from(
-//               json["subjectTeachers"]!.map((x) => SubjectTeacher.fromJson(x)),
-//             ),
-//     students:
-//         json["students"] == null
-//             ? []
-//             : List<String>.from(json["students"]!.map((x) => x)),
-//     capacity: json["capacity"],
-//     fees: json["fees"] == null ? null : Fees.fromJson(json["fees"]),
-//     feeStructures:
-//         json["feeStructures"] == null
-//             ? []
-//             : List<String>.from(json["feeStructures"]!.map((x) => x)),
-//     isActive: json["isActive"],
-//     createdAt:
-//         json["createdAt"] == null ? null : DateTime.parse(json["createdAt"]),
-//     updatedAt:
-//         json["updatedAt"] == null ? null : DateTime.parse(json["updatedAt"]),
-//     v: json["__v"],
-//     activeFeeStructure: json["activeFeeStructure"],
-//     classTeacher:
-//         json["classTeacher"] == null
-//             ? null
-//             : Teacher.fromJson(json["classTeacher"]),
-//     classDefault:
-//         json["default"] == null
-//             ? []
-//             : List<dynamic>.from(json["default"]!.map((x) => x)),
-//     totalFees: json["totalFees"],
-//     currentEnrollment: json["currentEnrollment"],
-//     availableSlots: json["availableSlots"],
-//     hasFeeStructure: json["hasFeeStructure"],
-//     feeStructureDetails: json["feeStructureDetails"],
-//     classId: json["id"],
-//     enrollmentStats:
-//         json["enrollmentStats"] == null
-//             ? null
-//             : EnrollmentStats.fromJson(json["enrollmentStats"]),
-//   );
+  // Virtual fields
+  final int? totalFees;
+  final int? currentEnrollment;
+  final int? availableSlots;
+  final bool? hasFeeStructure;
+  final dynamic feeStructureDetails;
 
-//   Map<String, dynamic> toJson() => {
-//     "classroom": classroom?.toJson(),
-//     "schedule": schedule?.toJson(),
-//     "_id": id,
-//     "name": name,
-//     "level": level,
-//     "section": section,
-//     "academicYear": academicYear,
-//     "subjectTeachers":
-//         subjectTeachers == null
-//             ? []
-//             : List<dynamic>.from(subjectTeachers!.map((x) => x.toJson())),
-//     "students":
-//         students == null ? [] : List<dynamic>.from(students!.map((x) => x)),
-//     "capacity": capacity,
-//     "fees": fees?.toJson(),
-//     "feeStructures":
-//         feeStructures == null
-//             ? []
-//             : List<dynamic>.from(feeStructures!.map((x) => x)),
-//     "isActive": isActive,
-//     "createdAt": createdAt?.toIso8601String(),
-//     "updatedAt": updatedAt?.toIso8601String(),
-//     "__v": v,
-//     "activeFeeStructure": activeFeeStructure,
-//     "classTeacher": classTeacher?.toJson(),
-//     "default":
-//         classDefault == null
-//             ? []
-//             : List<dynamic>.from(classDefault!.map((x) => x)),
-//     "totalFees": totalFees,
-//     "currentEnrollment": currentEnrollment,
-//     "availableSlots": availableSlots,
-//     "hasFeeStructure": hasFeeStructure,
-//     "feeStructureDetails": feeStructureDetails,
-//     "id": classId,
-//     "enrollmentStats": enrollmentStats?.toJson(),
-//   };
-// }
+  ClassModel({
+    required this.id,
+    required this.name,
+    required this.level,
+    this.section,
+    required this.term,
+    required this.academicYear,
+    this.color,
+    this.classTeacher,
+    required this.subjectTeachers,
+    required this.students,
+    required this.subjects,
+    required this.capacity,
+    this.classroom,
+    this.schedule,
+    this.fees,
+    required this.feeStructures,
+    this.activeFeeStructure,
+    required this.isActive,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.v,
+    this.totalFees,
+    this.currentEnrollment,
+    this.availableSlots,
+    this.hasFeeStructure,
+    this.feeStructureDetails,
+  });
 
-// class Teacher {
-//   PersonalInfo? personalInfo;
-//   String? id;
-//   String? staffId;
-//   int? yearsOfService;
-//   String? teacherId;
+  factory ClassModel.fromJson(Map<String, dynamic> json) {
+    return ClassModel(
+      id: json['_id'] ?? json['id'] ?? '',
+      name: json['name'] ?? '',
+      level: json['level'] ?? '',
+      section: json['section'],
+      term: json['term'] ?? '',
+      academicYear: json['academicYear'] ?? '',
+      color: json['color'],
+      classTeacher: json['classTeacher'],
+      subjectTeachers: json['subjectTeachers'] != null
+          ? List<SubjectTeacher>.from(
+              json['subjectTeachers'].map((x) => SubjectTeacher.fromJson(x)))
+          : [],
+      students: json['students'] != null
+          ? List<String>.from(json['students'])
+          : [],
+      subjects: json['subjects'] != null
+          ? List<String>.from(json['subjects'])
+          : [],
+      capacity: json['capacity'] ?? 0,
+      classroom: json['classroom'] != null
+          ? Classroom.fromJson(json['classroom'])
+          : null,
+      schedule: json['schedule'] != null
+          ? Schedule.fromJson(json['schedule'])
+          : null,
+      fees: json['fees'],
+      feeStructures: json['feeStructures'] != null
+          ? List<String>.from(json['feeStructures'])
+          : [],
+      activeFeeStructure: json['activeFeeStructure'],
+      isActive: json['isActive'] ?? true,
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : DateTime.now(),
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'])
+          : DateTime.now(),
+      v: json['__v'] ?? 0,
+      totalFees: json['totalFees'],
+      currentEnrollment: json['currentEnrollment'],
+      availableSlots: json['availableSlots'],
+      hasFeeStructure: json['hasFeeStructure'],
+      feeStructureDetails: json['feeStructureDetails'],
+    );
+  }
 
-//   Teacher({
-//     this.personalInfo,
-//     this.id,
-//     this.staffId,
-//     this.yearsOfService,
-//     this.teacherId,
-//   });
+  Map<String, dynamic> toJson() {
+    return {
+      '_id': id,
+      'name': name,
+      'level': level,
+      'section': section,
+      'term': term,
+      'academicYear': academicYear,
+      'color': color,
+      'classTeacher': classTeacher,
+      'subjectTeachers': subjectTeachers.map((x) => x.toJson()).toList(),
+      'students': students,
+      'subjects': subjects,
+      'capacity': capacity,
+      'classroom': classroom?.toJson(),
+      'schedule': schedule?.toJson(),
+      'fees': fees,
+      'feeStructures': feeStructures,
+      'activeFeeStructure': activeFeeStructure,
+      'isActive': isActive,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+      '__v': v,
+      'totalFees': totalFees,
+      'currentEnrollment': currentEnrollment,
+      'availableSlots': availableSlots,
+      'hasFeeStructure': hasFeeStructure,
+      'feeStructureDetails': feeStructureDetails,
+    };
+  }
 
-//   factory Teacher.fromJson(Map<String, dynamic> json) => Teacher(
-//     personalInfo:
-//         json["personalInfo"] == null
-//             ? null
-//             : PersonalInfo.fromJson(json["personalInfo"]),
-//     id: json["_id"],
-//     staffId: json["staffId"],
-//     yearsOfService: json["yearsOfService"],
-//     teacherId: json["id"],
-//   );
+  // Helper getter for display name
+  String get displayName {
+    if (section != null && section!.isNotEmpty) {
+      return '$name ($section)';
+    }
+    return name;
+  }
 
-//   Map<String, dynamic> toJson() => {
-//     "personalInfo": personalInfo?.toJson(),
-//     "_id": id,
-//     "staffId": staffId,
-//     "yearsOfService": yearsOfService,
-//     "id": teacherId,
-//   };
-// }
+  // Helper getter for full class info
+  String get fullInfo {
+    return '$displayName - $level ($academicYear)';
+  }
+}
 
-// class PersonalInfo {
-//   String? firstName;
-//   String? lastName;
+class SubjectTeacher {
+  final String teacher;
+  final String subject;
+  final String subjectText;
 
-//   PersonalInfo({this.firstName, this.lastName});
+  SubjectTeacher({
+    required this.teacher,
+    required this.subject,
+    required this.subjectText,
+  });
 
-//   factory PersonalInfo.fromJson(Map<String, dynamic> json) =>
-//       PersonalInfo(firstName: json["firstName"], lastName: json["lastName"]);
+  factory SubjectTeacher.fromJson(Map<String, dynamic> json) {
+    return SubjectTeacher(
+      teacher: json['teacher'] ?? '',
+      subject: json['subject'] ?? '',
+      subjectText: json['subjectText'] ?? '',
+    );
+  }
 
-//   Map<String, dynamic> toJson() => {
-//     "firstName": firstName,
-//     "lastName": lastName,
-//   };
-// }
+  Map<String, dynamic> toJson() {
+    return {
+      'teacher': teacher,
+      'subject': subject,
+      'subjectText': subjectText,
+    };
+  }
+}
 
-// class Classroom {
-//   String? building;
-//   String? roomNumber;
-//   String? floor;
+class Classroom {
+  final String? building;
+  final String? roomNumber;
+  final String? floor;
 
-//   Classroom({this.building, this.roomNumber, this.floor});
+  Classroom({
+    this.building,
+    this.roomNumber,
+    this.floor,
+  });
 
-//   factory Classroom.fromJson(Map<String, dynamic> json) => Classroom(
-//     building: json["building"],
-//     roomNumber: json["roomNumber"],
-//     floor: json["floor"],
-//   );
+  factory Classroom.fromJson(Map<String, dynamic> json) {
+    return Classroom(
+      building: json['building'],
+      roomNumber: json['roomNumber'],
+      floor: json['floor'],
+    );
+  }
 
-//   Map<String, dynamic> toJson() => {
-//     "building": building,
-//     "roomNumber": roomNumber,
-//     "floor": floor,
-//   };
-// }
+  Map<String, dynamic> toJson() {
+    return {
+      'building': building,
+      'roomNumber': roomNumber,
+      'floor': floor,
+    };
+  }
+}
 
-// class EnrollmentStats {
-//   int? currentEnrollment;
-//   int? availableSlots;
-//   String? enrollmentPercentage;
+class Schedule {
+  final String? startTime;
+  final String? endTime;
+  final List<String> days;
 
-//   EnrollmentStats({
-//     this.currentEnrollment,
-//     this.availableSlots,
-//     this.enrollmentPercentage,
-//   });
+  Schedule({
+    this.startTime,
+    this.endTime,
+    required this.days,
+  });
 
-//   factory EnrollmentStats.fromJson(Map<String, dynamic> json) =>
-//       EnrollmentStats(
-//         currentEnrollment: json["currentEnrollment"],
-//         availableSlots: json["availableSlots"],
-//         enrollmentPercentage: json["enrollmentPercentage"],
-//       );
+  factory Schedule.fromJson(Map<String, dynamic> json) {
+    return Schedule(
+      startTime: json['startTime'],
+      endTime: json['endTime'],
+      days: json['days'] != null
+          ? List<String>.from(json['days'])
+          : [],
+    );
+  }
 
-//   Map<String, dynamic> toJson() => {
-//     "currentEnrollment": currentEnrollment,
-//     "availableSlots": availableSlots,
-//     "enrollmentPercentage": enrollmentPercentage,
-//   };
-// }
+  Map<String, dynamic> toJson() {
+    return {
+      'startTime': startTime,
+      'endTime': endTime,
+      'days': days,
+    };
+  }
+}
 
-// class Fees {
-//   Fees();
+class PaginationInfo {
+  final int currentPage;
+  final int totalPages;
+  final int totalItems;
+  final int itemsPerPage;
+  final bool hasNextPage;
+  final bool hasPreviousPage;
 
-//   factory Fees.fromJson(Map<String, dynamic> json) => Fees();
+  PaginationInfo({
+    required this.currentPage,
+    required this.totalPages,
+    required this.totalItems,
+    required this.itemsPerPage,
+    required this.hasNextPage,
+    required this.hasPreviousPage,
+  });
 
-//   Map<String, dynamic> toJson() => {};
-// }
+  factory PaginationInfo.fromJson(Map<String, dynamic> json) {
+    return PaginationInfo(
+      currentPage: json['currentPage'] ?? 1,
+      totalPages: json['totalPages'] ?? 1,
+      totalItems: json['totalItems'] ?? 0,
+      itemsPerPage: json['itemsPerPage'] ?? 10,
+      hasNextPage: json['hasNextPage'] ?? false,
+      hasPreviousPage: json['hasPreviousPage'] ?? false,
+    );
+  }
 
-// class Schedule {
-//   List<dynamic>? days;
-
-//   Schedule({this.days});
-
-//   factory Schedule.fromJson(Map<String, dynamic> json) => Schedule(
-//     days:
-//         json["days"] == null
-//             ? []
-//             : List<dynamic>.from(json["days"]!.map((x) => x)),
-//   );
-
-//   Map<String, dynamic> toJson() => {
-//     "days": days == null ? [] : List<dynamic>.from(days!.map((x) => x)),
-//   };
-// }
-
-// class SubjectTeacher {
-//   Teacher? teacher;
-//   String? subject;
-//   String? id;
-//   String? subjectTeacherId;
-
-//   SubjectTeacher({this.teacher, this.subject, this.id, this.subjectTeacherId});
-
-//   factory SubjectTeacher.fromJson(Map<String, dynamic> json) => SubjectTeacher(
-//     teacher: json["teacher"] == null ? null : Teacher.fromJson(json["teacher"]),
-//     subject: json["subject"],
-//     id: json["_id"],
-//     subjectTeacherId: json["id"],
-//   );
-
-//   Map<String, dynamic> toJson() => {
-//     "teacher": teacher?.toJson(),
-//     "subject": subject,
-//     "_id": id,
-//     "id": subjectTeacherId,
-//   };
-// }
-
-// class Pagination {
-//   int? currentPage;
-//   int? totalPages;
-//   int? totalClasses;
-//   bool? hasNext;
-//   bool? hasPrev;
-
-//   Pagination({
-//     this.currentPage,
-//     this.totalPages,
-//     this.totalClasses,
-//     this.hasNext,
-//     this.hasPrev,
-//   });
-
-//   factory Pagination.fromJson(Map<String, dynamic> json) => Pagination(
-//     currentPage: json["currentPage"],
-//     totalPages: json["totalPages"],
-//     totalClasses: json["totalClasses"],
-//     hasNext: json["hasNext"],
-//     hasPrev: json["hasPrev"],
-//   );
-
-//   Map<String, dynamic> toJson() => {
-//     "currentPage": currentPage,
-//     "totalPages": totalPages,
-//     "totalClasses": totalClasses,
-//     "hasNext": hasNext,
-//     "hasPrev": hasPrev,
-//   };
-// }
+  Map<String, dynamic> toJson() {
+    return {
+      'currentPage': currentPage,
+      'totalPages': totalPages,
+      'totalItems': totalItems,
+      'itemsPerPage': itemsPerPage,
+      'hasNextPage': hasNextPage,
+      'hasPreviousPage': hasPreviousPage,
+    };
+  }
+}
