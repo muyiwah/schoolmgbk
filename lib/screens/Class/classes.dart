@@ -606,7 +606,7 @@ class _SchoolClassesState extends ConsumerState<SchoolClasses> {
         crossAxisCount: 4,
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
-        childAspectRatio: 0.75,
+        childAspectRatio: 0.7,
       ),
       itemCount: classData.classes?.length ?? 0,
       itemBuilder: (context, index) {
@@ -706,24 +706,24 @@ class _SchoolClassesState extends ConsumerState<SchoolClasses> {
           ),
           // const SizedBox(height: 16),
           _buildClassStats(classData),
-          const SizedBox(height: 16),
-          // if (classData.nextEvent.isNotEmpty)
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.1),
-              // color: classData.eventColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              'Class Event',
-              style: TextStyle(
-                color: Colors.green,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
+          // const SizedBox(height: 16),
+          // // if (classData.nextEvent.isNotEmpty)
+          // Container(
+          //   padding: const EdgeInsets.all(8),
+          //   decoration: BoxDecoration(
+          //     color: Colors.green.withOpacity(0.1),
+          //     // color: classData.eventColor.withOpacity(0.1),
+          //     borderRadius: BorderRadius.circular(6),
+          //   ),
+          //   child: Text(
+          //     'Class Event',
+          //     style: TextStyle(
+          //       color: Colors.green,
+          //       fontSize: 12,
+          //       fontWeight: FontWeight.w500,
+          //     ),
+          //   ),
+          // ),
           const SizedBox(height: 10),
           SizedBox(
             width: double.infinity,

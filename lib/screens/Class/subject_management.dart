@@ -55,14 +55,25 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
     ClassProvider classProvider,
     SubjectProvider subjectProvider,
   ) {
-    if (classSubjects.isEmpty) {
-      classSubjects = getClassSubjectsFromProvider(
-        classProvider,
-        subjectProvider,
-      );
-      _ensureAllSubjectsAvailable(subjectProvider);
-      print('Initialized classSubjects: $classSubjects');
+    // Always refresh the class subjects data to ensure it's up to date
+    // This handles cases where subjects have been deleted or added
+    classSubjects = getClassSubjectsFromProvider(
+      classProvider,
+      subjectProvider,
+    );
+    _ensureAllSubjectsAvailable(subjectProvider);
+    print('=== INITIALIZATION DEBUG ===');
+    print(
+      'ClassProvider classes count: ${classProvider.classData.classes?.length ?? 0}',
+    );
+    print('SubjectProvider subjects count: ${subjectProvider.subjects.length}');
+    print('Initialized classSubjects: $classSubjects');
+    print('ClassSubjects keys: ${classSubjects.keys.toList()}');
+    if (classSubjects.isNotEmpty) {
+      String firstKey = classSubjects.keys.first;
+      print('First class data: ${classSubjects[firstKey]}');
     }
+    print('============================');
   }
 
   @override
@@ -104,8 +115,14 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
             .map((subject) => subject.name.toUpperCase())
             .toList();
 
-    // Ensure each class has entries for all subjects
+    // Ensure each class has entries for all subjects and remove deleted ones
     for (String className in classSubjects.keys) {
+      // Remove subjects that no longer exist
+      classSubjects[className]!.removeWhere((subjectName, value) {
+        return !allSubjectNames.contains(subjectName);
+      });
+
+      // Add new subjects that don't exist yet
       for (String subjectName in allSubjectNames) {
         if (!classSubjects[className]!.containsKey(subjectName)) {
           classSubjects[className]![subjectName] = false;
@@ -290,6 +307,58 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
     });
   }
 
+  void _toggleAllClassesForAllSubjects(bool value) {
+    print('_toggleAllClassesForAllSubjects called with value: $value');
+    print('ClassSubjects before: $classSubjects');
+
+    setState(() {
+      int changesCount = 0;
+      for (String className in classSubjects.keys) {
+        for (String subjectName in classSubjects[className]!.keys) {
+          // Only count as change if the value is actually different
+          if (classSubjects[className]![subjectName] != value) {
+            classSubjects[className]![subjectName] = value;
+            changesCount++;
+          }
+        }
+      }
+
+      // Update changes pending counter
+      changesPending += changesCount;
+
+      print('Toggled all classes for all subjects to $value');
+      print('Changes made: $changesCount, Total pending: $changesPending');
+      print('ClassSubjects after: $classSubjects');
+    });
+  }
+
+  void _toggleAllSubjectsForClass(String className, bool value) {
+    print(
+      '_toggleAllSubjectsForClass called for $className with value: $value',
+    );
+    print('ClassSubjects before: $classSubjects');
+
+    setState(() {
+      int changesCount = 0;
+      if (classSubjects.containsKey(className)) {
+        for (String subjectName in classSubjects[className]!.keys) {
+          // Only count as change if the value is actually different
+          if (classSubjects[className]![subjectName] != value) {
+            classSubjects[className]![subjectName] = value;
+            changesCount++;
+          }
+        }
+      }
+
+      // Update changes pending counter
+      changesPending += changesCount;
+
+      print('Toggled all subjects for $className to $value');
+      print('Changes made: $changesCount, Total pending: $changesPending');
+      print('ClassSubjects after: $classSubjects');
+    });
+  }
+
   // Helper method to convert classSubjects to API format
   Map<String, dynamic> _prepareBulkAssignData(
     ClassProvider classProvider,
@@ -406,7 +475,9 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
     return Consumer2<SubjectProvider, ClassProvider>(
       builder: (context, subjectProvider, classProvider, child) {
         // Initialize class subjects data if not already done
-        _initializeClassSubjects(classProvider, subjectProvider);
+        if (classSubjects.isEmpty) {
+          _initializeClassSubjects(classProvider, subjectProvider);
+        }
 
         // Debug: Print current state
         print('=== BUILD METHOD DEBUG ===');
@@ -550,6 +621,17 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
                 tooltip: 'Export Data',
                 onPressed: () {},
               ),
+              const SizedBox(width: 8),
+              _buildIconButton(
+                icon: Icons.delete_outline,
+                tooltip: 'Bulk Delete Subjects',
+                onPressed:
+                    () => showBulkDeleteDialog(
+                      context,
+                      subjectProvider,
+                      classProvider,
+                    ),
+              ),
               const SizedBox(width: 12),
               ElevatedButton.icon(
                 onPressed:
@@ -651,8 +733,14 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
   }
 
   Widget _buildScrollIndicator() {
+    if (classSubjects.isEmpty) return const SizedBox.shrink();
+
     final subjects = classSubjects.values.first.keys.toList();
-    final hasManySubjects = subjects.length > 6;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final availableWidth = screenWidth - 200 - 32; // class column + margins
+    final subjectColumnWidth = 120.0;
+    final visibleSubjects = (availableWidth / subjectColumnWidth).floor();
+    final hasManySubjects = subjects.length > visibleSubjects;
 
     if (!hasManySubjects) return const SizedBox.shrink();
 
@@ -669,7 +757,7 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
           const Icon(Icons.swipe_left, size: 16, color: AppColors.primary),
           const SizedBox(width: 8),
           Text(
-            'Scroll horizontally to see all ${subjects.length} subjects',
+            'Scroll horizontally to see all ${subjects.length} subjects (${visibleSubjects} visible)',
             style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w500,
@@ -700,6 +788,8 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
   }
 
   Widget _buildScrollableTable(List<String> subjects) {
+    final classColumnWidth = 200.0;
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -708,9 +798,9 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
       ),
       child: Row(
         children: [
-          // Fixed Class Column
+          // Fixed Class Column - Always visible
           Container(
-            width: 200,
+            width: classColumnWidth,
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.only(
@@ -755,43 +845,45 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
             ),
           ),
           // Scrollable Subject Columns
-          SizedBox(
-            width: MediaQuery.of(context).size.width - 160, // Fixed width
+          Expanded(
             child: SingleChildScrollView(
               controller: _bodyScrollController,
               scrollDirection: Axis.horizontal,
-              child: Column(
-                children: [
-                  // Subject Headers
-                  Container(
-                    height: 60,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.only(
-                        topRight: Radius.circular(16),
-                      ),
-                    ),
-                    child: _buildSubjectHeaders(subjects),
-                  ),
-                  // Subject Body Rows
-                  ...classSubjects.entries.map((entry) {
-                    final className = entry.key;
-                    final classData = entry.value;
-
-                    return Container(
-                      height: 70,
+              child: SizedBox(
+                width: subjects.length * 120.0, // 120px per subject column
+                child: Column(
+                  children: [
+                    // Subject Headers
+                    Container(
+                      height: 60,
                       decoration: const BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(
-                            color: Color(0xFFE2E8F0),
-                            width: 1,
-                          ),
+                        color: Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.only(
+                          topRight: Radius.circular(16),
                         ),
                       ),
-                      child: _buildSubjectRow(classData, subjects, className),
-                    );
-                  }),
-                ],
+                      child: _buildSubjectHeaders(subjects),
+                    ),
+                    // Subject Body Rows
+                    ...classSubjects.entries.map((entry) {
+                      final className = entry.key;
+                      final classData = entry.value;
+
+                      return Container(
+                        height: 70,
+                        decoration: const BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(
+                              color: Color(0xFFE2E8F0),
+                              width: 1,
+                            ),
+                          ),
+                        ),
+                        child: _buildSubjectRow(classData, subjects, className),
+                      );
+                    }),
+                  ],
+                ),
               ),
             ),
           ),
@@ -808,8 +900,8 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
                 (subject) => Container(
                   width: 120,
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 8,
+                    horizontal: 2,
+                    vertical: 2,
                   ),
                   decoration: const BoxDecoration(
                     color: Color(0xFFF8FAFC),
@@ -862,17 +954,36 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
 
   // Custom Table Helper Methods
   Widget _buildClassColumnHeader() {
+    // Check if all classes have all subjects selected
+    bool allClassesSelected = false;
+    if (classSubjects.isNotEmpty) {
+      try {
+        allClassesSelected = classSubjects.values.every(
+          (classData) =>
+              classData.isNotEmpty &&
+              classData.values.every((isSelected) => isSelected),
+        );
+      } catch (e) {
+        print('Error calculating allClassesSelected: $e');
+        allClassesSelected = false;
+      }
+    }
+
+    print('Class column header - allClassesSelected: $allClassesSelected');
+    print('ClassSubjects keys: ${classSubjects.keys.toList()}');
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
           SizedBox(
-            width: 20,
-            height: 20,
+            width: 24,
+            height: 24,
             child: Checkbox(
-              value: false,
+              value: allClassesSelected,
               onChanged: (value) {
-                // Handle select all
+                print('Class header checkbox clicked: $value');
+                _toggleAllClassesForAllSubjects(value ?? false);
               },
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
               activeColor: AppColors.primary,
@@ -917,8 +1028,8 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
         mainAxisSize: MainAxisSize.min,
         children: [
           SizedBox(
-            width: 18,
-            height: 18,
+            width: 15,
+            height: 15,
             child: Checkbox(
               value: isAllSelected,
               onChanged:
@@ -941,7 +1052,7 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
               letterSpacing: 0.2,
             ),
             textAlign: TextAlign.center,
-            maxLines: 2,
+            maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
         ],
@@ -950,17 +1061,34 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
   }
 
   Widget _buildClassCell(String className, String gradeText) {
+    // Check if all subjects are selected for this class
+    bool allSubjectsSelected = false;
+    if (classSubjects.containsKey(className) &&
+        classSubjects[className]!.isNotEmpty) {
+      try {
+        allSubjectsSelected = classSubjects[className]!.values.every(
+          (isSelected) => isSelected,
+        );
+      } catch (e) {
+        print('Error calculating allSubjectsSelected for $className: $e');
+        allSubjectsSelected = false;
+      }
+    }
+
+    print('Class cell $className - allSubjectsSelected: $allSubjectsSelected');
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
           SizedBox(
-            width: 20,
-            height: 20,
+            width: 24,
+            height: 24,
             child: Checkbox(
-              value: false,
+              value: allSubjectsSelected,
               onChanged: (value) {
-                // Handle row selection
+                print('Class cell checkbox clicked for $className: $value');
+                _toggleAllSubjectsForClass(className, value ?? false);
               },
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
               activeColor: AppColors.primary,
@@ -1728,4 +1856,639 @@ void showAddSubjectDialog(
       // Subject created: $result
     }
   });
+}
+
+// Bulk Delete Dialog
+class BulkDeleteDialog extends StatefulWidget {
+  final SubjectProvider subjectProvider;
+  final ClassProvider classProvider;
+
+  const BulkDeleteDialog({
+    super.key,
+    required this.subjectProvider,
+    required this.classProvider,
+  });
+
+  @override
+  State<BulkDeleteDialog> createState() => _BulkDeleteDialogState();
+}
+
+class _BulkDeleteDialogState extends State<BulkDeleteDialog> {
+  final Map<String, bool> _selectedSubjects = {};
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize all subjects as unselected
+    for (var subject in widget.subjectProvider.subjects) {
+      _selectedSubjects[subject.id] = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final selectedCount =
+        _selectedSubjects.values.where((selected) => selected).length;
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        width: screenWidth > 600 ? 600 : screenWidth * 0.9,
+        height: screenHeight > 700 ? screenHeight * 0.8 : screenHeight * 0.9,
+        constraints: BoxConstraints(
+          maxHeight: screenHeight * 0.9,
+          maxWidth: screenWidth > 600 ? 600 : screenWidth * 0.9,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
+                ),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.delete_outline,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Bulk Delete Subjects',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Select subjects to delete permanently',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close, color: Colors.white),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.white.withValues(alpha: 0.2),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Content
+            Expanded(
+              child: Column(
+                children: [
+                  // Selection Summary
+                  Container(
+                    margin: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color:
+                          selectedCount > 0
+                              ? const Color(0xFFFEF2F2)
+                              : const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color:
+                            selectedCount > 0
+                                ? const Color(0xFFFECACA)
+                                : const Color(0xFFE2E8F0),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          selectedCount > 0
+                              ? Icons.warning_amber
+                              : Icons.info_outline,
+                          color:
+                              selectedCount > 0
+                                  ? const Color(0xFFEF4444)
+                                  : const Color(0xFF64748B),
+                          size: 20,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            selectedCount > 0
+                                ? '$selectedCount subject${selectedCount > 1 ? 's' : ''} selected for deletion'
+                                : 'No subjects selected',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color:
+                                  selectedCount > 0
+                                      ? const Color(0xFF991B1B)
+                                      : const Color(0xFF64748B),
+                            ),
+                          ),
+                        ),
+                        if (selectedCount > 0)
+                          TextButton(
+                            onPressed: _selectAll,
+                            child: const Text(
+                              'Select All',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFFEF4444),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+
+                  // Subject List
+                  Expanded(
+                    child:
+                        widget.subjectProvider.subjects.isEmpty
+                            ? const Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.subject_outlined,
+                                    size: 64,
+                                    color: Color(0xFFCBD5E1),
+                                  ),
+                                  SizedBox(height: 16),
+                                  Text(
+                                    'No subjects available',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Color(0xFF64748B),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                            : ListView.builder(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
+                              itemCount: widget.subjectProvider.subjects.length,
+                              itemBuilder: (context, index) {
+                                final subject =
+                                    widget.subjectProvider.subjects[index];
+                                final isSelected =
+                                    _selectedSubjects[subject.id] ?? false;
+
+                                return Container(
+                                  margin: const EdgeInsets.only(bottom: 8),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        isSelected
+                                            ? const Color(0xFFFEF2F2)
+                                            : Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color:
+                                          isSelected
+                                              ? const Color(0xFFFECACA)
+                                              : const Color(0xFFE2E8F0),
+                                      width: isSelected ? 2 : 1,
+                                    ),
+                                  ),
+                                  child: CheckboxListTile(
+                                    value: isSelected,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _selectedSubjects[subject.id] =
+                                            value ?? false;
+                                      });
+                                    },
+                                    title: Text(
+                                      subject.name,
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color:
+                                            isSelected
+                                                ? const Color(0xFF991B1B)
+                                                : const Color(0xFF1E293B),
+                                      ),
+                                    ),
+                                    subtitle: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        if (subject.code?.isNotEmpty ==
+                                            true) ...[
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            'Code: ${subject.code}',
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              color: Color(0xFF64748B),
+                                            ),
+                                          ),
+                                        ],
+                                        if (subject.category.isNotEmpty) ...[
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            'Category: ${subject.category}',
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              color: Color(0xFF64748B),
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                    secondary: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            subject.isActive
+                                                ? const Color(0xFFF0FDF4)
+                                                : const Color(0xFFFEF2F2),
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(
+                                          color:
+                                              subject.isActive
+                                                  ? const Color(0xFFBBF7D0)
+                                                  : const Color(0xFFFECACA),
+                                        ),
+                                      ),
+                                      child: Text(
+                                        subject.isActive
+                                            ? 'Active'
+                                            : 'Inactive',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w500,
+                                          color:
+                                              subject.isActive
+                                                  ? const Color(0xFF166534)
+                                                  : const Color(0xFF991B1B),
+                                        ),
+                                      ),
+                                    ),
+                                    activeColor: const Color(0xFFEF4444),
+                                    checkColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Action Buttons
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: const BoxDecoration(
+                color: Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(20),
+                  bottomRight: Radius.circular(20),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        side: const BorderSide(color: Color(0xFFE2E8F0)),
+                      ),
+                    ),
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF64748B),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton.icon(
+                    onPressed:
+                        selectedCount > 0 && !_isLoading
+                            ? () => _confirmDelete()
+                            : null,
+                    icon:
+                        _isLoading
+                            ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            )
+                            : const Icon(Icons.delete, size: 18),
+                    label: Text(_isLoading ? 'Deleting...' : 'Delete Selected'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          selectedCount > 0
+                              ? const Color(0xFFEF4444)
+                              : const Color(0xFFCBD5E1),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      elevation: 0,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _selectAll() {
+    setState(() {
+      bool allSelected = _selectedSubjects.values.every((selected) => selected);
+      for (var key in _selectedSubjects.keys) {
+        _selectedSubjects[key] = !allSelected;
+      }
+    });
+  }
+
+  void _confirmDelete() {
+    final selectedSubjects =
+        _selectedSubjects.entries
+            .where((entry) => entry.value)
+            .map(
+              (entry) => widget.subjectProvider.subjects.firstWhere(
+                (subject) => subject.id == entry.key,
+              ),
+            )
+            .toList();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF2F2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.warning_amber,
+                  color: Color(0xFFEF4444),
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Confirm Deletion',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Are you sure you want to delete ${selectedSubjects.length} subject${selectedSubjects.length > 1 ? 's' : ''}?',
+                style: const TextStyle(fontSize: 16, color: Color(0xFF64748B)),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF2F2),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFFECACA)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Subjects to be deleted:',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF991B1B),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ...selectedSubjects
+                        .take(5)
+                        .map(
+                          (subject) => Padding(
+                            padding: const EdgeInsets.only(bottom: 4),
+                            child: Text(
+                              '• ${subject.name}',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: Color(0xFF991B1B),
+                              ),
+                            ),
+                          ),
+                        ),
+                    if (selectedSubjects.length > 5)
+                      Text(
+                        '... and ${selectedSubjects.length - 5} more',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF991B1B),
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'This action cannot be undone.',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFFEF4444),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF64748B),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close confirmation dialog
+                _performDelete(selectedSubjects);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFEF4444),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'Delete',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _performDelete(List<Subject> subjectsToDelete) async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Perform bulk delete
+      bool success = await widget.subjectProvider.bulkDeleteSubjects(
+        context,
+        subjectsToDelete.map((subject) => subject.id).toList(),
+      );
+
+      if (success && mounted) {
+        Navigator.of(context).pop(); // Close the bulk delete dialog
+
+        // Refresh the class data to ensure it's up to date
+        await widget.classProvider.getAllClassesWithMetric(context);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Successfully deleted ${subjectsToDelete.length} subject${subjectsToDelete.length > 1 ? 's' : ''}',
+            ),
+            backgroundColor: const Color(0xFF22C55E),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error deleting subjects: $e'),
+            backgroundColor: const Color(0xFFEF4444),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+}
+
+// Usage function for bulk delete dialog
+void showBulkDeleteDialog(
+  BuildContext context,
+  SubjectProvider subjectProvider,
+  ClassProvider classProvider,
+) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return BulkDeleteDialog(
+        subjectProvider: subjectProvider,
+        classProvider: classProvider,
+      );
+    },
+  );
 }

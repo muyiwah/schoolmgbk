@@ -27,8 +27,6 @@ class SubjectRepo {
 
   // ✅ Create new subject
   Future<HTTPResponseModel> createSubject(Map<String, dynamic> body) async {
-
-
     return await _httpService.runApi(
       type: ApiRequestType.post,
       url: "/subjects",
@@ -53,6 +51,16 @@ class SubjectRepo {
     return await _httpService.runApi(
       type: ApiRequestType.delete,
       url: "/subjects/$subjectId",
+    );
+  }
+
+  // ✅ Bulk delete subjects
+  Future<HTTPResponseModel> bulkDeleteSubjects(List<String> subjectIds) async {
+    print( 'subjectIds: $subjectIds');
+    return await _httpService.runApi(
+      type: ApiRequestType.delete,
+      url: "/subjects/bulk",
+      body: {"subjectIds": subjectIds},
     );
   }
 }

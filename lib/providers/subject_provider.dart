@@ -234,6 +234,7 @@ class SubjectProvider extends ChangeNotifier {
       HTTPResponseModel res = await _subjectRepo.deleteSubject(subjectId);
 
       if (HTTPResponseModel.isApiCallSuccess(res)) {
+        print(res.data);
         CustomToastNotification.show(
           res.message ?? 'Subject deleted successfully',
           type: ToastType.success,
@@ -256,6 +257,48 @@ class SubjectProvider extends ChangeNotifier {
       setError('Error deleting subject: $e');
       CustomToastNotification.show(
         'Error deleting subject: $e',
+        type: ToastType.error,
+      );
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // ✅ Bulk delete subjects
+  Future<bool> bulkDeleteSubjects(
+    BuildContext context,
+    List<String> subjectIds,
+  ) async {
+    try {
+      setLoading(true);
+      setError(null);
+
+      HTTPResponseModel res = await _subjectRepo.bulkDeleteSubjects(subjectIds);
+
+      if (HTTPResponseModel.isApiCallSuccess(res)) {
+        CustomToastNotification.show(
+          res.message ?? 'Subjects deleted successfully',
+          type: ToastType.success,
+        );
+
+        // Remove deleted subjects from local list
+        _subjects.removeWhere((subject) => subjectIds.contains(subject.id));
+        notifyListeners();
+
+        return true;
+      } else {
+        setError(res.message ?? 'Failed to delete subjects');
+        CustomToastNotification.show(
+          res.message ?? 'Failed to delete subjects',
+          type: ToastType.error,
+        );
+        return false;
+      }
+    } catch (e) {
+      setError('Error deleting subjects: $e');
+      CustomToastNotification.show(
+        'Error deleting subjects: $e',
         type: ToastType.error,
       );
       return false;
