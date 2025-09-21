@@ -5,6 +5,7 @@ import 'package:schmgtsystem/repository/attendance_repo.dart';
 import 'package:schmgtsystem/repository/auth_repo.dart';
 import 'package:schmgtsystem/providers/auth_provider.dart';
 import 'package:schmgtsystem/repository/class_repo.dart';
+import 'package:schmgtsystem/repository/class_level_repo.dart';
 import 'package:schmgtsystem/repository/metrics_repo.dart';
 import 'package:schmgtsystem/repository/parent_repo.dart';
 import 'package:schmgtsystem/repository/profile_repo.dart';
@@ -48,6 +49,7 @@ Future<void> setupLocator({Env? env = Env.prod}) async {
   locator.registerLazySingleton(() => AssignmentRepo());
   locator.registerLazySingleton(() => AttendanceRepo());
   locator.registerLazySingleton(() => ClassRepo());
+  locator.registerLazySingleton(() => ClassLevelRepo());
   locator.registerLazySingleton(() => SubjectRepo());
 }
 

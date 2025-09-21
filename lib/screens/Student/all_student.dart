@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:schmgtsystem/constants/appcolor.dart';
 import 'package:schmgtsystem/models/student_model.dart';
 import 'package:schmgtsystem/providers/student_provider.dart';
+import 'package:schmgtsystem/providers/class_provider.dart';
+import 'package:schmgtsystem/providers/provider.dart';
 
 class AllStudentsScreen extends ConsumerStatefulWidget {
   const AllStudentsScreen({super.key});
@@ -27,17 +29,35 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
   // Flag to track if we need to reload when returning to screen
   bool _shouldReloadOnReturn = false;
 
-  // Available options for dropdowns
-  final List<String> _classOptions = [
-    'All Classes',
-    'Excellence',
-    'Pride',
-    'Grade 1',
-    'Grade 2',
-    'Grade 3',
-    'Grade 4',
-    'Grade 5',
-  ];
+  // Get class options from ClassProvider
+  List<String> _getClassOptions(ClassProvider classProvider) {
+    final classes = classProvider.classData.classes ?? [];
+    final classNames =
+        classes
+            .map((cls) => cls.level ?? '')
+            .where((name) => name.isNotEmpty)
+            .toList();
+    return ['All Classes', ...classNames];
+  }
+
+  // Get class ID from class name
+  String? _getClassIdFromName(String className, ClassProvider classProvider) {
+    if (className == 'All Classes') return null;
+
+    final classes = classProvider.classData.classes ?? [];
+    if (classes.isEmpty) {
+      print('Warning: No classes loaded yet, cannot filter by class');
+      return null;
+    }
+
+    try {
+      final classData = classes.firstWhere((cls) => cls.name == className);
+      return classData.id;
+    } catch (e) {
+      print('Warning: Class "$className" not found in available classes');
+      return null;
+    }
+  }
 
   final List<String> _genderOptions = ['All Genders', 'male', 'female'];
 
@@ -54,7 +74,14 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
     // Use WidgetsBinding to defer the loading until after the build is complete
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadStudents();
+      _loadClasses();
     });
+  }
+
+  Future<void> _loadClasses() async {
+    await ref
+        .read(RiverpodProvider.classProvider.notifier)
+        .getAllClassesWithMetric(context);
   }
 
   @override
@@ -74,13 +101,17 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
   }
 
   Future<void> _loadStudents() async {
+    final classState = ref.read(RiverpodProvider.classProvider);
+    final classId = _getClassIdFromName(_selectedClass, classState);
+
+
     await ref
         .read(studentProvider.notifier)
         .getAllStudents(
           context,
           page: _currentPage,
           limit: _itemsPerPage,
-          classId: _selectedClass == 'All Classes' ? null : _selectedClass,
+          classId: classId,
           gender: _selectedGender == 'All Genders' ? null : _selectedGender,
           feeStatus:
               _selectedFeeStatus == 'All Status' ? null : _selectedFeeStatus,
@@ -111,10 +142,14 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
   @override
   Widget build(BuildContext context) {
     final studentState = ref.watch(studentProvider);
+    final classState = ref.watch(RiverpodProvider.classProvider);
     final students = studentState.students;
     final pagination = studentState.pagination;
     final isLoading = studentState.isLoading;
     final errorMessage = studentState.errorMessage;
+
+    // Get dynamic class options
+    final classOptions = _getClassOptions(classState);
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
@@ -174,11 +209,15 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
             const SizedBox(height: 32),
 
             // Statistics Cards
-            _buildStatisticsCards(students, pagination),
+            _buildStatisticsCards(students, pagination, classOptions),
             const SizedBox(height: 32),
 
             // Search and Filters
-            _buildSearchAndFilters(),
+            _buildSearchAndFilters(classOptions),
+
+            // Filter Status Indicator
+            _buildFilterStatusIndicator(),
+
             const SizedBox(height: 24),
 
             // Data Table
@@ -195,6 +234,7 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
   Widget _buildStatisticsCards(
     List<StudentModel> students,
     PaginationInfo? pagination,
+    List<String> classOptions,
   ) {
     return Row(
       children: [
@@ -210,7 +250,7 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
         Expanded(
           child: _buildStatCard(
             title: 'Classes',
-            value: _classOptions.length.toString(),
+            value: classOptions.length.toString(),
             icon: Icons.class_,
             color: const Color(0xFF8B5CF6),
           ),
@@ -221,7 +261,7 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
             title: 'Avg per Class',
             value:
                 pagination != null
-                    ? (pagination.totalStudents / _classOptions.length)
+                    ? (pagination.totalStudents / classOptions.length)
                         .round()
                         .toString()
                     : '0',
@@ -261,7 +301,7 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
     );
   }
 
-  Widget _buildSearchAndFilters() {
+  Widget _buildSearchAndFilters(List<String> classOptions) {
     return Row(
       children: [
         Expanded(
@@ -290,7 +330,7 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
           ),
         ),
         const SizedBox(width: 16),
-        _buildDropdown(_classOptions, _selectedClass, (value) {
+        _buildDropdown(classOptions, _selectedClass, (value) {
           setState(() => _selectedClass = value!);
           _onFilterChanged();
         }),
@@ -305,6 +345,66 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
           _onFilterChanged();
         }),
       ],
+    );
+  }
+
+  Widget _buildFilterStatusIndicator() {
+    final activeFilters = <String>[];
+
+    if (_selectedClass != 'All Classes') {
+      activeFilters.add('Class: $_selectedClass');
+    }
+    if (_selectedGender != 'All Genders') {
+      activeFilters.add('Gender: $_selectedGender');
+    }
+    if (_selectedFeeStatus != 'All Status') {
+      activeFilters.add('Fee Status: $_selectedFeeStatus');
+    }
+    if (_searchController.text.trim().isNotEmpty) {
+      activeFilters.add('Search: "${_searchController.text.trim()}"');
+    }
+
+    if (activeFilters.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0F9FF),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFF0EA5E9), width: 1),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.filter_list, color: Color(0xFF0EA5E9), size: 20),
+          const SizedBox(width: 8),
+          Text(
+            'Active Filters: ${activeFilters.join(', ')}',
+            style: const TextStyle(
+              color: Color(0xFF0EA5E9),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const Spacer(),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _selectedClass = 'All Classes';
+                _selectedGender = 'All Genders';
+                _selectedFeeStatus = 'All Status';
+                _searchController.clear();
+              });
+              _onFilterChanged();
+            },
+            child: const Text(
+              'Clear All',
+              style: TextStyle(color: Color(0xFF0EA5E9)),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

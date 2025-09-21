@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:schmgtsystem/models/class_metrics_model.dart';
 import 'package:schmgtsystem/models/single_class_model.dart' as single_class;
+import 'package:schmgtsystem/models/students_with_fees_model.dart';
 import 'package:schmgtsystem/repository/class_repo.dart';
 import 'package:schmgtsystem/utils/locator.dart';
 import 'package:schmgtsystem/utils/response_model.dart';
@@ -27,9 +28,122 @@ class ClassProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Students with fees data
+  StudentsWithFeesModel _studentsWithFeesData = StudentsWithFeesModel(
+    students: [],
+    pagination: PaginationInfo(
+      currentPage: 1,
+      totalPages: 1,
+      totalStudents: 0,
+      limit: 50,
+    ),
+    metrics: FeeMetrics(
+      totalStudents: 0,
+      maleStudents: 0,
+      femaleStudents: 0,
+      paidStudents: 0,
+      partialStudents: 0,
+      unpaidStudents: 0,
+      totalFeesCollected: 0,
+      totalFeesOutstanding: 0,
+      totalClasses: 0,
+      averagePerClass: 0,
+      totalFeesExpected: 0,
+    ),
+  );
+  StudentsWithFeesModel get studentsWithFeesData => _studentsWithFeesData;
+
+  bool _isLoadingStudentsWithFees = false;
+  bool get isLoadingStudentsWithFees => _isLoadingStudentsWithFees;
+
+  String? _studentsWithFeesError;
+  String? get studentsWithFeesError => _studentsWithFeesError;
+
+  setStudentsWithFeesData(data) {
+    _studentsWithFeesData = data;
+    notifyListeners();
+  }
+
+  setLoadingStudentsWithFees(bool loading) {
+    _isLoadingStudentsWithFees = loading;
+    notifyListeners();
+  }
+
+  setStudentsWithFeesError(String? error) {
+    _studentsWithFeesError = error;
+    notifyListeners();
+  }
+
   setSingleClassData(data) {
     _singlgeClassData = data;
     notifyListeners();
+  }
+
+  // Get students with fees
+  Future<StudentsWithFeesModel?> getStudentsWithFees(
+    BuildContext context, {
+    String? search,
+    String? searchBy,
+    String? classId,
+    String? feeStatus,
+    String? term,
+    String? academicYear,
+    String? sortBy,
+    String? sortOrder,
+    int page = 1,
+    int limit = 50,
+  }) async {
+    try {
+      setLoadingStudentsWithFees(true);
+      setStudentsWithFeesError(null);
+
+      HTTPResponseModel res = await _classRepo.getStudentsWithFees(
+        search: search,
+        searchBy: searchBy,
+        classId: classId,
+        feeStatus: feeStatus,
+        term: term,
+        academicYear: academicYear,
+        sortBy: sortBy,
+        sortOrder: sortOrder,
+        page: page,
+        limit: limit,
+      );
+
+      if (HTTPResponseModel.isApiCallSuccess(res)) {
+        // Handle both possible response structures
+        Map<String, dynamic> responseData;
+        if (res.data.containsKey('data')) {
+          responseData = res.data['data'];
+        } else {
+          responseData = res.data;
+        }
+
+        StudentsWithFeesModel studentsWithFees = StudentsWithFeesModel.fromJson(
+          responseData,
+        );
+        setStudentsWithFeesData(studentsWithFees);
+        return studentsWithFees;
+      } else {
+        setStudentsWithFeesError(
+          res.message ?? 'Failed to fetch students with fees',
+        );
+        CustomToastNotification.show(
+          res.message ?? 'Failed to fetch students with fees',
+          type: ToastType.error,
+        );
+        return null;
+      }
+    } catch (e) {
+      setStudentsWithFeesError('Error fetching students with fees: $e');
+      CustomToastNotification.show(
+        'Error fetching students with fees: $e',
+        type: ToastType.error,
+      );
+      return null;
+    } finally {
+      setLoadingStudentsWithFees(false);
+    }
   }
 
   getAllClassesWithMetric(BuildContext context) async {

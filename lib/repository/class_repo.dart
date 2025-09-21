@@ -133,4 +133,51 @@ class ClassRepo {
       body: body,
     );
   }
+
+  // ✅ Get all students with fees (with filters and search)
+  Future<HTTPResponseModel> getStudentsWithFees({
+    String? search,
+    String? searchBy,
+    String? classId,
+    String? feeStatus,
+    String? term,
+    String? academicYear,
+    String? sortBy,
+    String? sortOrder,
+    int page = 1,
+    int limit = 50,
+  }) async {
+    Map<String, dynamic> queryParams = {'page': page, 'limit': limit};
+
+    if (search != null && search.isNotEmpty) {
+      queryParams['search'] = search;
+      if (searchBy != null && searchBy.isNotEmpty) {
+        queryParams['searchBy'] = searchBy;
+      }
+    }
+    if (classId != null && classId.isNotEmpty) {
+      queryParams['classId'] = classId;
+    }
+    if (feeStatus != null && feeStatus.isNotEmpty) {
+      queryParams['feeStatus'] = feeStatus;
+    }
+    if (term != null && term.isNotEmpty) {
+      queryParams['term'] = term;
+    }
+    if (academicYear != null && academicYear.isNotEmpty) {
+      queryParams['academicYear'] = academicYear;
+    }
+    if (sortBy != null && sortBy.isNotEmpty) {
+      queryParams['sortBy'] = sortBy;
+    }
+    if (sortOrder != null && sortOrder.isNotEmpty) {
+      queryParams['sortOrder'] = sortOrder;
+    }
+
+    return await _httpService.runApi(
+      type: ApiRequestType.get,
+      url: "/classes/students-with-fees",
+      params: queryParams,
+    );
+  }
 }

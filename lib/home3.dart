@@ -6,12 +6,16 @@ import 'package:schmgtsystem/login_screen.dart';
 import 'package:schmgtsystem/providers/subject_provider.dart';
 import 'package:schmgtsystem/providers/class_provider.dart';
 import 'package:schmgtsystem/screens/Class/subject_management.dart';
+import 'package:schmgtsystem/screens/accunts/class_payment_details.dart';
+import 'package:schmgtsystem/screens/accunts/fee_breakdown.dart';
+import 'package:schmgtsystem/screens/accunts/fee_verification.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // Screen imports - Class
 import 'package:schmgtsystem/screens/Class/all_table.dart';
 import 'package:schmgtsystem/screens/Class/classes.dart';
 import 'package:schmgtsystem/screens/Class/single_class.dart';
+import 'package:schmgtsystem/screens/Class/class_level_management.dart';
 
 // Screen imports - Student
 import 'package:schmgtsystem/screens/Student/add_student.dart';
@@ -151,7 +155,11 @@ final menuItemsProvider = Provider<List<MenuItem>>((ref) {
         MenuItem(
           title: 'All Tables',
           icon: Icons.table_chart,
-          route: '/classes/tables',
+          route: '/classes/tables',),
+        MenuItem(
+          title: 'Class Level Management',
+          icon: Icons.table_chart,
+          route: '/classes/level-management',
         ),
         MenuItem(
           title: 'Assign Students',
@@ -331,6 +339,21 @@ final menuItemsProvider = Provider<List<MenuItem>>((ref) {
       subItems: [
         MenuItem(title: 'Account Home', icon: Icons.home, route: '/accounts'),
         MenuItem(
+          title: 'Fee Verification',
+          icon: Icons.home,
+          route: '/accounts/fee-verification',
+        ),
+        MenuItem(
+          title: 'Class Account',
+          icon: Icons.home,
+          route: '/accounts/class-account',
+        ),
+        MenuItem(
+          title: 'Class Fee Breakdown',
+          icon: Icons.home,
+          route: '/accounts/class-fee-breakdown',
+        ),
+        MenuItem(
           title: 'Income',
           icon: Icons.trending_up,
           route: '/accounts/income',
@@ -491,6 +514,10 @@ final router = GoRouter(
               path: 'exam-schedule',
               builder: (context, state) => const ExamScheduleScreen(),
             ),
+            GoRoute(
+              path: 'level-management',
+              builder: (context, state) => const ClassLevelManagementScreen(),
+            ),
           ],
         ),
 
@@ -615,6 +642,22 @@ final router = GoRouter(
           path: '/accounts',
           builder: (context, state) => const AccountHomeScreen(),
           routes: [
+            GoRoute(
+              path: 'class-account',
+              builder:
+                  (context, state) => PaymentDetailsScreen(
+                    classId: null,
+                    className: 'All Classes',
+                  ),
+            ),
+            GoRoute(
+              path: 'class-fee-breakdown',
+              builder: (context, state) => PaymentBreakdownScreen(),
+            ),
+            GoRoute(
+              path: 'fee-verification',
+              builder: (context, state) => PaymentVerificationScreen(),
+            ),
             GoRoute(
               path: 'income',
               builder: (context, state) => const IncomeScreen(),
