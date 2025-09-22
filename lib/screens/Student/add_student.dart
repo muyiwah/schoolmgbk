@@ -55,7 +55,7 @@ class _StudentRegistrationPageState
   final _emergencyContactPhoneController = TextEditingController();
   final _emergencyContactRelationshipController = TextEditingController();
 
-  // Parent controllers - Father
+  // Parent controllers - Father (simplified to match schema)
   final _fatherTitleController = TextEditingController();
   final _fatherFirstNameController = TextEditingController();
   final _fatherLastNameController = TextEditingController();
@@ -65,14 +65,13 @@ class _StudentRegistrationPageState
   final _fatherEmailController = TextEditingController();
   final _fatherOccupationController = TextEditingController();
   final _fatherEmployerController = TextEditingController();
-  final _fatherIncomeController = TextEditingController();
   final _fatherWorkPhoneController = TextEditingController();
   final _fatherWorkStreetController = TextEditingController();
   final _fatherWorkCityController = TextEditingController();
   final _fatherWorkStateController = TextEditingController();
   final _fatherWorkCountryController = TextEditingController();
 
-  // Parent controllers - Mother
+  // Parent controllers - Mother (simplified to match schema)
   final _motherTitleController = TextEditingController();
   final _motherFirstNameController = TextEditingController();
   final _motherLastNameController = TextEditingController();
@@ -82,7 +81,6 @@ class _StudentRegistrationPageState
   final _motherEmailController = TextEditingController();
   final _motherOccupationController = TextEditingController();
   final _motherEmployerController = TextEditingController();
-  final _motherIncomeController = TextEditingController();
 
   // Selected values
   String? _selectedGender;
@@ -242,7 +240,6 @@ class _StudentRegistrationPageState
     _fatherEmailController.dispose();
     _fatherOccupationController.dispose();
     _fatherEmployerController.dispose();
-    _fatherIncomeController.dispose();
     _fatherWorkPhoneController.dispose();
     _fatherWorkStreetController.dispose();
     _fatherWorkCityController.dispose();
@@ -259,7 +256,6 @@ class _StudentRegistrationPageState
     _motherEmailController.dispose();
     _motherOccupationController.dispose();
     _motherEmployerController.dispose();
-    _motherIncomeController.dispose();
 
     _pageController.dispose();
     super.dispose();
@@ -998,24 +994,10 @@ class _StudentRegistrationPageState
             ],
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildTextField(
-                  controller: _fatherIncomeController,
-                  label: 'Annual Income',
-                  keyboardType: TextInputType.number,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildTextField(
-                  controller: _fatherWorkPhoneController,
-                  label: 'Work Phone',
-                  keyboardType: TextInputType.phone,
-                ),
-              ),
-            ],
+          _buildTextField(
+            controller: _fatherWorkPhoneController,
+            label: 'Work Phone',
+            keyboardType: TextInputType.phone,
           ),
           const SizedBox(height: 16),
 
@@ -1234,11 +1216,6 @@ class _StudentRegistrationPageState
             ],
           ),
           const SizedBox(height: 16),
-          _buildTextField(
-            controller: _motherIncomeController,
-            label: 'Annual Income',
-            keyboardType: TextInputType.number,
-          ),
         ],
       ),
     );
@@ -1259,9 +1236,9 @@ class _StudentRegistrationPageState
       children: [
         Text(
           label + (isRequired ? ' *' : ''),
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.w500,
-            color: Colors.black87,
+            color: isRequired ? Colors.red : Colors.black87,
           ),
         ),
         const SizedBox(height: 8),
@@ -1367,7 +1344,7 @@ class _StudentRegistrationPageState
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Current Class',
+          'Assign to Class',
           style: TextStyle(fontWeight: FontWeight.w500, color: Colors.black87),
         ),
         const SizedBox(height: 8),
@@ -1532,7 +1509,10 @@ class _StudentRegistrationPageState
         'personalInfo': {
           'firstName': _firstNameController.text.trim(),
           'lastName': _lastNameController.text.trim(),
-          'middleName': _middleNameController.text.trim(),
+          'middleName':
+              _middleNameController.text.trim().isNotEmpty
+                  ? _middleNameController.text.trim()
+                  : null,
           'dateOfBirth': _selectedDOB?.toIso8601String().split('T')[0],
           'gender': _selectedGender,
           'nationality': _selectedNationality,
@@ -1549,8 +1529,14 @@ class _StudentRegistrationPageState
             'state': _stateController.text.trim(),
             'country': _countryController.text.trim(),
           },
-          'phone': _phoneController.text.trim(),
-          'email': _emailController.text.trim(),
+          'phone':
+              _phoneController.text.trim().isNotEmpty
+                  ? _phoneController.text.trim()
+                  : null,
+          'email':
+              _emailController.text.trim().isNotEmpty
+                  ? _emailController.text.trim()
+                  : null,
         },
         'academicInfo': {
           'academicYear': _selectedAcademicYear,
@@ -1566,7 +1552,10 @@ class _StudentRegistrationPageState
               'title': _fatherTitleController.text.trim(),
               'firstName': _fatherFirstNameController.text.trim(),
               'lastName': _fatherLastNameController.text.trim(),
-              'middleName': _fatherMiddleNameController.text.trim(),
+              'middleName':
+                  _fatherMiddleNameController.text.trim().isNotEmpty
+                      ? _fatherMiddleNameController.text.trim()
+                      : null,
               'dateOfBirth':
                   _selectedFatherDOB?.toIso8601String().split('T')[0],
               'gender': _selectedFatherGender,
@@ -1583,18 +1572,35 @@ class _StudentRegistrationPageState
               },
             },
             'professionalInfo': {
-              'occupation': _fatherOccupationController.text.trim(),
-              'employer': _fatherEmployerController.text.trim(),
-              'annualIncome':
-                  _fatherIncomeController.text.trim().isNotEmpty
-                      ? int.tryParse(_fatherIncomeController.text.trim()) ?? 0
-                      : 0,
-              'workPhone': _fatherWorkPhoneController.text.trim(),
+              'occupation':
+                  _fatherOccupationController.text.trim().isNotEmpty
+                      ? _fatherOccupationController.text.trim()
+                      : null,
+              'employer':
+                  _fatherEmployerController.text.trim().isNotEmpty
+                      ? _fatherEmployerController.text.trim()
+                      : null,
+              'workPhone':
+                  _fatherWorkPhoneController.text.trim().isNotEmpty
+                      ? _fatherWorkPhoneController.text.trim()
+                      : null,
               'workAddress': {
-                'street': _fatherWorkStreetController.text.trim(),
-                'city': _fatherWorkCityController.text.trim(),
-                'state': _fatherWorkStateController.text.trim(),
-                'country': _fatherWorkCountryController.text.trim(),
+                'street':
+                    _fatherWorkStreetController.text.trim().isNotEmpty
+                        ? _fatherWorkStreetController.text.trim()
+                        : null,
+                'city':
+                    _fatherWorkCityController.text.trim().isNotEmpty
+                        ? _fatherWorkCityController.text.trim()
+                        : null,
+                'state':
+                    _fatherWorkStateController.text.trim().isNotEmpty
+                        ? _fatherWorkStateController.text.trim()
+                        : null,
+                'country':
+                    _fatherWorkCountryController.text.trim().isNotEmpty
+                        ? _fatherWorkCountryController.text.trim()
+                        : null,
               },
             },
           },
@@ -1603,7 +1609,10 @@ class _StudentRegistrationPageState
               'title': _motherTitleController.text.trim(),
               'firstName': _motherFirstNameController.text.trim(),
               'lastName': _motherLastNameController.text.trim(),
-              'middleName': _motherMiddleNameController.text.trim(),
+              'middleName':
+                  _motherMiddleNameController.text.trim().isNotEmpty
+                      ? _motherMiddleNameController.text.trim()
+                      : null,
               'dateOfBirth':
                   _selectedMotherDOB?.toIso8601String().split('T')[0],
               'gender': _selectedMotherGender,
@@ -1620,12 +1629,14 @@ class _StudentRegistrationPageState
               },
             },
             'professionalInfo': {
-              'occupation': _motherOccupationController.text.trim(),
-              'employer': _motherEmployerController.text.trim(),
-              'annualIncome':
-                  _motherIncomeController.text.trim().isNotEmpty
-                      ? int.tryParse(_motherIncomeController.text.trim()) ?? 0
-                      : 0,
+              'occupation':
+                  _motherOccupationController.text.trim().isNotEmpty
+                      ? _motherOccupationController.text.trim()
+                      : null,
+              'employer':
+                  _motherEmployerController.text.trim().isNotEmpty
+                      ? _motherEmployerController.text.trim()
+                      : null,
             },
           },
         },
@@ -1636,6 +1647,7 @@ class _StudentRegistrationPageState
                       .trim()
                       .split(',')
                       .map((e) => e.trim())
+                      .where((e) => e.isNotEmpty)
                       .toList()
                   : [],
           'medications':
@@ -1644,6 +1656,7 @@ class _StudentRegistrationPageState
                       .trim()
                       .split(',')
                       .map((e) => e.trim())
+                      .where((e) => e.isNotEmpty)
                       .toList()
                   : [],
           'medicalConditions':
@@ -1652,6 +1665,7 @@ class _StudentRegistrationPageState
                       .trim()
                       .split(',')
                       .map((e) => e.trim())
+                      .where((e) => e.isNotEmpty)
                       .toList()
                   : [],
           'emergencyContact': {
@@ -1661,6 +1675,15 @@ class _StudentRegistrationPageState
           },
         },
       };
+
+      // Debug logging
+      print('Creating student with data structure:');
+      print('Personal Info: ${studentData['personalInfo']}');
+      print('Contact Info: ${studentData['contactInfo']}');
+      print('Academic Info: ${studentData['academicInfo']}');
+      print('Assign to Class: ${studentData['assignToClass']}');
+      print('Parent Info: ${studentData['parentInfo']}');
+      print('Medical Info: ${studentData['medicalInfo']}');
 
       final response = await ref
           .read(studentProvider.notifier)
@@ -1674,8 +1697,15 @@ class _StudentRegistrationPageState
 
         if (!mounted) return;
 
-        // Navigate back to students list
-        context.go('/students');
+        // Show credentials dialog if they exist
+        if (response['StudentLoginCredentials'] != null ||
+            (response['parentCredentials'] != null &&
+                response['parentCredentials'].isNotEmpty)) {
+          _showCredentialsDialog(context, response);
+        } else {
+          // Navigate back to students list
+          context.go('/students');
+        }
       }
     } catch (e) {
       if (!mounted) return;
@@ -2184,6 +2214,189 @@ class _StudentRegistrationPageState
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCredentialsDialog(
+    BuildContext context,
+    Map<String, dynamic> response,
+  ) {
+    final studentCredentials = response['StudentLoginCredentials'];
+    final parentCredentials = response['parentCredentials'] as List<dynamic>?;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.security, color: Color(0xFF6366F1)),
+              SizedBox(width: 8),
+              Text(
+                'Login Credentials',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Please save these credentials securely. They will be needed for login.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF64748B),
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+                SizedBox(height: 20),
+
+                // Student Credentials
+                if (studentCredentials != null) ...[
+                  _buildCredentialSection(
+                    'Student Login Credentials',
+                    Icons.person,
+                    Color(0xFF10B981),
+                    [
+                      _buildCredentialItem(
+                        'Email',
+                        studentCredentials['email'],
+                      ),
+                      _buildCredentialItem(
+                        'Temporary Password',
+                        studentCredentials['temporaryPassword'],
+                      ),
+                      _buildCredentialItem(
+                        'Student ID',
+                        studentCredentials['studentId'],
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 16),
+                ],
+
+                // Parent Credentials
+                if (parentCredentials != null &&
+                    parentCredentials.isNotEmpty) ...[
+                  _buildCredentialSection(
+                    'Parent Login Credentials',
+                    Icons.family_restroom,
+                    Color(0xFF8B5CF6),
+                    parentCredentials
+                        .map(
+                          (credential) => [
+                            _buildCredentialItem('Email', credential['email']),
+                            _buildCredentialItem(
+                              'Temporary Password',
+                              credential['temporaryPassword'],
+                            ),
+                            _buildCredentialItem(
+                              'Parent ID',
+                              credential['parentId'],
+                            ),
+                          ],
+                        )
+                        .expand((item) => item)
+                        .toList(),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                context.go('/students');
+              },
+              child: Text(
+                'Done',
+                style: TextStyle(
+                  color: Color(0xFF6366F1),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildCredentialSection(
+    String title,
+    IconData icon,
+    Color color,
+    List<Widget> items,
+  ) {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: color, size: 20),
+              SizedBox(width: 8),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 12),
+          ...items,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCredentialItem(String label, String value) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(
+              '$label:',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF64748B),
+              ),
+            ),
+          ),
+          Expanded(
+            child: SelectableText(
+              value,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF0F172A),
+                fontFamily: 'monospace',
+              ),
+            ),
           ),
         ],
       ),

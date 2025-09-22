@@ -51,6 +51,7 @@ class StudentModel {
 
   String get fullName => '${personalInfo.firstName} ${personalInfo.lastName}';
   String get className => academicInfo.currentClass?.name ?? 'N/A';
+  String get classLevel => academicInfo.currentClass?.level ?? 'N/A';
   String get parentName =>
       parentInfo.father?.personalInfo.fullName ??
       parentInfo.mother?.personalInfo.fullName ??

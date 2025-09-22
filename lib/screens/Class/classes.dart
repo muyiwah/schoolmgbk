@@ -663,10 +663,10 @@ class _SchoolClassesState extends ConsumerState<SchoolClasses> {
                 child: Text(
                   classData.level ?? '',
                   style: TextStyle(
-                    color: Colors.blue,
+                    color: Colors.red,
                     // color: classData.levelColor,
                     fontSize: 12,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),

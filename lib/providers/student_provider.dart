@@ -158,19 +158,33 @@ class StudentNotifier extends StateNotifier<StudentState> {
     }
   }
 
-  assignStudentToClass(BuildContext context, body) async {
-    EasyLoading.show(status: 'creating classes...');
+  assignStudentToClass(
+    BuildContext context,
+    String studentId,
+    Map<String, dynamic> body,
+  ) async {
+    EasyLoading.show(status: 'Assigning student to class...');
 
-    HTTPResponseModel res = await _studentsRepo.assignStudentToClass('', body);
+    HTTPResponseModel res = await _studentsRepo.assignStudentToClass(
+      studentId,
+      body,
+    );
     EasyLoading.dismiss();
 
     if (HTTPResponseModel.isApiCallSuccess(res)) {
-      CustomToastNotification.show(res.message ?? '', type: ToastType.success);
-    } else {
       CustomToastNotification.show(
-        res.message ?? 'unable to get class data',
+        res.message ?? 'Student assigned to class successfully',
         type: ToastType.success,
       );
+      // Refresh the students list after successful assignment
+      await getAllStudents(context);
+      return true;
+    } else {
+      CustomToastNotification.show(
+        res.message ?? 'Failed to assign student to class',
+        type: ToastType.error,
+      );
+      return false;
     }
   }
 

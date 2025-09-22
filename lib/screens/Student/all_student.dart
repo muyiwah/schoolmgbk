@@ -22,9 +22,11 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
   String _selectedGender = 'All Genders';
   String _selectedFeeStatus = 'All Status';
 
-  // Pagination
+  // Pagination for loading more students
   int _currentPage = 1;
-  final int _itemsPerPage = 10;
+  final int _itemsPerPage = 50; // Load 50 students per page
+  bool _hasMoreStudents = true;
+  bool _isLoadingMore = false;
 
   // Flag to track if we need to reload when returning to screen
   bool _shouldReloadOnReturn = false;
@@ -32,31 +34,32 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
   // Get class options from ClassProvider
   List<String> _getClassOptions(ClassProvider classProvider) {
     final classes = classProvider.classData.classes ?? [];
-    final classNames =
+    final classLevels =
         classes
             .map((cls) => cls.level ?? '')
-            .where((name) => name.isNotEmpty)
+            .where((level) => level.isNotEmpty)
+            .toSet() // Use Set to ensure uniqueness
             .toList();
-    return ['All Classes', ...classNames];
+    return ['All Classes', ...classLevels];
   }
 
-  // Get class ID from class name
-  String? _getClassIdFromName(String className, ClassProvider classProvider) {
-    if (className == 'All Classes') return null;
+  // Get class IDs from class level (returns all classes with that level)
+  List<String> _getClassIdsFromLevel(
+    String classLevel,
+    ClassProvider classProvider,
+  ) {
+    if (classLevel == 'All Classes') return [];
 
     final classes = classProvider.classData.classes ?? [];
     if (classes.isEmpty) {
-      print('Warning: No classes loaded yet, cannot filter by class');
-      return null;
+      print('Warning: No classes loaded yet, cannot filter by class level');
+      return [];
     }
 
-    try {
-      final classData = classes.firstWhere((cls) => cls.name == className);
-      return classData.id;
-    } catch (e) {
-      print('Warning: Class "$className" not found in available classes');
-      return null;
-    }
+    return classes
+        .where((cls) => cls.level == classLevel && cls.id != null)
+        .map((cls) => cls.id!)
+        .toList();
   }
 
   final List<String> _genderOptions = ['All Genders', 'male', 'female'];
@@ -94,24 +97,73 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
     }
   }
 
+  // Filter students by class level client-side
+  List<StudentModel> _filterStudentsByClassLevel(
+    List<StudentModel> students,
+    ClassProvider classProvider,
+  ) {
+    if (_selectedClass == 'All Classes') return students;
+
+    final classIds = _getClassIdsFromLevel(_selectedClass, classProvider);
+    if (classIds.isEmpty) return students;
+
+    return students.where((student) {
+      // Check if student's class ID is in the list of class IDs for this level
+      return classIds.contains(student.academicInfo.currentClass?.id);
+    }).toList();
+  }
+
+  // Check if there are more students available for the current filter
+  bool _hasMoreFilteredStudents(
+    List<StudentModel> filteredStudents,
+    ClassProvider classProvider,
+  ) {
+    if (!_hasMoreStudents) return false;
+
+    // If no class filter is applied, check if we have more students from API
+    if (_selectedClass == 'All Classes') {
+      return _hasMoreStudents;
+    }
+
+    // For class level filtering, we need to check if there might be more students
+    // with this class level in the remaining data
+    final studentState = ref.read(studentProvider);
+    final allStudents = studentState.students;
+    final classIds = _getClassIdsFromLevel(_selectedClass, classProvider);
+
+    // Count how many students with this class level we currently have
+    final currentCount =
+        allStudents.where((student) {
+          return classIds.contains(student.academicInfo.currentClass?.id);
+        }).length;
+
+    // If we have fewer students than expected, there might be more
+    // This is a simple heuristic - if we have loaded students but fewer than expected
+    // for this class level, there might be more to load
+    return _hasMoreStudents && currentCount > 0;
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
   }
 
-  Future<void> _loadStudents() async {
-    final classState = ref.read(RiverpodProvider.classProvider);
-    final classId = _getClassIdFromName(_selectedClass, classState);
+  Future<void> _loadStudents({bool loadMore = false}) async {
+    if (loadMore) {
+      setState(() {
+        _isLoadingMore = true;
+      });
+    }
 
-
+    // Load students with pagination
     await ref
         .read(studentProvider.notifier)
         .getAllStudents(
           context,
-          page: _currentPage,
+          page: loadMore ? _currentPage + 1 : 1,
           limit: _itemsPerPage,
-          classId: classId,
+          classId: null, // Don't filter by class on API level
           gender: _selectedGender == 'All Genders' ? null : _selectedGender,
           feeStatus:
               _selectedFeeStatus == 'All Status' ? null : _selectedFeeStatus,
@@ -120,22 +172,36 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
                   ? null
                   : _searchController.text.trim(),
         );
+
+    if (loadMore) {
+      setState(() {
+        _currentPage++;
+        _isLoadingMore = false;
+        // Check if we have more students to load based on pagination info
+        final studentState = ref.read(studentProvider);
+        final pagination = studentState.pagination;
+        _hasMoreStudents = pagination != null && pagination.hasNext;
+      });
+    } else {
+      setState(() {
+        _currentPage = 1;
+        // Check if we have more students to load based on pagination info
+        final studentState = ref.read(studentProvider);
+        final pagination = studentState.pagination;
+        _hasMoreStudents = pagination != null && pagination.hasNext;
+      });
+    }
+  }
+
+  Future<void> _loadMoreStudents() async {
+    await _loadStudents(loadMore: true);
   }
 
   void _onSearchChanged() {
-    _currentPage = 1;
     _loadStudents();
   }
 
   void _onFilterChanged() {
-    _currentPage = 1;
-    _loadStudents();
-  }
-
-  void _onPageChanged(int page) {
-    setState(() {
-      _currentPage = page;
-    });
     _loadStudents();
   }
 
@@ -143,10 +209,13 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
   Widget build(BuildContext context) {
     final studentState = ref.watch(studentProvider);
     final classState = ref.watch(RiverpodProvider.classProvider);
-    final students = studentState.students;
+    final allStudents = studentState.students;
     final pagination = studentState.pagination;
     final isLoading = studentState.isLoading;
     final errorMessage = studentState.errorMessage;
+
+    // Filter students by class level client-side
+    final students = _filterStudentsByClassLevel(allStudents, classState);
 
     // Get dynamic class options
     final classOptions = _getClassOptions(classState);
@@ -223,8 +292,49 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
             // Data Table
             Expanded(child: _buildDataTable(students, isLoading, errorMessage)),
 
-            // Pagination
-            if (pagination != null) _buildPagination(pagination),
+            // Load More Button
+            if (!isLoading &&
+                students.isNotEmpty &&
+                _hasMoreFilteredStudents(students, classState))
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Center(
+                  child: ElevatedButton.icon(
+                    onPressed: _isLoadingMore ? null : _loadMoreStudents,
+                    icon:
+                        _isLoadingMore
+                            ? SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            )
+                            : Icon(Icons.refresh, size: 16),
+                    label: Text(
+                      _isLoadingMore ? 'Loading...' : 'Load More Students',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.secondary,
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -240,8 +350,8 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
       children: [
         Expanded(
           child: _buildStatCard(
-            title: 'Total Students',
-            value: pagination?.totalStudents.toString() ?? '0',
+            title: 'Filtered Students',
+            value: students.length.toString(),
             icon: Icons.groups,
             color: const Color(0xFF6366F1),
           ),
@@ -249,7 +359,7 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
         const SizedBox(width: 16),
         Expanded(
           child: _buildStatCard(
-            title: 'Classes',
+            title: 'Class Levels',
             value: classOptions.length.toString(),
             icon: Icons.class_,
             color: const Color(0xFF8B5CF6),
@@ -258,10 +368,12 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
         const SizedBox(width: 16),
         Expanded(
           child: _buildStatCard(
-            title: 'Avg per Class',
+            title: 'Avg per Class Level',
             value:
-                pagination != null
-                    ? (pagination.totalStudents / classOptions.length)
+                classOptions.length > 1
+                    ? (students.length /
+                            (classOptions.length -
+                                1)) // Subtract 1 for "All Classes"
                         .round()
                         .toString()
                     : '0',
@@ -352,7 +464,7 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
     final activeFilters = <String>[];
 
     if (_selectedClass != 'All Classes') {
-      activeFilters.add('Class: $_selectedClass');
+      activeFilters.add('Class Level: $_selectedClass');
     }
     if (_selectedGender != 'All Genders') {
       activeFilters.add('Gender: $_selectedGender');
@@ -504,7 +616,7 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
                 const Expanded(
                   flex: 1,
                   child: Text(
-                    'CLASS',
+                    'CLASS LEVEL',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       color: Colors.black54,
@@ -633,8 +745,8 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
                       // Admission No
                       Expanded(flex: 2, child: Text(student.admissionNumber)),
 
-                      // Class
-                      Expanded(flex: 1, child: Text(student.className)),
+                      // Class Level
+                      Expanded(flex: 1, child: Text(student.classLevel)),
 
                       // Gender
                       Expanded(
@@ -705,67 +817,6 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
                 );
               },
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPagination(PaginationInfo pagination) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            'Showing ${(_currentPage - 1) * _itemsPerPage + 1} to ${_currentPage * _itemsPerPage} of ${pagination.totalStudents} students',
-            style: TextStyle(color: Colors.grey[600]),
-          ),
-          Row(
-            children: [
-              TextButton(
-                onPressed:
-                    pagination.hasPrev
-                        ? () => _onPageChanged(_currentPage - 1)
-                        : null,
-                child: const Text('Previous'),
-              ),
-              ...List.generate(pagination.totalPages, (index) {
-                final page = index + 1;
-                final isCurrentPage = page == _currentPage;
-
-                return Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  child:
-                      isCurrentPage
-                          ? Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF6366F1),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              page.toString(),
-                              style: const TextStyle(color: Colors.white),
-                            ),
-                          )
-                          : TextButton(
-                            onPressed: () => _onPageChanged(page),
-                            child: Text(page.toString()),
-                          ),
-                );
-              }),
-              TextButton(
-                onPressed:
-                    pagination.hasNext
-                        ? () => _onPageChanged(_currentPage + 1)
-                        : null,
-                child: const Text('Next'),
-              ),
-            ],
           ),
         ],
       ),
@@ -870,26 +921,210 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
   void _showDeleteDialog(StudentModel student) {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder:
           (context) => AlertDialog(
-            title: const Text('Delete Student'),
-            content: Text(
-              'Are you sure you want to delete ${student.fullName}?',
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFEF4444).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.warning_amber_rounded,
+                    color: Color(0xFFEF4444),
+                    size: 24,
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Delete Student',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(height: 8),
+                Text(
+                  'Are you sure you want to delete this student?',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+                SizedBox(height: 16),
+
+                // Student Info Card
+                Container(
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Color(0xFFE2E8F0)),
+                  ),
+                  child: Row(
+                    children: [
+                      // Student Avatar
+                      CircleAvatar(
+                        radius: 24,
+                        backgroundColor: _getAvatarColor(
+                          student.personalInfo.firstName,
+                        ),
+                        backgroundImage:
+                            student.personalInfo.profileImage != null &&
+                                    student
+                                        .personalInfo
+                                        .profileImage!
+                                        .isNotEmpty
+                                ? NetworkImage(
+                                  student.personalInfo.profileImage!,
+                                )
+                                : null,
+                        child:
+                            student.personalInfo.profileImage == null ||
+                                    student.personalInfo.profileImage!.isEmpty
+                                ? Text(
+                                  student.personalInfo.firstName[0]
+                                      .toUpperCase(),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                )
+                                : null,
+                      ),
+                      SizedBox(width: 12),
+
+                      // Student Details
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              student.fullName,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF0F172A),
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              student.admissionNumber,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF64748B),
+                              ),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              student.classLevel,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Color(0xFF94A3B8),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                SizedBox(height: 16),
+
+                // Warning Message
+                Container(
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFFEF2F2),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Color(0xFFFECACA)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        color: Color(0xFFDC2626),
+                        size: 20,
+                      ),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'This action cannot be undone. All student data, including academic records, will be permanently deleted.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFFDC2626),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
             actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  _deleteStudent(student.id);
-                },
-                child: const Text(
-                  'Delete',
-                  style: TextStyle(color: Colors.red),
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: OutlinedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        side: BorderSide(color: Color(0xFFE2E8F0)),
+                      ),
+                      child: Text(
+                        'Cancel',
+                        style: TextStyle(
+                          color: Color(0xFF64748B),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        _deleteStudent(student.id);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFFEF4444),
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        'Delete Student',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

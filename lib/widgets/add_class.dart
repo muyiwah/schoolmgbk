@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:schmgtsystem/constants/appcolor.dart';
 import 'package:schmgtsystem/models/teacher_model.dart';
+import 'package:schmgtsystem/models/class_level_model.dart';
 import 'package:schmgtsystem/providers/provider.dart';
 
 class AddClassDialog extends ConsumerStatefulWidget {
@@ -39,29 +40,15 @@ class _AddClassDialogState extends ConsumerState<AddClassDialog>
   // Selected values
   String? selectedLevel;
   String? selectedTerm;
-  String? selectedClassTeacher;
+  String? selectedClassTeacher = 'No Teacher Assigned'; // Default to no teacher
   String? selectedClassTeacherId;
   Color selectedColor = const Color(0xFF3B82F6); // Default blue color
   List<String> selectedDays = [];
   bool _isLoading = false;
+  bool _isLoadingLevels = false;
 
-  // Available options
-  final List<String> levels = [
-    'Primary 1',
-    'Primary 2',
-    'Primary 3',
-    'Primary 4',
-    'Primary 5',
-    'Primary 6',
-    'JSS 1',
-    'JSS 2',
-    'JSS 3',
-    'SSS 1',
-    'SSS 2',
-    'SSS 3',
-    'Kindergarten',
-    'Nursery',
-  ];
+  // Dynamic class levels from API
+  List<ClassLevelModel> _classLevels = [];
 
   final List<String> terms = ['First', 'Second', 'Third'];
   final List<String> daysOfWeek = [
@@ -95,7 +82,39 @@ class _AddClassDialogState extends ConsumerState<AddClassDialog>
     _startTimeController.text = '08:00 AM';
     _endTimeController.text = '02:00 PM';
     selectedDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+
+    // Load class levels
+    _loadClassLevels();
   }
+
+  Future<void> _loadClassLevels() async {
+    setState(() {
+      _isLoadingLevels = true;
+    });
+
+    try {
+      await ref
+          .read(RiverpodProvider.classLevelProvider)
+          .getAllClassLevels(
+            context,
+            isActive: true, // Only load active levels
+          );
+
+      final classLevelProvider = ref.read(RiverpodProvider.classLevelProvider);
+      setState(() {
+        _classLevels = classLevelProvider.classLevels;
+        _isLoadingLevels = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoadingLevels = false;
+      });
+      print('Error loading class levels: $e');
+    }
+  }
+
+  // Helper method to check if class levels are loaded
+  bool get hasClassLevels => _classLevels.isNotEmpty && !_isLoadingLevels;
 
   @override
   void dispose() {
@@ -118,9 +137,25 @@ class _AddClassDialogState extends ConsumerState<AddClassDialog>
       });
 
       try {
+        // Get the selected class level data
+        final selectedClassLevel = _classLevels.firstWhere(
+          (level) => level.displayName == selectedLevel,
+          orElse: () => throw Exception('Selected level not found'),
+        );
+
+        // Debug logging
+        print('Selected Class Level: ${selectedClassLevel.displayName}');
+        print('Level Name: ${selectedClassLevel.name}');
+        print('Class Level ID: ${selectedClassLevel.id}');
+        print(
+          'Selected Teacher: ${selectedClassTeacher ?? 'No Teacher Assigned'}',
+        );
+        print('Teacher ID: ${selectedClassTeacherId ?? 'null'}');
+
         final Map<String, dynamic> requestBody = {
           "name": _classNameController.text.trim(),
-          "level": selectedLevel,
+          "level": selectedClassLevel.name, // String level name
+          "classLevel": selectedClassLevel.id, // ObjectId reference
           "section":
               _sectionController.text.trim().isNotEmpty
                   ? _sectionController.text.trim()
@@ -142,6 +177,9 @@ class _AddClassDialogState extends ConsumerState<AddClassDialog>
             "days": selectedDays,
           },
         };
+
+        // Debug logging
+        print('Creating class with request body: $requestBody');
 
         await ref
             .read(RiverpodProvider.classProvider)
@@ -598,22 +636,67 @@ class _AddClassDialogState extends ConsumerState<AddClassDialog>
             Row(
               children: [
                 Expanded(
-                  child: _buildStyledDropdown(
-                    label: 'Level *',
-                    items: levels,
-                    value: selectedLevel,
-                    onChanged: (value) {
-                      setState(() {
-                        selectedLevel = value;
-                      });
-                    },
-                    icon: Icons.grade,
-                    validator: (value) {
-                      if (value == null) {
-                        return 'Please select a level';
-                      }
-                      return null;
-                    },
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildStyledDropdown(
+                              label: 'Level *',
+                              items:
+                                  _isLoadingLevels
+                                      ? ['Loading class levels...']
+                                      : _classLevels.isEmpty
+                                      ? ['No class levels available']
+                                      : _classLevels
+                                          .map((level) => level.displayName)
+                                          .toList(),
+                              value: selectedLevel,
+                              onChanged:
+                                  _isLoadingLevels || _classLevels.isEmpty
+                                      ? (value) {}
+                                      : (value) {
+                                        setState(() {
+                                          selectedLevel = value;
+                                        });
+                                      },
+                              icon: Icons.grade,
+                              validator: (value) {
+                                if (value == null ||
+                                    value == 'Loading class levels...' ||
+                                    value == 'No class levels available') {
+                                  return 'Please select a level';
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                          if (_classLevels.isEmpty && !_isLoadingLevels) ...[
+                            SizedBox(width: 8),
+                            IconButton(
+                              onPressed: _loadClassLevels,
+                              icon: Icon(
+                                Icons.refresh,
+                                color: Color(0xFF6366F1),
+                              ),
+                              tooltip: 'Refresh class levels',
+                            ),
+                          ],
+                        ],
+                      ),
+                      if (_classLevels.isEmpty && !_isLoadingLevels)
+                        Padding(
+                          padding: EdgeInsets.only(top: 4),
+                          child: Text(
+                            'No class levels found. Please create some in Class Level Management.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFFEF4444),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -675,19 +758,23 @@ class _AddClassDialogState extends ConsumerState<AddClassDialog>
             ),
             const SizedBox(height: 20),
 
-            // Class Teacher
+            // Class Teacher (Optional)
             _buildStyledDropdown(
-              label: 'Class Teacher',
-              items:
-                  (widget.teacherData.teachers ?? [])
-                      .map((teacher) => teacher.fullName.toString())
-                      .toList(),
-              value: selectedClassTeacher,
+              label: 'Class Teacher (Optional)',
+              items: [
+                'No Teacher Assigned', // Add "No Teacher" option
+                ...(widget.teacherData.teachers ?? [])
+                    .map((teacher) => teacher.fullName.toString())
+                    .toList(),
+              ],
+              value: selectedClassTeacher ?? 'No Teacher Assigned',
               onChanged: (value) {
                 setState(() {
                   selectedClassTeacher = value;
                   // Find teacher ID
-                  if (widget.teacherData.teachers != null && value != null) {
+                  if (widget.teacherData.teachers != null &&
+                      value != null &&
+                      value != 'No Teacher Assigned') {
                     final teacher = widget.teacherData.teachers!.firstWhere(
                       (t) => t.fullName.toString() == value,
                       orElse: () => widget.teacherData.teachers!.first,

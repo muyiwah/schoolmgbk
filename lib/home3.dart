@@ -5,6 +5,7 @@ import 'package:provider/provider.dart' as provider;
 import 'package:schmgtsystem/login_screen.dart';
 import 'package:schmgtsystem/providers/subject_provider.dart';
 import 'package:schmgtsystem/providers/class_provider.dart';
+import 'package:schmgtsystem/screens/Class/manage_student_class.dart';
 import 'package:schmgtsystem/screens/Class/subject_management.dart';
 import 'package:schmgtsystem/screens/accunts/class_payment_details.dart';
 import 'package:schmgtsystem/screens/accunts/fee_breakdown.dart';
@@ -1315,7 +1316,7 @@ class AssignStudentsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const AssignStudentsScreen();
+    return  ManageStudentClass();
   }
 }
 
