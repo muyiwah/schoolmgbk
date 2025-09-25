@@ -3,6 +3,7 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:schmgtsystem/models/class_metrics_model.dart';
 import 'package:schmgtsystem/models/single_class_model.dart' as single_class;
 import 'package:schmgtsystem/models/students_with_fees_model.dart';
+import 'package:schmgtsystem/models/class_statistics_model.dart';
 import 'package:schmgtsystem/repository/class_repo.dart';
 import 'package:schmgtsystem/utils/locator.dart';
 import 'package:schmgtsystem/utils/response_model.dart';
@@ -52,6 +53,14 @@ class ClassProvider extends ChangeNotifier {
     ),
   );
   StudentsWithFeesModel get studentsWithFeesData => _studentsWithFeesData;
+
+  // Class statistics data
+  ClassStatisticsModel _classStatisticsData = ClassStatisticsModel();
+  ClassStatisticsModel get classStatisticsData => _classStatisticsData;
+  setClassStatisticsData(data) {
+    _classStatisticsData = data;
+    notifyListeners();
+  }
 
   bool _isLoadingStudentsWithFees = false;
   bool get isLoadingStudentsWithFees => _isLoadingStudentsWithFees;
@@ -380,6 +389,117 @@ class ClassProvider extends ChangeNotifier {
       EasyLoading.dismiss();
       CustomToastNotification.show(
         'Error updating subject assignments: $e',
+        type: ToastType.error,
+      );
+      return false;
+    }
+  }
+
+  // ✅ Add fee structure to class
+  Future<bool> addFeeStructureToClass(
+    BuildContext context,
+    String classId,
+    Map<String, dynamic> feeStructureData,
+  ) async {
+    try {
+      EasyLoading.show(status: 'Adding fee structure...');
+
+      HTTPResponseModel res = await _classRepo.addFeeStructureToClass(
+        classId,
+        feeStructureData,
+      );
+      EasyLoading.dismiss();
+
+      if (HTTPResponseModel.isApiCallSuccess(res)) {
+        CustomToastNotification.show(
+          res.message ?? 'Fee structure added successfully',
+          type: ToastType.success,
+        );
+
+        // Refresh class data to reflect changes
+        await getAllClassesWithMetric(context);
+        return true;
+      } else {
+        CustomToastNotification.show(
+          res.message ?? 'Failed to add fee structure',
+          type: ToastType.error,
+        );
+        return false;
+      }
+    } catch (e) {
+      EasyLoading.dismiss();
+      CustomToastNotification.show(
+        'Error adding fee structure: $e',
+        type: ToastType.error,
+      );
+      return false;
+    }
+  }
+
+  // ✅ Get class statistics
+  Future<bool> getClassStatistics(
+    BuildContext context, {
+    String? term,
+    String? academicYear,
+  }) async {
+    try {
+      EasyLoading.show(status: 'Loading statistics...');
+
+      HTTPResponseModel res = await _classRepo.getClassStatistics(
+        term: term,
+        academicYear: academicYear,
+      );
+      EasyLoading.dismiss();
+
+      if (HTTPResponseModel.isApiCallSuccess(res)) {
+        final statisticsData = ClassStatisticsModel.fromJson(res.data);
+        setClassStatisticsData(statisticsData);
+        return true;
+      } else {
+        CustomToastNotification.show(
+          res.message ?? 'Failed to load statistics',
+          type: ToastType.error,
+        );
+        return false;
+      }
+    } catch (e) {
+      EasyLoading.dismiss();
+      CustomToastNotification.show(
+        'Error loading statistics: $e',
+        type: ToastType.error,
+      );
+      return false;
+    }
+  }
+
+  // ✅ Delete class level
+  Future<bool> deleteClassLevel(BuildContext context, String classId) async {
+    try {
+      EasyLoading.show(status: 'Deleting class...');
+
+      HTTPResponseModel res = await _classRepo.deleteClassLevel(classId);
+      EasyLoading.dismiss();
+
+      if (HTTPResponseModel.isApiCallSuccess(res)) {
+        CustomToastNotification.show(
+          res.message ?? 'Class deleted successfully',
+          type: ToastType.success,
+        );
+
+        // Refresh class data to reflect changes
+        await getAllClassesWithMetric(context);
+        return true;
+      } else {
+        CustomToastNotification.show(
+          res.message ?? 'Failed to delete class',
+          type: ToastType.error,
+        );
+        return false;
+      }
+    } catch (e) {
+      EasyLoading.dismiss();
+      CustomToastNotification.show(
+        'Error deleting class: $e',
         type: ToastType.error,
       );
       return false;

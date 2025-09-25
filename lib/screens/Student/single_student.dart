@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:schmgtsystem/widgets/piechart.dart';
 import 'package:schmgtsystem/providers/student_provider.dart';
 import 'package:schmgtsystem/models/student_full_model.dart';
+import 'package:schmgtsystem/widgets/success_snack.dart';
 
 class SingleStudent extends ConsumerStatefulWidget {
   final String studentId;
@@ -934,13 +935,9 @@ class _SingleStudentState extends ConsumerState<SingleStudent> {
                               if (messageController.text.isNotEmpty) {
                                 // Here you would implement the actual message sending
                                 Navigator.of(context).pop();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      'Message sent to $selectedParent',
-                                    ),
-                                    backgroundColor: Colors.green,
-                                  ),
+                                showSnackbar(
+                                  context,
+                                  'Message sent to $selectedParent',
                                 );
                               }
                             },

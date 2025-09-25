@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:schmgtsystem/color_pallete.dart';
 import 'package:schmgtsystem/constants/appcolor.dart';
 import 'package:schmgtsystem/providers/staff_provider.dart';
+import 'package:schmgtsystem/widgets/success_snack.dart';
 import 'package:schmgtsystem/widgets/custom_datepicker.dart';
 import 'package:schmgtsystem/widgets/custom_dropdown_select.dart';
 
@@ -330,9 +331,7 @@ class _AddStaffState extends ConsumerState<AddStaff>
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error picking documents: $e')));
+      showSnackbar(context, 'Error picking documents: $e');
     }
   }
 
@@ -345,45 +344,31 @@ class _AddStaffState extends ConsumerState<AddStaff>
   Future<void> _submitForm() async {
     // Basic validation
     if (_firstNameController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Please enter first name')));
+      showSnackbar(context, 'Please enter first name');
       return;
     }
     if (_lastNameController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Please enter last name')));
+      showSnackbar(context, 'Please enter last name');
       return;
     }
     if (_selectedGender == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Please select gender')));
+      showSnackbar(context, 'Please select gender');
       return;
     }
     if (_selectedRole == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Please select role')));
+      showSnackbar(context, 'Please select role');
       return;
     }
     if (_primaryPhoneController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter primary phone number')),
-      );
+      showSnackbar(context, 'Please enter primary phone number');
       return;
     }
     if (_emailController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter email address')),
-      );
+      showSnackbar(context, 'Please enter email address');
       return;
     }
     if (_emergencyPhoneController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter emergency contact phone')),
-      );
+      showSnackbar(context, 'Please enter emergency contact phone');
       return;
     }
 
@@ -393,9 +378,7 @@ class _AddStaffState extends ConsumerState<AddStaff>
       try {
         int.parse(salaryText);
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please enter a valid salary amount')),
-        );
+        showSnackbar(context, 'Please enter a valid salary amount');
         return;
       }
     }
@@ -407,22 +390,16 @@ class _AddStaffState extends ConsumerState<AddStaff>
         try {
           final year = int.parse(yearText);
           if (year < 1900 || year > DateTime.now().year + 10) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  'Please enter a valid year for qualification ${i + 1}',
-                ),
-              ),
+            showSnackbar(
+              context,
+              'Please enter a valid year for qualification ${i + 1}',
             );
             return;
           }
         } catch (e) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Please enter a valid year for qualification ${i + 1}',
-              ),
-            ),
+          showSnackbar(
+            context,
+            'Please enter a valid year for qualification ${i + 1}',
           );
           return;
         }
@@ -443,9 +420,7 @@ class _AddStaffState extends ConsumerState<AddStaff>
         // Navigator.of(context).pop(); // Navigate back to previous screen
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error creating staff: $e')));
+      showSnackbar(context, 'Error creating staff: $e');
     }
   }
 
@@ -929,19 +904,19 @@ class _AddStaffState extends ConsumerState<AddStaff>
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.tertiary1.withOpacity(0.1),
+              color: AppColors.secondaryColor.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
               children: [
-                Icon(Icons.location_on, color: AppColors.tertiary1, size: 18),
+                Icon(Icons.location_on, color: AppColors.secondaryColor, size: 18),
                 const SizedBox(width: 8),
                 Text(
                   'Address Information',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.tertiary1,
+                    color: AppColors.secondaryColor,
                   ),
                 ),
               ],
@@ -1047,6 +1022,22 @@ class _AddStaffState extends ConsumerState<AddStaff>
                   allValues: const [
                     "admin",
                     "teacher",
+                    'teaching Assistant',
+                    'Admissions Officer',
+                    'part-time cook',
+                    'cook',
+                    'caretaker',
+                    'driver',
+                    'guard',
+                    'lab assistant',
+                    'library assistant',
+                    'security',
+                    'cleaner',
+                    'stock-keeper',
+                    'librarian',
+                    'secretary',
+                    'principal',
+                    'support staff',
                     "accountant",
                     "security",
                     "cleaner",

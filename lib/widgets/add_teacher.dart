@@ -5,6 +5,7 @@ import 'package:schmgtsystem/models/class_metrics_model.dart';
 import 'package:schmgtsystem/models/staff_model.dart' as staff;
 import 'package:schmgtsystem/providers/provider.dart';
 import 'package:schmgtsystem/providers/staff_provider.dart';
+import 'package:schmgtsystem/widgets/success_snack.dart';
 
 class AssignNewTeacherDialog extends ConsumerStatefulWidget {
   final Class? classData;
@@ -63,12 +64,7 @@ class _AssignNewTeacherDialogState
         _isLoading = false;
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error loading teachers: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        showSnackbar(context, 'Error loading teachers: $e');
       }
     }
   }
@@ -100,6 +96,9 @@ class _AssignNewTeacherDialogState
               assignmentData,
               widget.classData!.id ?? '',
             );
+        await ref
+            .read(RiverpodProvider.classProvider)
+            .getAllClassesWithMetric(context);
       }
 
       // Store context before async operation
@@ -112,23 +111,14 @@ class _AssignNewTeacherDialogState
 
       if (mounted) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '${selectedTeacher!.personalInfo?.firstName} ${selectedTeacher!.personalInfo?.lastName} assigned as class teacher successfully!',
-            ),
-            backgroundColor: Colors.green,
-          ),
+        showSnackbar(
+          context,
+          '${selectedTeacher!.personalInfo?.firstName} ${selectedTeacher!.personalInfo?.lastName} assigned as class teacher successfully!',
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error assigning teacher: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        showSnackbar(context, 'Error assigning teacher: $e');
       }
     } finally {
       if (mounted) {

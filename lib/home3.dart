@@ -10,6 +10,8 @@ import 'package:schmgtsystem/screens/Class/subject_management.dart';
 import 'package:schmgtsystem/screens/accunts/class_payment_details.dart';
 import 'package:schmgtsystem/screens/accunts/fee_breakdown.dart';
 import 'package:schmgtsystem/screens/accunts/fee_verification.dart';
+import 'package:schmgtsystem/screens/exams/records.dart';
+import 'package:schmgtsystem/widgets/success_snack.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // Screen imports - Class
@@ -35,6 +37,8 @@ import 'package:schmgtsystem/screens/accunts/expenditure_manager.dart';
 
 // Screen imports - Admissions
 import 'package:schmgtsystem/screens/admissions/admission_screen.dart';
+import 'package:schmgtsystem/screens/admissions/register_online.dart';
+import 'package:schmgtsystem/screens/admissions/admission_management.dart';
 
 // Screen imports - CBT
 import 'package:schmgtsystem/screens/cbt/cbt_crateexam_teacher.dart';
@@ -54,6 +58,8 @@ import 'package:schmgtsystem/screens/exams/overview2.dart';
 import 'package:schmgtsystem/screens/adminhome/dashboar_details.dart';
 import 'package:schmgtsystem/screens/adminhome/dshboard.dart';
 import 'package:schmgtsystem/screens/parent/parent_dashboard.dart';
+import 'package:schmgtsystem/screens/teacher/teacher_dashboard.dart';
+import 'package:schmgtsystem/screens/teacher/teacher_students.dart';
 
 // Screen imports - Promotions
 import 'package:schmgtsystem/screens/promotions/manage_promotion.dart';
@@ -103,13 +109,19 @@ final menuItemsProvider = Provider<List<MenuItem>>((ref) {
       title: 'Dashboard',
       icon: Icons.dashboard,
       route: '/dashboard',
-      allowedRoles: ['admin', 'teacher', 'accountant'],
+      allowedRoles: ['admin', 'accountant'],
+    ),
+    MenuItem(
+      title: 'Class Teacher',
+      icon: Icons.dashboard,
+      route: '/teacher',
+      allowedRoles: ['teacher'],
     ),
     MenuItem(
       title: 'Students',
       icon: Icons.people,
       route: '/students',
-      allowedRoles: ['admin', 'teacher'],
+      allowedRoles: ['admin'],
       subItems: [
         MenuItem(title: 'All Students', icon: Icons.list, route: '/students'),
         MenuItem(title: 'Add Student', icon: Icons.add, route: '/students/add'),
@@ -119,33 +131,33 @@ final menuItemsProvider = Provider<List<MenuItem>>((ref) {
           icon: Icons.family_restroom,
           route: '/students/parents',
         ),
-        MenuItem(
-          title: 'Parent Transactions',
-          icon: Icons.payment,
-          route: '/students/parent-transactions',
-        ),
-        MenuItem(
-          title: 'Time Table',
-          icon: Icons.schedule,
-          route: '/students/timetable',
-        ),
-        MenuItem(
-          title: 'Create Time Table',
-          icon: Icons.create,
-          route: '/students/create-timetable',
-        ),
-        MenuItem(
-          title: 'Attendance',
-          icon: Icons.check_circle,
-          route: '/students/attendance',
-        ),
+        // MenuItem(
+        //   title: 'Parent Transactions',
+        //   icon: Icons.payment,
+        //   route: '/students/parent-transactions',
+        // ),
+        // MenuItem(
+        //   title: 'Time Table',
+        //   icon: Icons.schedule,
+        //   route: '/students/timetable',
+        // ),
+        // MenuItem(
+        //   title: 'Create Time Table',
+        //   icon: Icons.create,
+        //   route: '/students/create-timetable',
+        // ),
+        // MenuItem(
+        //   title: 'Attendance',
+        //   icon: Icons.check_circle,
+        //   route: '/students/attendance',
+        // ),
       ],
     ),
     MenuItem(
       title: 'Classes',
       icon: Icons.class_,
       route: '/classes',
-      allowedRoles: ['admin', 'teacher'],
+      allowedRoles: ['admin'],
       subItems: [
         MenuItem(title: 'All Classes', icon: Icons.list, route: '/classes'),
         MenuItem(
@@ -156,7 +168,8 @@ final menuItemsProvider = Provider<List<MenuItem>>((ref) {
         MenuItem(
           title: 'All Tables',
           icon: Icons.table_chart,
-          route: '/classes/tables',),
+          route: '/classes/tables',
+        ),
         MenuItem(
           title: 'Class Level Management',
           icon: Icons.table_chart,
@@ -167,11 +180,11 @@ final menuItemsProvider = Provider<List<MenuItem>>((ref) {
           icon: Icons.assignment,
           route: '/classes/assign',
         ),
-        MenuItem(
-          title: 'Time Table',
-          icon: Icons.schedule,
-          route: '/classes/timetable',
-        ),
+        // MenuItem(
+        //   title: 'Time Table',
+        //   icon: Icons.schedule,
+        //   route: '/classes/timetable',
+        // ),
         MenuItem(
           title: 'Exam Schedule',
           icon: Icons.event,
@@ -187,69 +200,69 @@ final menuItemsProvider = Provider<List<MenuItem>>((ref) {
       subItems: [
         MenuItem(title: 'All Staff', icon: Icons.list, route: '/staff'),
         MenuItem(title: 'Add Staff', icon: Icons.add, route: '/staff/add'),
-        MenuItem(
-          title: 'Assign Teacher',
-          icon: Icons.assignment_ind,
-          route: '/staff/assign-teacher',
-        ),
-        MenuItem(
-          title: 'Create Timetable',
-          icon: Icons.create,
-          route: '/staff/create-timetable',
-        ),
+        // MenuItem(
+        //   title: 'Assign Teacher',
+        //   icon: Icons.assignment_ind,
+        //   route: '/staff/assign-teacher',
+        // ),
+        // MenuItem(
+        //   title: 'Create Timetable',
+        //   icon: Icons.create,
+        //   route: '/staff/create-timetable',
+        // ),
       ],
     ),
-    MenuItem(
-      title: 'CBT',
-      icon: Icons.quiz,
-      route: '/cbt',
-      allowedRoles: ['admin', 'teacher'],
-      subItems: [
-        MenuItem(
-          title: 'Create Exam',
-          icon: Icons.add,
-          route: '/cbt/create-exam',
-        ),
-        MenuItem(
-          title: 'Question Bank',
-          icon: Icons.library_books,
-          route: '/cbt/question-bank',
-        ),
-        MenuItem(
-          title: 'Take Exam',
-          icon: Icons.play_arrow,
-          route: '/cbt/take-exam',
-        ),
-        MenuItem(
-          title: 'Results',
-          icon: Icons.assessment,
-          route: '/cbt/results',
-        ),
-        MenuItem(
-          title: 'Student Results',
-          icon: Icons.school,
-          route: '/cbt/student-results',
-        ),
-        MenuItem(
-          title: 'Parent Score',
-          icon: Icons.family_restroom,
-          route: '/cbt/parent-score',
-        ),
-      ],
-    ),
-    MenuItem(
-      title: 'Inventory',
-      icon: Icons.inventory,
-      route: '/inventory',
-      allowedRoles: ['admin'],
-      subItems: [
-        MenuItem(
-          title: 'Inventory',
-          icon: Icons.inventory_2,
-          route: '/inventory',
-        ),
-      ],
-    ),
+    // MenuItem(
+    //   title: 'CBT',
+    //   icon: Icons.quiz,
+    //   route: '/cbt',
+    //   allowedRoles: ['admin', 'teacher'],
+    //   subItems: [
+    //     MenuItem(
+    //       title: 'Create Exam',
+    //       icon: Icons.add,
+    //       route: '/cbt/create-exam',
+    //     ),
+    //     MenuItem(
+    //       title: 'Question Bank',
+    //       icon: Icons.library_books,
+    //       route: '/cbt/question-bank',
+    //     ),
+    //     MenuItem(
+    //       title: 'Take Exam',
+    //       icon: Icons.play_arrow,
+    //       route: '/cbt/take-exam',
+    //     ),
+    //     MenuItem(
+    //       title: 'Results',
+    //       icon: Icons.assessment,
+    //       route: '/cbt/results',
+    //     ),
+    //     MenuItem(
+    //       title: 'Student Results',
+    //       icon: Icons.school,
+    //       route: '/cbt/student-results',
+    //     ),
+    //     MenuItem(
+    //       title: 'Parent Score',
+    //       icon: Icons.family_restroom,
+    //       route: '/cbt/parent-score',
+    //     ),
+    //   ],
+    // ),
+    // MenuItem(
+    //   title: 'Inventory',
+    //   icon: Icons.inventory,
+    //   route: '/inventory',
+    //   allowedRoles: ['admin'],
+    //   subItems: [
+    //     MenuItem(
+    //       title: 'Inventory',
+    //       icon: Icons.inventory_2,
+    //       route: '/inventory',
+    //     ),
+    //   ],
+    // ),
     MenuItem(
       title: 'Parent',
       icon: Icons.inventory,
@@ -269,13 +282,13 @@ final menuItemsProvider = Provider<List<MenuItem>>((ref) {
       route: '/exams',
       allowedRoles: ['admin', 'teacher'],
       subItems: [
-        MenuItem(title: 'All Exams', icon: Icons.list, route: '/exams'),
-        MenuItem(title: 'Add Exam', icon: Icons.add, route: '/exams/add'),
-        MenuItem(
-          title: 'Exam Schedule',
-          icon: Icons.schedule,
-          route: '/exams/schedule',
-        ),
+        // MenuItem(title: 'All Exams', icon: Icons.list, route: '/exams'),
+        // MenuItem(title: 'Add Exam', icon: Icons.add, route: '/exams/add'),
+        // MenuItem(
+        //   title: 'Exam Schedule',
+        //   icon: Icons.schedule,
+        //   route: '/exams/schedule',
+        // ),
         MenuItem(
           title: 'Records',
           icon: Icons.record_voice_over,
@@ -293,6 +306,11 @@ final menuItemsProvider = Provider<List<MenuItem>>((ref) {
           title: 'All Admissions',
           icon: Icons.list,
           route: '/admissions',
+        ),
+        MenuItem(
+          title: 'Student Admission Form',
+          icon: Icons.person_add,
+          route: '/admissions/form',
         ),
       ],
     ),
@@ -338,7 +356,7 @@ final menuItemsProvider = Provider<List<MenuItem>>((ref) {
       route: '/accounts',
       allowedRoles: ['admin', 'accountant'],
       subItems: [
-        MenuItem(title: 'Account Home', icon: Icons.home, route: '/accounts'),
+        // MenuItem(title: 'Account Home', icon: Icons.home, route: '/accounts'),
         MenuItem(
           title: 'Fee Verification',
           icon: Icons.home,
@@ -354,21 +372,21 @@ final menuItemsProvider = Provider<List<MenuItem>>((ref) {
           icon: Icons.home,
           route: '/accounts/class-fee-breakdown',
         ),
-        MenuItem(
-          title: 'Income',
-          icon: Icons.trending_up,
-          route: '/accounts/income',
-        ),
-        MenuItem(
-          title: 'Expenditure',
-          icon: Icons.trending_down,
-          route: '/accounts/expenditure',
-        ),
-        MenuItem(
-          title: 'Expenditure Manager',
-          icon: Icons.manage_accounts,
-          route: '/accounts/expenditure-manager',
-        ),
+        // MenuItem(
+        //   title: 'Income',
+        //   icon: Icons.trending_up,
+        //   route: '/accounts/income',
+        // ),
+        // MenuItem(
+        //   title: 'Expenditure',
+        //   icon: Icons.trending_down,
+        //   route: '/accounts/expenditure',
+        // ),
+        // MenuItem(
+        //   title: 'Expenditure Manager',
+        //   icon: Icons.manage_accounts,
+        //   route: '/accounts/expenditure-manager',
+        // ),
         MenuItem(
           title: 'School Fees',
           icon: Icons.payment,
@@ -423,6 +441,18 @@ final router = GoRouter(
         GoRoute(
           path: '/parent',
           builder: (context, state) => const ParentScreen(),
+        ),
+
+        // Teacher Dashboard Route
+        GoRoute(
+          path: '/teacher',
+          builder: (context, state) => const TeacherDashboardScreen(),
+          routes: [
+            GoRoute(
+              path: 'students',
+              builder: (context, state) => const TeacherStudentsScreen(),
+            ),
+          ],
         ),
 
         // Students Routes
@@ -595,7 +625,7 @@ final router = GoRouter(
             ),
             GoRoute(
               path: 'records',
-              builder: (context, state) => const ExamRecordsScreen(),
+              builder: (context, state) => const ExamRecords(),
             ),
           ],
         ),
@@ -603,7 +633,13 @@ final router = GoRouter(
         // Admissions Routes
         GoRoute(
           path: '/admissions',
-          builder: (context, state) => const AdmissionsScreen(),
+          builder: (context, state) => const AdmissionManagementScreen(),
+          routes: [
+            GoRoute(
+              path: 'form',
+              builder: (context, state) => StudentAdmissionForm(),
+            ),
+          ],
         ),
 
         // Notifications Routes
@@ -769,7 +805,7 @@ class PersistentSidebar extends ConsumerWidget {
                 if (sidebarExpanded) ...[
                   const SizedBox(height: 10),
                   const Text(
-                    'School Management',
+                    'LoveSpring Dashboard',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -972,9 +1008,9 @@ class PersistentHeader extends ConsumerWidget {
               IconButton(
                 icon: const Icon(Icons.notifications_outlined),
                 onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Notifications clicked')),
-                  );
+                  // ScaffoldMessenger.of(context).showSnackBar(
+                  //   const SnackBar(content: Text('Notifications clicked')),
+                  // );
                 },
               ),
               const SizedBox(width: 8),
@@ -1100,12 +1136,7 @@ class PersistentHeader extends ConsumerWidget {
                     'admin';
                 // Clear user data and redirect to login
                 context.go('/login');
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Logged out successfully'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
+                showSnackbar(context, 'Logged out successfully');
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
@@ -1316,7 +1347,7 @@ class AssignStudentsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return  ManageStudentClass();
+    return ManageStudentClass();
   }
 }
 
@@ -1481,8 +1512,8 @@ class AddExamScreen extends StatelessWidget {
   }
 }
 
-class ExamRecordsScreen extends StatelessWidget {
-  const ExamRecordsScreen({Key? key}) : super(key: key);
+class ExamRecords extends StatelessWidget {
+  const ExamRecords({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

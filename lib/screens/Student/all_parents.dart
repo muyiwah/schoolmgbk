@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:schmgtsystem/color_pallete.dart';
 import 'package:schmgtsystem/providers/provider.dart';
+import 'package:schmgtsystem/widgets/success_snack.dart';
 import 'package:schmgtsystem/widgets/screen_header.dart';
 
 class AllParents extends ConsumerStatefulWidget {
@@ -209,11 +210,9 @@ class _AllParentsState extends ConsumerState<AllParents> {
                               final parentId = parentIdValue?.toString() ?? '';
 
                               if (parentId.isEmpty) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Parent ID not available'),
-                                    backgroundColor: Colors.red,
-                                  ),
+                                showSnackbar(
+                                  context,
+                                  'Parent ID not available',
                                 );
                                 return;
                               }
@@ -249,9 +248,10 @@ class _AllParentsState extends ConsumerState<AllParents> {
                                         Row(
                                           children: [
                                             CircleAvatar(
-                                              backgroundImage: AssetImage(
-                                                images[index % images.length],
-                                              ),
+                                              backgroundColor: Colors.blue[300],
+                                              child: Text(
+                                                '${parent.personalInfo?.firstName.toString().split('').first.toUpperCase() ?? ''} ${parent.personalInfo?.lastName.toString().split('').first.toUpperCase() ?? ''}',
+                                             style: TextStyle(color: Colors.white), ),
                                               radius: 20,
                                             ),
                                             const SizedBox(width: 10),

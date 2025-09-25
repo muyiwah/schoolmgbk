@@ -3,7 +3,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_styled_toast/flutter_styled_toast.dart';
 import 'package:schmgtsystem/constants/appcolor.dart';
 
-
 enum ToastType { success, error, warning }
 
 class CustomToastNotification {
@@ -19,8 +18,8 @@ class CustomToastNotification {
         padding: EdgeInsets.symmetric(horizontal: 14.0, vertical: 12.0),
         margin: EdgeInsets.symmetric(horizontal: 36.0),
         decoration: BoxDecoration(
-          color: isFilled ? getToastColor(type) : AppColors.white,
-          borderRadius: BorderRadius.circular(12.0),
+          color: isFilled ? getToastColor(type) : AppColors.red.withOpacity(.8),
+          borderRadius: BorderRadius.circular(12.0),border: Border.all(color: AppColors.border),
           boxShadow: [
             BoxShadow(
               color: AppColors.shadowGrey.withOpacity(0.08),
@@ -30,40 +29,58 @@ class CustomToastNotification {
             ),
           ],
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            Container(
-              padding: EdgeInsets.all(2.0),
-              decoration: BoxDecoration(
-                color: getToastColor(type),
-                shape: BoxShape.circle,
-              ),
-              child:Icon(Icons.abc)
-              //  SvgPicture.asset(getToastIcon(type)
-              //  ),
-            ),
-            SizedBox(width: 16.0),
-            Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  color: isFilled ? AppColors.white : getToastColor(type),
-                  fontSize: 13.sp,
-                  // letterSpacing: 0.5,
-                  // fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-      position: bottomPosition == true
-          ? StyledToastPosition.bottom
-          : StyledToastPosition.top,
-      animation: bottomPosition == true
-          ? StyledToastAnimation.slideFromBottom
-          : StyledToastAnimation.slideFromTop,
+        child: Text(title,style: TextStyle(fontSize: 18.5, color: AppColors.white),)),
+      // Container(
+      //   padding: EdgeInsets.symmetric(horizontal: 14.0, vertical: 12.0),
+      //   margin: EdgeInsets.symmetric(horizontal: 36.0),
+      //   decoration: BoxDecoration(
+      //     color: isFilled ? getToastColor(type) : AppColors.white,
+      //     borderRadius: BorderRadius.circular(12.0),
+      //     boxShadow: [
+      //       BoxShadow(
+      //         color: AppColors.shadowGrey.withOpacity(0.08),
+      //         spreadRadius: 2,
+      //         blurRadius: 6,
+      //         offset: Offset(0, 3),
+      //       ),
+      //     ],
+      //   ),
+      //   child: Row(
+      //     mainAxisAlignment: MainAxisAlignment.start,
+      //     children: [
+      //       Container(
+      //         padding: EdgeInsets.all(2.0),
+      //         decoration: BoxDecoration(
+      //           color: getToastColor(type),
+      //           shape: BoxShape.circle,
+      //         ),
+      //         child: Icon(Icons.abc),
+      //         //  SvgPicture.asset(getToastIcon(type)
+      //         //  ),
+      //       ),
+      //       SizedBox(width: 16.0),
+      //       Expanded(
+      //         child: Text(
+      //           title,
+      //           style: TextStyle(
+      //             color: isFilled ? AppColors.white : getToastColor(type),
+      //             fontSize: 13.sp,
+      //             // letterSpacing: 0.5,
+      //             // fontWeight: FontWeight.bold,
+      //           ),
+      //         ),
+      //       ),
+      //     ],
+      //   ),
+      // ),
+      position:
+          bottomPosition == true
+              ? StyledToastPosition.bottom
+              : StyledToastPosition.top,
+      animation:
+          bottomPosition == true
+              ? StyledToastAnimation.slideFromBottom
+              : StyledToastAnimation.slideFromTop,
       duration: duration,
     );
   }

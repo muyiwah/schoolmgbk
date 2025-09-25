@@ -4,6 +4,7 @@ import 'package:schmgtsystem/constants/appcolor.dart';
 import 'package:schmgtsystem/models/subject_model.dart';
 import 'package:schmgtsystem/providers/subject_provider.dart';
 import 'package:schmgtsystem/providers/class_provider.dart';
+import 'package:schmgtsystem/widgets/success_snack.dart';
 
 class SubjectsManagementPage extends StatefulWidget {
   const SubjectsManagementPage({super.key});
@@ -455,19 +456,12 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
       );
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Changes reset to original state'),
-        backgroundColor: Colors.orange,
-      ),
-    );
+    showSnackbar(context, 'Changes reset to original state');
   }
 
   void _undoChanges() {
     // Implement undo functionality
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Changes undone')));
+    showSnackbar(context, 'Changes undone');
   }
 
   @override
@@ -1505,32 +1499,32 @@ class _AddSubjectDialogState extends State<AddSubjectDialog> {
                     ),
                     const SizedBox(height: 20),
 
-                    // Category Field
-                    _buildDropdownField(
-                      label: 'Category',
-                      isRequired: true,
-                      value: _selectedCategory,
-                      items: Subject.categories,
-                      onChanged:
-                          (value) => setState(() => _selectedCategory = value),
-                      hintText: 'Select subject category',
-                      helperText: 'Choose the category for this subject.',
-                    ),
-                    const SizedBox(height: 20),
+                    // // Category Field
+                    // _buildDropdownField(
+                    //   label: 'Category',
+                    //   isRequired: true,
+                    //   value: _selectedCategory,
+                    //   items: Subject.categories,
+                    //   onChanged:
+                    //       (value) => setState(() => _selectedCategory = value),
+                    //   hintText: 'Select subject category',
+                    //   helperText: 'Choose the category for this subject.',
+                    // ),
+                    // const SizedBox(height: 20),
 
                     // Department Field
-                    _buildDropdownField(
-                      label: 'Department',
-                      isRequired: true,
-                      value: _selectedDepartment,
-                      items: Subject.departments,
-                      onChanged:
-                          (value) =>
-                              setState(() => _selectedDepartment = value),
-                      hintText: 'Select department',
-                      helperText: 'Choose the department for this subject.',
-                    ),
-                    const SizedBox(height: 20),
+                    // _buildDropdownField(
+                    //   label: 'Department',
+                    //   isRequired: true,
+                    //   value: _selectedDepartment,
+                    //   items: Subject.departments,
+                    //   onChanged:
+                    //       (value) =>
+                    //           setState(() => _selectedDepartment = value),
+                    //   hintText: 'Select department',
+                    //   helperText: 'Choose the department for this subject.',
+                    // ),
+                    // const SizedBox(height: 20),
 
                     // Level Field
                     _buildDropdownField(
@@ -1614,13 +1608,9 @@ class _AddSubjectDialogState extends State<AddSubjectDialog> {
                               print(
                                 'Form validation failed - missing required fields',
                               );
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Please fill in all required fields',
-                                  ),
-                                  backgroundColor: Colors.red,
-                                ),
+                              showSnackbar(
+                                context,
+                                'Please fill in all required fields',
                               );
                             }
                           },
@@ -2440,31 +2430,14 @@ class _BulkDeleteDialogState extends State<BulkDeleteDialog> {
         // Refresh the class data to ensure it's up to date
         await widget.classProvider.getAllClassesWithMetric(context);
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Successfully deleted ${subjectsToDelete.length} subject${subjectsToDelete.length > 1 ? 's' : ''}',
-            ),
-            backgroundColor: const Color(0xFF22C55E),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
+        showSnackbar(
+          context,
+          'Successfully deleted ${subjectsToDelete.length} subject${subjectsToDelete.length > 1 ? 's' : ''}',
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error deleting subjects: $e'),
-            backgroundColor: const Color(0xFFEF4444),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        );
+        showSnackbar(context, 'Error deleting subjects: $e');
       }
     } finally {
       if (mounted) {

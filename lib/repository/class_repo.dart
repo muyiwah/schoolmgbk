@@ -56,10 +56,14 @@ class ClassRepo {
   }
 
   // ✅ add fee structure to a class
-  Future<HTTPResponseModel> addFeeStructureToClass(String classId) async {
+  Future<HTTPResponseModel> addFeeStructureToClass(
+    String classId,
+    Map<String, dynamic> body,
+  ) async {
     return await _httpService.runApi(
-      type: ApiRequestType.get,
+      type: ApiRequestType.post,
       url: "/classes/$classId/fee-structures",
+      body: body,
     );
   }
 
@@ -178,6 +182,35 @@ class ClassRepo {
       type: ApiRequestType.get,
       url: "/classes/students-with-fees",
       params: queryParams,
+    );
+  }
+
+  // ✅ Get class statistics
+  Future<HTTPResponseModel> getClassStatistics({
+    String? term,
+    String? academicYear,
+  }) async {
+    Map<String, dynamic> queryParams = {};
+
+    if (term != null && term.isNotEmpty) {
+      queryParams['term'] = term;
+    }
+    if (academicYear != null && academicYear.isNotEmpty) {
+      queryParams['academicYear'] = academicYear;
+    }
+
+    return await _httpService.runApi(
+      type: ApiRequestType.get,
+      url: "/classes/statistics",
+      params: queryParams,
+    );
+  }
+
+  // ✅ Delete class level
+  Future<HTTPResponseModel> deleteClassLevel(String classId) async {
+    return await _httpService.runApi(
+      type: ApiRequestType.delete,
+      url: "/classes/$classId",
     );
   }
 }

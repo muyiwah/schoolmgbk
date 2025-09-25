@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:schmgtsystem/models/communication_model.dart';
 import 'package:schmgtsystem/widgets/add_assignment_popup.dart';
 import 'package:schmgtsystem/widgets/message_popup.dart';
 import 'package:schmgtsystem/widgets/todo_popup.dart';
@@ -852,7 +853,7 @@ class _TeacherDashboardAppState extends State<TeacherDashboardApp> {
               context: context,
               barrierDismissible: true,
               barrierColor: Colors.black.withOpacity(0.5),
-              builder: (context) => MessagePopup(title: 'Message to Parents'),
+              builder: (context) => MessagePopup(title: 'Message to Parents',classId: '',communicationType: CommunicationType.adminParent),
             );
           } else if (title == 'Add Assignment') {
             showDialog(

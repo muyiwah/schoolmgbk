@@ -3,10 +3,15 @@ import 'package:schmgtsystem/providers/app_nav_notifier.dart';
 import 'package:schmgtsystem/providers/auth_provider.dart';
 import 'package:schmgtsystem/providers/class_provider.dart';
 import 'package:schmgtsystem/providers/class_level_provider.dart';
+import 'package:schmgtsystem/providers/metrics_provider.dart';
 import 'package:schmgtsystem/providers/parent_provider.dart';
 import 'package:schmgtsystem/providers/parent_login_provider.dart';
 import 'package:schmgtsystem/providers/profile_provider.dart';
+import 'package:schmgtsystem/providers/student_provider.dart';
 import 'package:schmgtsystem/providers/teachers_provider.dart';
+import 'package:schmgtsystem/providers/admission_provider.dart';
+import 'package:schmgtsystem/providers/attendance_provider.dart';
+import 'package:schmgtsystem/providers/communication_provider.dart';
 
 class RiverpodProvider {
   static final appNavProvider = ChangeNotifierProvider<AppNavProvider>(
@@ -38,5 +43,26 @@ class RiverpodProvider {
   static final parentLoginProvider =
       StateNotifierProvider<ParentLoginProvider, ParentLoginState>(
         (ref) => ParentLoginProvider(),
+      );
+
+  static final studentProvider =
+      StateNotifierProvider<StudentNotifier, StudentState>(
+        (ref) => StudentNotifier(),
+      );
+
+  static final admissionProvider = ChangeNotifierProvider<AdmissionProvider>(
+    (ref) => AdmissionProvider(),
+  );
+
+  static final metricsProvider = ChangeNotifierProvider<MetricsProvider>(
+    (ref) => MetricsProvider(),
+  );
+  static final attendanceProvider = ChangeNotifierProvider<AttendanceProvider>(
+    (ref) => AttendanceProvider(),
+  );
+
+  static final communicationProvider =
+      ChangeNotifierProvider<CommunicationProvider>(
+        (ref) => CommunicationProvider(),
       );
 }

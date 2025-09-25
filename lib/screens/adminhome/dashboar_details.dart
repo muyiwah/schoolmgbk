@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:schmgtsystem/providers/provider.dart';
 
-class DashboardDetails extends StatefulWidget {
+class DashboardDetails extends ConsumerStatefulWidget {
   final Function navigateBack;
   const DashboardDetails({super.key, required this.navigateBack});
 
   @override
-  _DashboardDetailsState createState() => _DashboardDetailsState();
+  ConsumerState<DashboardDetails> createState() => _DashboardDetailsState();
 }
 
-class _DashboardDetailsState extends State<DashboardDetails>
+class _DashboardDetailsState extends ConsumerState<DashboardDetails>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   String selectedClass = 'All Classes';
@@ -18,6 +20,20 @@ class _DashboardDetailsState extends State<DashboardDetails>
   void initState() {
     super.initState();
     _tabController = TabController(length: 5, vsync: this);
+
+    // Load metrics data
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadMetrics();
+    });
+  }
+
+  Future<void> _loadMetrics() async {
+    final metricsProvider = ref.read(RiverpodProvider.metricsProvider);
+    await metricsProvider.getComprehensiveMetrics();
+  }
+
+  Future<void> _refreshMetrics() async {
+    await _loadMetrics();
   }
 
   @override
@@ -36,7 +52,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
           final isMobile = screenWidth < 768;
           final isTablet = screenWidth >= 768 && screenWidth < 1024;
           final isDesktop = screenWidth >= 1024;
-          
+
           return SingleChildScrollView(
             child: Column(
               children: [
@@ -44,7 +60,10 @@ class _DashboardDetailsState extends State<DashboardDetails>
                 _buildFilters(isMobile),
                 _buildMetricsRow(isMobile, isTablet, isDesktop),
                 _buildTabBar(isMobile),
-                SizedBox(height: isMobile ? 600 : 800, child: _buildTabContent(isMobile, isTablet)),
+                SizedBox(
+                  height: isMobile ? 600 : 800,
+                  child: _buildTabContent(isMobile, isTablet),
+                ),
               ],
             ),
           );
@@ -146,9 +165,9 @@ class _DashboardDetailsState extends State<DashboardDetails>
               ),
               const SizedBox(width: 12),
               OutlinedButton.icon(
-                onPressed: () {},
-                icon: Icon(Icons.download, size: isMobile ? 16 : 18),
-                label: Text(isMobile ? 'Export' : 'Export Report'),
+                onPressed: _refreshMetrics,
+                icon: Icon(Icons.refresh, size: isMobile ? 16 : 18),
+                label: Text(isMobile ? 'Refresh' : 'Refresh Data'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.grey[700],
                   side: BorderSide(color: Colors.grey[300]!),
@@ -168,7 +187,6 @@ class _DashboardDetailsState extends State<DashboardDetails>
     );
   }
 
-
   Widget _buildFilters(bool isMobile) {
     if (isMobile) {
       return Container(
@@ -177,19 +195,23 @@ class _DashboardDetailsState extends State<DashboardDetails>
           children: [
             Row(
               children: [
-                Expanded(child: _buildDropdown('All Classes', [
-                  'All Classes',
-                  'Grade 1',
-                  'Grade 2',
-                  'Grade 3',
-                ])),
+                Expanded(
+                  child: _buildDropdown('All Classes', [
+                    'All Classes',
+                    'Grade 1',
+                    'Grade 2',
+                    'Grade 3',
+                  ]),
+                ),
                 const SizedBox(width: 12),
-                Expanded(child: _buildDropdown('All Departments', [
-                  'All Departments',
-                  'Mathematics',
-                  'Science',
-                  'English',
-                ])),
+                Expanded(
+                  child: _buildDropdown('All Departments', [
+                    'All Departments',
+                    'Mathematics',
+                    'Science',
+                    'English',
+                  ]),
+                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -197,7 +219,11 @@ class _DashboardDetailsState extends State<DashboardDetails>
               children: [
                 Expanded(child: _buildDatePicker()),
                 const SizedBox(width: 12),
-                _buildActionButton('Refresh', Icons.refresh, const Color(0xFF6C5CE7)),
+                _buildActionButton(
+                  'Refresh',
+                  Icons.refresh,
+                  const Color(0xFF6C5CE7),
+                ),
                 const SizedBox(width: 8),
                 _buildActionButton('Print', Icons.print, Colors.grey[600]!),
               ],
@@ -226,7 +252,11 @@ class _DashboardDetailsState extends State<DashboardDetails>
             const SizedBox(width: 16),
             _buildDatePicker(),
             const Spacer(),
-            _buildActionButton('Refresh', Icons.refresh, const Color(0xFF6C5CE7)),
+            _buildActionButton(
+              'Refresh',
+              Icons.refresh,
+              const Color(0xFF6C5CE7),
+            ),
             const SizedBox(width: 12),
             _buildActionButton('Print', Icons.print, Colors.grey[600]!),
           ],
@@ -293,13 +323,57 @@ class _DashboardDetailsState extends State<DashboardDetails>
   }
 
   Widget _buildMetricsRow(bool isMobile, bool isTablet, bool isDesktop) {
-    final metrics = [
-      {'title': 'Total Students', 'value': '1,247', 'change': '+5.2%', 'icon': Icons.people, 'color': Colors.blue},
-      {'title': 'Total Teachers', 'value': '67', 'change': 'Active', 'icon': Icons.school, 'color': Colors.purple},
-      {'title': 'Support Staff', 'value': '23', 'change': 'Active', 'icon': Icons.support_agent, 'color': Colors.teal},
-      {'title': 'Term Income', 'value': '\$487K', 'change': '+12.3%', 'icon': Icons.attach_money, 'color': Colors.green},
-      {'title': 'Attendance Rate', 'value': '94.2%', 'change': '+2.1%', 'icon': Icons.check_circle, 'color': Colors.blue},
-      {'title': 'Avg Performance', 'value': '87.5%', 'change': '+3.2%', 'icon': Icons.trending_up, 'color': Colors.indigo},
+    final metricsProvider = ref.watch(RiverpodProvider.metricsProvider);
+    final metrics = metricsProvider.comprehensiveMetrics;
+
+    // Use real data from metrics or fallback to default values
+    final metricsData = [
+      {
+        'title': 'Total Students',
+        'value': _formatNumber(metrics?.data.overview.totalStudents ?? 19),
+        'change': '+5.2%',
+        'icon': Icons.people,
+        'color': Colors.blue,
+      },
+      {
+        'title': 'Total Staff',
+        'value': _formatNumber(metrics?.data.overview.totalStaff ?? 6),
+        'change': 'Active',
+        'icon': Icons.school,
+        'color': Colors.purple,
+      },
+      {
+        'title': 'Total Classes',
+        'value': _formatNumber(metrics?.data.overview.totalClasses ?? 9),
+        'change': 'Active',
+        'icon': Icons.class_,
+        'color': Colors.teal,
+      },
+      {
+        'title': 'Outstanding Fees',
+        'value': _formatCurrency(
+          metrics?.data.finances.outstanding.total ?? 191800,
+        ),
+        'change': '+12.3%',
+        'icon': Icons.attach_money,
+        'color': Colors.green,
+      },
+      {
+        'title': 'Enrollment Rate',
+        'value':
+            '${metrics?.data.academics.classes.enrollment.rate ?? '3.14'}%',
+        'change': '+2.1%',
+        'icon': Icons.trending_up,
+        'color': Colors.blue,
+      },
+      {
+        'title': 'Capacity Utilization',
+        'value':
+            '${metrics?.data.academics.classes.enrollment.utilization ?? '2.86'}%',
+        'change': '+3.2%',
+        'icon': Icons.pie_chart,
+        'color': Colors.indigo,
+      },
     ];
 
     int crossAxisCount;
@@ -327,14 +401,14 @@ class _DashboardDetailsState extends State<DashboardDetails>
         ),
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        itemCount: metrics.length,
+        itemCount: metricsData.length,
         itemBuilder: (context, index) {
           return _buildMetricCard(
-            metrics[index]['title'] as String,
-            metrics[index]['value'] as String,
-            metrics[index]['change'] as String,
-            metrics[index]['icon'] as IconData,
-            metrics[index]['color'] as Color,
+            metricsData[index]['title'] as String,
+            metricsData[index]['value'] as String,
+            metricsData[index]['change'] as String,
+            metricsData[index]['icon'] as IconData,
+            metricsData[index]['color'] as Color,
             isMobile: isMobile,
           );
         },
@@ -373,7 +447,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
                 child: Text(
                   title,
                   style: TextStyle(
-                    color: Colors.grey[600], 
+                    color: Colors.grey[600],
                     fontSize: isMobile ? 11 : 13,
                   ),
                 ),
@@ -703,6 +777,11 @@ class _DashboardDetailsState extends State<DashboardDetails>
 
   // Students Tab Cards (existing)
   Widget _buildEnrollmentCard(bool isMobile) {
+    final metricsProvider = ref.watch(RiverpodProvider.metricsProvider);
+    final metrics = metricsProvider.comprehensiveMetrics;
+    final enrollmentByClass =
+        metrics?.data.academics.classes.enrollment.byClass ?? [];
+
     return Container(
       padding: EdgeInsets.all(isMobile ? 16 : 24),
       decoration: BoxDecoration(
@@ -728,9 +807,23 @@ class _DashboardDetailsState extends State<DashboardDetails>
             ),
           ),
           SizedBox(height: isMobile ? 16 : 20),
-          _buildEnrollmentRow('Grade 1', 142, isMobile),
-          _buildEnrollmentRow('Grade 2', 138, isMobile),
-          _buildEnrollmentRow('Grade 3', 145, isMobile),
+          if (enrollmentByClass.isNotEmpty)
+            ...enrollmentByClass
+                .take(5)
+                .map(
+                  (classData) => _buildEnrollmentRow(
+                    classData.level,
+                    classData.count,
+                    isMobile,
+                  ),
+                )
+                .toList()
+          else
+            ...[
+              'Grade 1',
+              'Grade 2',
+              'Grade 3',
+            ].map((grade) => _buildEnrollmentRow(grade, 0, isMobile)).toList(),
         ],
       ),
     );
@@ -743,9 +836,9 @@ class _DashboardDetailsState extends State<DashboardDetails>
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            grade, 
+            grade,
             style: TextStyle(
-              fontSize: isMobile ? 14 : 16, 
+              fontSize: isMobile ? 14 : 16,
               color: Colors.grey[700],
             ),
           ),
@@ -799,7 +892,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
           Text(
             'This term',
             style: TextStyle(
-              fontSize: isMobile ? 12 : 14, 
+              fontSize: isMobile ? 12 : 14,
               color: Colors.grey[600],
             ),
           ),
@@ -850,9 +943,9 @@ class _DashboardDetailsState extends State<DashboardDetails>
         children: [
           Expanded(
             child: Text(
-              name, 
+              name,
               style: TextStyle(
-                fontSize: isMobile ? 14 : 16, 
+                fontSize: isMobile ? 14 : 16,
                 color: Colors.grey[700],
               ),
             ),
@@ -871,6 +964,16 @@ class _DashboardDetailsState extends State<DashboardDetails>
   }
 
   Widget _buildOutstandingFeesCard(bool isMobile) {
+    final metricsProvider = ref.watch(RiverpodProvider.metricsProvider);
+    final metrics = metricsProvider.comprehensiveMetrics;
+    final outstandingTotal = metrics?.data.finances.outstanding.total ?? 0;
+    final unpaidCount =
+        metrics?.data.finances.feeStatus
+            .where((f) => f.id == 'unpaid')
+            .firstOrNull
+            ?.count ??
+        0;
+
     return Container(
       padding: EdgeInsets.all(isMobile ? 16 : 24),
       decoration: BoxDecoration(
@@ -897,7 +1000,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
           ),
           SizedBox(height: isMobile ? 12 : 16),
           Text(
-            '\$23,450',
+            _formatCurrency(outstandingTotal),
             style: TextStyle(
               fontSize: isMobile ? 24 : 32,
               fontWeight: FontWeight.bold,
@@ -905,9 +1008,9 @@ class _DashboardDetailsState extends State<DashboardDetails>
             ),
           ),
           Text(
-            '42 students',
+            '$unpaidCount students',
             style: TextStyle(
-              fontSize: isMobile ? 12 : 14, 
+              fontSize: isMobile ? 12 : 14,
               color: Colors.grey[600],
             ),
           ),
@@ -918,6 +1021,10 @@ class _DashboardDetailsState extends State<DashboardDetails>
 
   // Teachers & Staff Tab Cards
   Widget _buildTeachersByDepartmentCard(bool isMobile) {
+    final metricsProvider = ref.watch(RiverpodProvider.metricsProvider);
+    final metrics = metricsProvider.comprehensiveMetrics;
+    final staffByDepartment = metrics?.data.staff.byDepartment ?? [];
+
     return Container(
       padding: EdgeInsets.all(isMobile ? 16 : 24),
       decoration: BoxDecoration(
@@ -943,20 +1050,52 @@ class _DashboardDetailsState extends State<DashboardDetails>
             ),
           ),
           SizedBox(height: isMobile ? 16 : 20),
-          _buildDepartmentRow('Mathematics', 2, Colors.blue, isMobile),
-          _buildDepartmentRow('Science', 5, Colors.green, isMobile),
-          _buildDepartmentRow('English', 8, Colors.purple, isMobile),
-          _buildDepartmentRow('Basic Science', 1, Colors.red, isMobile),
-          _buildDepartmentRow('Social Tech', 3, Colors.yellow, isMobile),
-          _buildDepartmentRow('Culture', 4, Colors.green, isMobile),
-          _buildDepartmentRow('Agric Studies', 2, Colors.pink, isMobile),
-          _buildDepartmentRow('Rural Studies', 1, Colors.deepPurpleAccent, isMobile),
+          if (staffByDepartment.isNotEmpty)
+            ...staffByDepartment
+                .map(
+                  (dept) => _buildDepartmentRow(
+                    dept.id,
+                    dept.count,
+                    _getDepartmentColor(dept.id),
+                    isMobile,
+                  ),
+                )
+                .toList()
+          else
+            ...['Mathematics', 'Science', 'English']
+                .map(
+                  (dept) => _buildDepartmentRow(
+                    dept,
+                    0,
+                    _getDepartmentColor(dept),
+                    isMobile,
+                  ),
+                )
+                .toList(),
         ],
       ),
     );
   }
 
-  Widget _buildDepartmentRow(String department, int count, Color color, bool isMobile) {
+  Color _getDepartmentColor(String department) {
+    final colors = [
+      Colors.blue,
+      Colors.green,
+      Colors.purple,
+      Colors.red,
+      Colors.yellow,
+      Colors.pink,
+      Colors.deepPurpleAccent,
+    ];
+    return colors[department.hashCode % colors.length];
+  }
+
+  Widget _buildDepartmentRow(
+    String department,
+    int count,
+    Color color,
+    bool isMobile,
+  ) {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: isMobile ? 6 : 8),
       child: Row(
@@ -974,7 +1113,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
             child: Text(
               department,
               style: TextStyle(
-                fontSize: isMobile ? 14 : 16, 
+                fontSize: isMobile ? 14 : 16,
                 color: Colors.grey[700],
               ),
             ),
@@ -1018,7 +1157,12 @@ class _DashboardDetailsState extends State<DashboardDetails>
             ),
           ),
           SizedBox(height: isMobile ? 16 : 20),
-          _buildStaffRow('Dr. Emily Watson', 'Mathematics', 'Jan 2025', isMobile),
+          _buildStaffRow(
+            'Dr. Emily Watson',
+            'Mathematics',
+            'Jan 2025',
+            isMobile,
+          ),
           _buildStaffRow('Mr. James Liu', 'Science', 'Dec 2024', isMobile),
           _buildStaffRow('Ms. Anna Rodriguez', 'English', 'Nov 2024', isMobile),
         ],
@@ -1026,7 +1170,12 @@ class _DashboardDetailsState extends State<DashboardDetails>
     );
   }
 
-  Widget _buildStaffRow(String name, String department, String date, bool isMobile) {
+  Widget _buildStaffRow(
+    String name,
+    String department,
+    String date,
+    bool isMobile,
+  ) {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: isMobile ? 6 : 8),
       child: Column(
@@ -1047,14 +1196,14 @@ class _DashboardDetailsState extends State<DashboardDetails>
               Text(
                 department,
                 style: TextStyle(
-                  fontSize: isMobile ? 12 : 14, 
+                  fontSize: isMobile ? 12 : 14,
                   color: Colors.grey[600],
                 ),
               ),
               Text(
                 date,
                 style: TextStyle(
-                  fontSize: isMobile ? 10 : 12, 
+                  fontSize: isMobile ? 10 : 12,
                   color: Colors.grey[500],
                 ),
               ),
@@ -1099,7 +1248,12 @@ class _DashboardDetailsState extends State<DashboardDetails>
     );
   }
 
-  Widget _buildPerformanceRow(String rating, int count, Color color, bool isMobile) {
+  Widget _buildPerformanceRow(
+    String rating,
+    int count,
+    Color color,
+    bool isMobile,
+  ) {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: isMobile ? 6 : 8),
       child: Row(
@@ -1117,7 +1271,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
             child: Text(
               rating,
               style: TextStyle(
-                fontSize: isMobile ? 14 : 16, 
+                fontSize: isMobile ? 14 : 16,
                 color: Colors.grey[700],
               ),
             ),
@@ -1172,7 +1326,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
           Text(
             'This month',
             style: TextStyle(
-              fontSize: isMobile ? 12 : 14, 
+              fontSize: isMobile ? 12 : 14,
               color: Colors.grey[600],
             ),
           ),
@@ -1210,13 +1364,23 @@ class _DashboardDetailsState extends State<DashboardDetails>
           SizedBox(height: isMobile ? 16 : 20),
           _buildRevenueRow('Tuition Fees', '\$420,000', Colors.green, isMobile),
           _buildRevenueRow('Activity Fees', '\$45,000', Colors.blue, isMobile),
-          _buildRevenueRow('Transport Fees', '\$22,000', Colors.orange, isMobile),
+          _buildRevenueRow(
+            'Transport Fees',
+            '\$22,000',
+            Colors.orange,
+            isMobile,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildRevenueRow(String source, String amount, Color color, bool isMobile) {
+  Widget _buildRevenueRow(
+    String source,
+    String amount,
+    Color color,
+    bool isMobile,
+  ) {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: isMobile ? 6 : 8),
       child: Row(
@@ -1234,7 +1398,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
             child: Text(
               source,
               style: TextStyle(
-                fontSize: isMobile ? 14 : 16, 
+                fontSize: isMobile ? 14 : 16,
                 color: Colors.grey[700],
               ),
             ),
@@ -1295,7 +1459,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
           Text(
             category,
             style: TextStyle(
-              fontSize: isMobile ? 14 : 16, 
+              fontSize: isMobile ? 14 : 16,
               color: Colors.grey[700],
             ),
           ),
@@ -1338,15 +1502,35 @@ class _DashboardDetailsState extends State<DashboardDetails>
             ),
           ),
           SizedBox(height: isMobile ? 16 : 20),
-          _buildPaymentRow('Vendor Payments', '\$8,450', 'Due in 5 days', isMobile),
-          _buildPaymentRow('Staff Bonuses', '\$15,200', 'Due in 2 days', isMobile),
-          _buildPaymentRow('Equipment Purchase', '\$32,100', 'Due in 10 days', isMobile),
+          _buildPaymentRow(
+            'Vendor Payments',
+            '\$8,450',
+            'Due in 5 days',
+            isMobile,
+          ),
+          _buildPaymentRow(
+            'Staff Bonuses',
+            '\$15,200',
+            'Due in 2 days',
+            isMobile,
+          ),
+          _buildPaymentRow(
+            'Equipment Purchase',
+            '\$32,100',
+            'Due in 10 days',
+            isMobile,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildPaymentRow(String description, String amount, String dueDate, bool isMobile) {
+  Widget _buildPaymentRow(
+    String description,
+    String amount,
+    String dueDate,
+    bool isMobile,
+  ) {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: isMobile ? 6 : 8),
       child: Column(
@@ -1379,7 +1563,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
           Text(
             dueDate,
             style: TextStyle(
-              fontSize: isMobile ? 10 : 12, 
+              fontSize: isMobile ? 10 : 12,
               color: Colors.grey[500],
             ),
           ),
@@ -1425,7 +1609,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
           Text(
             'Budget utilized',
             style: TextStyle(
-              fontSize: isMobile ? 12 : 14, 
+              fontSize: isMobile ? 12 : 14,
               color: Colors.grey[600],
             ),
           ),
@@ -1477,7 +1661,12 @@ class _DashboardDetailsState extends State<DashboardDetails>
     );
   }
 
-  Widget _buildTrendRow(String day, String percentage, Color color, bool isMobile) {
+  Widget _buildTrendRow(
+    String day,
+    String percentage,
+    Color color,
+    bool isMobile,
+  ) {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: isMobile ? 4 : 6),
       child: Row(
@@ -1487,7 +1676,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
             child: Text(
               day,
               style: TextStyle(
-                fontSize: isMobile ? 14 : 16, 
+                fontSize: isMobile ? 14 : 16,
                 color: Colors.grey[700],
               ),
             ),
@@ -1560,7 +1749,12 @@ class _DashboardDetailsState extends State<DashboardDetails>
     );
   }
 
-  Widget _buildClassAttendanceRow(String className, int present, int total, bool isMobile) {
+  Widget _buildClassAttendanceRow(
+    String className,
+    int present,
+    int total,
+    bool isMobile,
+  ) {
     double percentage = (present / total) * 100;
     return Padding(
       padding: EdgeInsets.symmetric(vertical: isMobile ? 6 : 8),
@@ -1571,7 +1765,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
             child: Text(
               className,
               style: TextStyle(
-                fontSize: isMobile ? 14 : 16, 
+                fontSize: isMobile ? 14 : 16,
                 color: Colors.grey[700],
               ),
             ),
@@ -1580,7 +1774,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
             child: Text(
               '$present/$total',
               style: TextStyle(
-                fontSize: isMobile ? 14 : 16, 
+                fontSize: isMobile ? 14 : 16,
                 color: Colors.grey[600],
               ),
             ),
@@ -1629,8 +1823,18 @@ class _DashboardDetailsState extends State<DashboardDetails>
             ),
           ),
           SizedBox(height: isMobile ? 16 : 20),
-          _buildAbsentStudentRow('Emma Wilson', 'Grade 2A', 'Sick Leave', isMobile),
-          _buildAbsentStudentRow('David Chen', 'Grade 1B', 'Family Emergency', isMobile),
+          _buildAbsentStudentRow(
+            'Emma Wilson',
+            'Grade 2A',
+            'Sick Leave',
+            isMobile,
+          ),
+          _buildAbsentStudentRow(
+            'David Chen',
+            'Grade 1B',
+            'Family Emergency',
+            isMobile,
+          ),
           _buildAbsentStudentRow(
             'Lisa Brown',
             'Grade 2B',
@@ -1642,7 +1846,12 @@ class _DashboardDetailsState extends State<DashboardDetails>
     );
   }
 
-  Widget _buildAbsentStudentRow(String name, String className, String reason, bool isMobile) {
+  Widget _buildAbsentStudentRow(
+    String name,
+    String className,
+    String reason,
+    bool isMobile,
+  ) {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: isMobile ? 6 : 8),
       child: Column(
@@ -1663,14 +1872,14 @@ class _DashboardDetailsState extends State<DashboardDetails>
               Text(
                 className,
                 style: TextStyle(
-                  fontSize: isMobile ? 12 : 14, 
+                  fontSize: isMobile ? 12 : 14,
                   color: Colors.grey[600],
                 ),
               ),
               Text(
                 reason,
                 style: TextStyle(
-                  fontSize: isMobile ? 10 : 12, 
+                  fontSize: isMobile ? 10 : 12,
                   color: Colors.grey[500],
                 ),
               ),
@@ -1718,7 +1927,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
           Text(
             'Students below 75%',
             style: TextStyle(
-              fontSize: isMobile ? 12 : 14, 
+              fontSize: isMobile ? 12 : 14,
               color: Colors.grey[600],
             ),
           ),
@@ -1754,16 +1963,36 @@ class _DashboardDetailsState extends State<DashboardDetails>
             ),
           ),
           SizedBox(height: isMobile ? 16 : 20),
-          _buildFacilityRow('Classrooms', 'Operational', Colors.green, isMobile),
+          _buildFacilityRow(
+            'Classrooms',
+            'Operational',
+            Colors.green,
+            isMobile,
+          ),
           _buildFacilityRow('Library', 'Operational', Colors.green, isMobile),
-          _buildFacilityRow('Cafeteria', 'Under Maintenance', Colors.orange, isMobile),
-          _buildFacilityRow('Playground', 'Operational', Colors.green, isMobile),
+          _buildFacilityRow(
+            'Cafeteria',
+            'Under Maintenance',
+            Colors.orange,
+            isMobile,
+          ),
+          _buildFacilityRow(
+            'Playground',
+            'Operational',
+            Colors.green,
+            isMobile,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildFacilityRow(String facility, String status, Color color, bool isMobile) {
+  Widget _buildFacilityRow(
+    String facility,
+    String status,
+    Color color,
+    bool isMobile,
+  ) {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: isMobile ? 6 : 8),
       child: Row(
@@ -1781,7 +2010,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
             child: Text(
               facility,
               style: TextStyle(
-                fontSize: isMobile ? 14 : 16, 
+                fontSize: isMobile ? 14 : 16,
                 color: Colors.grey[700],
               ),
             ),
@@ -1826,14 +2055,24 @@ class _DashboardDetailsState extends State<DashboardDetails>
           ),
           SizedBox(height: isMobile ? 16 : 20),
           _buildMaintenanceRow('AC Unit Repair', 'Room 12', 'High', isMobile),
-          _buildMaintenanceRow('Plumbing Issue', 'Restroom B', 'Medium', isMobile),
+          _buildMaintenanceRow(
+            'Plumbing Issue',
+            'Restroom B',
+            'Medium',
+            isMobile,
+          ),
           _buildMaintenanceRow('Light Fixture', 'Hallway', 'Low', isMobile),
         ],
       ),
     );
   }
 
-  Widget _buildMaintenanceRow(String issue, String location, String priority, bool isMobile) {
+  Widget _buildMaintenanceRow(
+    String issue,
+    String location,
+    String priority,
+    bool isMobile,
+  ) {
     Color priorityColor =
         priority == 'High'
             ? Colors.red
@@ -1861,13 +2100,13 @@ class _DashboardDetailsState extends State<DashboardDetails>
               Text(
                 location,
                 style: TextStyle(
-                  fontSize: isMobile ? 12 : 14, 
+                  fontSize: isMobile ? 12 : 14,
                   color: Colors.grey[600],
                 ),
               ),
               Container(
                 padding: EdgeInsets.symmetric(
-                  horizontal: isMobile ? 6 : 8, 
+                  horizontal: isMobile ? 6 : 8,
                   vertical: isMobile ? 1 : 2,
                 ),
                 decoration: BoxDecoration(
@@ -1924,7 +2163,12 @@ class _DashboardDetailsState extends State<DashboardDetails>
     );
   }
 
-  Widget _buildTransportRow(String route, String capacity, String status, bool isMobile) {
+  Widget _buildTransportRow(
+    String route,
+    String capacity,
+    String status,
+    bool isMobile,
+  ) {
     Color statusColor = status == 'On Time' ? Colors.green : Colors.red;
 
     return Padding(
@@ -1947,7 +2191,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
               Text(
                 capacity,
                 style: TextStyle(
-                  fontSize: isMobile ? 12 : 14, 
+                  fontSize: isMobile ? 12 : 14,
                   color: Colors.grey[600],
                 ),
               ),
@@ -2003,7 +2247,7 @@ class _DashboardDetailsState extends State<DashboardDetails>
           Text(
             'Items low in stock',
             style: TextStyle(
-              fontSize: isMobile ? 12 : 14, 
+              fontSize: isMobile ? 12 : 14,
               color: Colors.grey[600],
             ),
           ),
@@ -2011,12 +2255,38 @@ class _DashboardDetailsState extends State<DashboardDetails>
           Text(
             'Textbooks, Stationery, Cleaning Supplies',
             style: TextStyle(
-              fontSize: isMobile ? 10 : 12, 
+              fontSize: isMobile ? 10 : 12,
               color: Colors.grey[500],
             ),
           ),
         ],
       ),
     );
+  }
+
+  // Helper methods for formatting data
+  String _formatNumber(dynamic number) {
+    if (number == null) return '0';
+    final numValue =
+        number is num ? number : double.tryParse(number.toString()) ?? 0;
+    return numValue
+        .toStringAsFixed(0)
+        .replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (Match m) => '${m[1]},',
+        );
+  }
+
+  String _formatCurrency(dynamic amount) {
+    if (amount == null) return '\$0';
+    final numAmount =
+        amount is num ? amount : double.tryParse(amount.toString()) ?? 0;
+    if (numAmount >= 1000000) {
+      return '\$${(numAmount / 1000000).toStringAsFixed(1)}M';
+    } else if (numAmount >= 1000) {
+      return '\$${(numAmount / 1000).toStringAsFixed(1)}K';
+    } else {
+      return '\$${numAmount.toStringAsFixed(0)}';
+    }
   }
 }

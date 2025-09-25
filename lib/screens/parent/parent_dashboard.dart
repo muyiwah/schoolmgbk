@@ -13,6 +13,7 @@ import 'package:schmgtsystem/utils/constants.dart';
 import 'package:schmgtsystem/repository/payment_repo.dart';
 import 'package:schmgtsystem/utils/response_model.dart';
 import 'package:schmgtsystem/services/fee_manager.dart';
+import 'package:schmgtsystem/widgets/success_snack.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ParentDashboardScreen extends ConsumerStatefulWidget {
@@ -1179,9 +1180,7 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
             ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Message sent successfully!')),
-                );
+                showSnackbar(context, 'Message sent successfully!');
               },
               child: const Text('Send'),
             ),
@@ -2297,12 +2296,7 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
       if (mounted) {
         Navigator.of(context).pop(); // Close processing dialog
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Payment processed successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        showSnackbar(context, 'Payment processed successfully!');
 
         // Reset selected fees
         setState(() {
@@ -2315,6 +2309,46 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
         });
       }
     });
+  }
+
+  /// Schedules a data refresh after 25 seconds to fetch updated data from backend
+  void _scheduleDataRefresh() {
+    Future.delayed(const Duration(seconds: 25), () async {
+      if (mounted) {
+        await _refreshParentData();
+      }
+    });
+  }
+
+  /// Refreshes parent data by invalidating the provider
+  Future<void> _refreshParentData() async {
+    try {
+      // Get the parent login provider
+      final parentLoginProvider = ref.read(
+        RiverpodProvider.parentLoginProvider.notifier,
+      );
+
+      // Show loading indicator
+      showSnackbar(context, 'Refreshing data...');
+
+      // Call refreshData which re-authenticates using saved credentials
+      final success = await parentLoginProvider.refreshData();
+
+      if (success) {
+        // Show success notification
+        showSnackbar(context, 'Data refreshed successfully!');
+        print(
+          '🔄 ParentDashboardScreen: Data refreshed after payment - Success',
+        );
+      } else {
+        // Show error notification
+        showSnackbar(context, 'Failed to refresh data. Please try again.');
+        print('❌ ParentDashboardScreen: Data refresh failed');
+      }
+    } catch (e) {
+      print('❌ Error refreshing parent data: $e');
+      showSnackbar(context, 'Error refreshing data. Please try again.');
+    }
   }
 
   void _showSchoolFeesPaymentPopup() {
@@ -2573,9 +2607,9 @@ class _SchoolFeesPaymentPopupState extends State<SchoolFeesPaymentPopup> {
       await _initializeCardPayment();
     } else {
       // Handle bank transfer or other payment methods
-      widget.onFeesChanged(_localSelectedFees, _localPartialPaymentAmounts);
-      widget.onPaymentProcessed();
-      Navigator.of(context).pop();
+      // widget.onFeesChanged(_localSelectedFees, _localPartialPaymentAmounts);
+      // widget.onPaymentProcessed();
+      // Navigator.of(context).pop();
     }
   }
 
@@ -2667,8 +2701,17 @@ class _SchoolFeesPaymentPopupState extends State<SchoolFeesPaymentPopup> {
           // Launch the authorization URL
           await _launchPaymentUrl(authorizationUrl);
 
+          // Show success message
+          showSnackbar(
+            context,
+            'Payment initialized successfully! Redirecting to payment gateway...',
+          );
+
           // Close the payment popup
           Navigator.of(context).pop();
+
+          // Schedule refresh after 25 seconds to fetch updated data
+          _scheduleDataRefresh();
         } else {
           _showErrorDialog(
             'Payment initialization failed: No authorization URL received',
@@ -3526,6 +3569,54 @@ class _SchoolFeesPaymentPopupState extends State<SchoolFeesPaymentPopup> {
       return _isRequiredFee(feeName) ? Colors.red : null;
     }
   }
+
+  /// Schedules a data refresh after 25 seconds to fetch updated data from backend
+  void _scheduleDataRefresh() {
+    Future.delayed(const Duration(seconds: 25), () async {
+      if (mounted) {
+        await _refreshParentData();
+      }
+    });
+  }
+
+  /// Refreshes parent data by re-authenticating as if user just logged in
+  Future<void> _refreshParentData() async {
+    try {
+      // Get the parent dashboard context to refresh data
+      // Since this is a popup, we need to trigger refresh in the parent screen
+      final parentContext = context;
+
+      // Show loading indicator
+      showSnackbar(parentContext, 'Refreshing data...');
+
+      // Get the parent login provider from the parent context
+      final container = ProviderScope.containerOf(parentContext);
+      final parentLoginProvider = container.read(
+        RiverpodProvider.parentLoginProvider.notifier,
+      );
+
+      // Call refreshData which re-authenticates using saved credentials
+      final success = await parentLoginProvider.refreshData();
+
+      if (success) {
+        // Show success notification
+        showSnackbar(parentContext, 'Data refreshed successfully!');
+        print(
+          '🔄 SchoolFeesPaymentPopup: Data refreshed after payment - Success',
+        );
+      } else {
+        // Show error notification
+        showSnackbar(
+          parentContext,
+          'Failed to refresh data. Please try again.',
+        );
+        print('❌ SchoolFeesPaymentPopup: Data refresh failed');
+      }
+    } catch (e) {
+      print('❌ Error refreshing parent data: $e');
+      showSnackbar(context, 'Error refreshing data. Please try again.');
+    }
+  }
 }
 
 class SchoolFeesManualPaymentPopup extends ConsumerStatefulWidget {
@@ -3667,14 +3758,9 @@ class _SchoolFeesManualPaymentPopupState
             await _createManualPayment(uploadedUrl);
 
             // Show success message
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  'Receipt uploaded and payment recorded successfully!',
-                ),
-                backgroundColor: Colors.green,
-                behavior: SnackBarBehavior.floating,
-              ),
+            showSnackbar(
+              context,
+              'Receipt uploaded and payment recorded successfully!',
             );
           } else {
             throw Exception('Failed to upload to cloud');
@@ -3687,23 +3773,11 @@ class _SchoolFeesManualPaymentPopupState
           });
 
           // Show success message
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Receipt uploaded successfully!'),
-              backgroundColor: Colors.green,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+          showSnackbar(context, 'Receipt uploaded successfully!');
         }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error uploading receipt: ${e.toString()}'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      showSnackbar(context, 'Error uploading receipt: ${e.toString()}');
     } finally {
       setState(() {
         isUploading = false;
@@ -4000,16 +4074,11 @@ class _SchoolFeesManualPaymentPopupState
         final refreshSuccess = await parentLoginProvider.refreshData();
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                refreshSuccess
-                    ? 'Payment recorded and data refreshed successfully!'
-                    : 'Payment recorded successfully! (Data refresh failed)',
-              ),
-              backgroundColor: refreshSuccess ? Colors.green : Colors.orange,
-              behavior: SnackBarBehavior.floating,
-            ),
+          showSnackbar(
+            context,
+            refreshSuccess
+                ? 'Payment recorded and data refreshed successfully!'
+                : 'Payment recorded successfully! (Data refresh failed)',
           );
         }
       } else {
@@ -4019,13 +4088,7 @@ class _SchoolFeesManualPaymentPopupState
       debugPrint('❌ Manual payment creation error: $e');
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to record payment: ${e.toString()}'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        showSnackbar(context, 'Failed to record payment: ${e.toString()}');
       }
       rethrow;
     }

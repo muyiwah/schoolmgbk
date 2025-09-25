@@ -6,11 +6,13 @@ import 'package:schmgtsystem/providers/provider.dart';
 import 'package:schmgtsystem/providers/student_provider.dart';
 import 'package:schmgtsystem/models/class_metrics_model.dart';
 import 'package:schmgtsystem/utils/constants.dart';
+import 'package:schmgtsystem/widgets/success_snack.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image/image.dart' as img;
 import 'dart:io';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:country_picker/country_picker.dart';
 
 class StudentRegistrationPage extends ConsumerStatefulWidget {
   const StudentRegistrationPage({super.key});
@@ -91,6 +93,14 @@ class _StudentRegistrationPageState
   String? _selectedBloodGroup;
   String? _selectedStateOfOrigin;
   String? _selectedLocalGovernment;
+  String? _selectedCountry;
+  String? _selectedState;
+  String? _selectedFatherWorkCountry;
+  String? _selectedFatherWorkState;
+
+  // Country picker selections for personal info
+  String? _selectedPersonalCountry;
+  String? _selectedPersonalState;
   String? _selectedFatherGender = 'male';
   String? _selectedMotherGender = 'female';
   String? _selectedFatherMaritalStatus;
@@ -101,14 +111,6 @@ class _StudentRegistrationPageState
   DateTime? _selectedMotherDOB;
 
   final List<String> _genders = ['male', 'female'];
-  final List<String> _nationalities = [
-    'Nigerian',
-    'American',
-    'British',
-    'Canadian',
-    'Ghanaian',
-    'Other',
-  ];
   final List<String> _religions = [
     'Christian',
     'Muslim',
@@ -125,15 +127,301 @@ class _StudentRegistrationPageState
     'O+',
     'O-',
   ];
-  final List<String> _states = [
-    'Lagos',
-    'Abuja',
-    'Kano',
-    'Rivers',
-    'Ogun',
-    'Kaduna',
-    'Other',
-  ];
+
+  // Comprehensive country and state data
+  final Map<String, List<String>> _countriesWithStates = {
+    'Nigeria': [
+      'Abia',
+      'Adamawa',
+      'Akwa Ibom',
+      'Anambra',
+      'Bauchi',
+      'Bayelsa',
+      'Benue',
+      'Borno',
+      'Cross River',
+      'Delta',
+      'Ebonyi',
+      'Edo',
+      'Ekiti',
+      'Enugu',
+      'FCT',
+      'Gombe',
+      'Imo',
+      'Jigawa',
+      'Kaduna',
+      'Kano',
+      'Katsina',
+      'Kebbi',
+      'Kogi',
+      'Kwara',
+      'Lagos',
+      'Nasarawa',
+      'Niger',
+      'Ogun',
+      'Ondo',
+      'Osun',
+      'Oyo',
+      'Plateau',
+      'Rivers',
+      'Sokoto',
+      'Taraba',
+      'Yobe',
+      'Zamfara',
+    ],
+    'United States': [
+      'Alabama',
+      'Alaska',
+      'Arizona',
+      'Arkansas',
+      'California',
+      'Colorado',
+      'Connecticut',
+      'Delaware',
+      'Florida',
+      'Georgia',
+      'Hawaii',
+      'Idaho',
+      'Illinois',
+      'Indiana',
+      'Iowa',
+      'Kansas',
+      'Kentucky',
+      'Louisiana',
+      'Maine',
+      'Maryland',
+      'Massachusetts',
+      'Michigan',
+      'Minnesota',
+      'Mississippi',
+      'Missouri',
+      'Montana',
+      'Nebraska',
+      'Nevada',
+      'New Hampshire',
+      'New Jersey',
+      'New Mexico',
+      'New York',
+      'North Carolina',
+      'North Dakota',
+      'Ohio',
+      'Oklahoma',
+      'Oregon',
+      'Pennsylvania',
+      'Rhode Island',
+      'South Carolina',
+      'South Dakota',
+      'Tennessee',
+      'Texas',
+      'Utah',
+      'Vermont',
+      'Virginia',
+      'Washington',
+      'West Virginia',
+      'Wisconsin',
+      'Wyoming',
+    ],
+    'United Kingdom': ['England', 'Scotland', 'Wales', 'Northern Ireland'],
+    'Canada': [
+      'Alberta',
+      'British Columbia',
+      'Manitoba',
+      'New Brunswick',
+      'Newfoundland and Labrador',
+      'Northwest Territories',
+      'Nova Scotia',
+      'Nunavut',
+      'Ontario',
+      'Prince Edward Island',
+      'Quebec',
+      'Saskatchewan',
+      'Yukon',
+    ],
+    'Ghana': [
+      'Greater Accra',
+      'Ashanti',
+      'Western',
+      'Central',
+      'Volta',
+      'Eastern',
+      'Northern',
+      'Upper East',
+      'Upper West',
+      'Brong-Ahafo',
+    ],
+    'Kenya': [
+      'Nairobi',
+      'Mombasa',
+      'Kisumu',
+      'Nakuru',
+      'Eldoret',
+      'Thika',
+      'Malindi',
+      'Kitale',
+      'Garissa',
+      'Kakamega',
+      'Bungoma',
+      'Nyeri',
+    ],
+    'South Africa': [
+      'Eastern Cape',
+      'Free State',
+      'Gauteng',
+      'KwaZulu-Natal',
+      'Limpopo',
+      'Mpumalanga',
+      'Northern Cape',
+      'North West',
+      'Western Cape',
+    ],
+    'India': [
+      'Andhra Pradesh',
+      'Arunachal Pradesh',
+      'Assam',
+      'Bihar',
+      'Chhattisgarh',
+      'Goa',
+      'Gujarat',
+      'Haryana',
+      'Himachal Pradesh',
+      'Jharkhand',
+      'Karnataka',
+      'Kerala',
+      'Madhya Pradesh',
+      'Maharashtra',
+      'Manipur',
+      'Meghalaya',
+      'Mizoram',
+      'Nagaland',
+      'Odisha',
+      'Punjab',
+      'Rajasthan',
+      'Sikkim',
+      'Tamil Nadu',
+      'Telangana',
+      'Tripura',
+      'Uttar Pradesh',
+      'Uttarakhand',
+      'West Bengal',
+    ],
+    'China': [
+      'Beijing',
+      'Shanghai',
+      'Tianjin',
+      'Chongqing',
+      'Hebei',
+      'Shanxi',
+      'Inner Mongolia',
+      'Liaoning',
+      'Jilin',
+      'Heilongjiang',
+      'Jiangsu',
+      'Zhejiang',
+      'Anhui',
+      'Fujian',
+      'Jiangxi',
+      'Shandong',
+      'Henan',
+      'Hubei',
+      'Hunan',
+      'Guangdong',
+      'Guangxi',
+      'Hainan',
+      'Sichuan',
+      'Guizhou',
+      'Yunnan',
+      'Tibet',
+      'Shaanxi',
+      'Gansu',
+      'Qinghai',
+      'Ningxia',
+      'Xinjiang',
+    ],
+    'Brazil': [
+      'Acre',
+      'Alagoas',
+      'Amapá',
+      'Amazonas',
+      'Bahia',
+      'Ceará',
+      'Distrito Federal',
+      'Espírito Santo',
+      'Goiás',
+      'Maranhão',
+      'Mato Grosso',
+      'Mato Grosso do Sul',
+      'Minas Gerais',
+      'Pará',
+      'Paraíba',
+      'Paraná',
+      'Pernambuco',
+      'Piauí',
+      'Rio de Janeiro',
+      'Rio Grande do Norte',
+      'Rio Grande do Sul',
+      'Rondônia',
+      'Roraima',
+      'Santa Catarina',
+      'São Paulo',
+      'Sergipe',
+      'Tocantins',
+    ],
+    'Australia': [
+      'New South Wales',
+      'Victoria',
+      'Queensland',
+      'Western Australia',
+      'South Australia',
+      'Tasmania',
+      'Australian Capital Territory',
+      'Northern Territory',
+    ],
+    'Germany': [
+      'Baden-Württemberg',
+      'Bavaria',
+      'Berlin',
+      'Brandenburg',
+      'Bremen',
+      'Hamburg',
+      'Hesse',
+      'Lower Saxony',
+      'Mecklenburg-Vorpommern',
+      'North Rhine-Westphalia',
+      'Rhineland-Palatinate',
+      'Saarland',
+      'Saxony',
+      'Saxony-Anhalt',
+      'Schleswig-Holstein',
+      'Thuringia',
+    ],
+    'France': [
+      'Auvergne-Rhône-Alpes',
+      'Bourgogne-Franche-Comté',
+      'Brittany',
+      'Centre-Val de Loire',
+      'Corsica',
+      'Grand Est',
+      'Hauts-de-France',
+      'Île-de-France',
+      'Normandy',
+      'Nouvelle-Aquitaine',
+      'Occitanie',
+      'Pays de la Loire',
+      'Provence-Alpes-Côte d\'Azur',
+    ],
+    'Japan': [
+      'Hokkaido',
+      'Tohoku',
+      'Kanto',
+      'Chubu',
+      'Kansai',
+      'Chugoku',
+      'Shikoku',
+      'Kyushu',
+      'Okinawa',
+    ],
+    'Other': [],
+  };
   final List<String> _localGovernments = [
     'Ikeja',
     'Victoria Island',
@@ -156,10 +444,197 @@ class _StudentRegistrationPageState
     'widowed',
   ];
   ClassMetricModel _classData = ClassMetricModel();
+
+  // Helper method to get states for selected country
+  List<String> _getStatesForCountry(String? country) {
+    if (country == null || country.isEmpty) return [];
+    return _countriesWithStates[country] ?? [];
+  }
+
+  // Helper method to get local governments for selected state
+  List<String> _getLocalGovernmentsForState(String? state) {
+    if (state == null || state.isEmpty) return _localGovernments;
+
+    // For Nigeria, provide state-specific LGAs
+    if (_selectedPersonalCountry == 'Nigeria') {
+      return _getNigerianLGAsForState(state);
+    }
+
+    // For other countries, return generic list
+    return _localGovernments;
+  }
+
+  // Helper method to get Nigerian LGAs for specific state
+  List<String> _getNigerianLGAsForState(String state) {
+    // This is a simplified mapping - you can expand this with actual LGA data
+    switch (state) {
+      case 'Lagos':
+        return [
+          'Ikeja',
+          'Victoria Island',
+          'Lekki',
+          'Surulere',
+          'Mushin',
+          'Oshodi',
+          'Other',
+        ];
+      case 'Abuja':
+        return ['Garki', 'Wuse', 'Asokoro', 'Maitama', 'Gwarinpa', 'Other'];
+      case 'Kano':
+        return ['Nassarawa', 'Fagge', 'Dala', 'Gwale', 'Municipal', 'Other'];
+      case 'Rivers':
+        return ['Port Harcourt', 'Obio-Akpor', 'Eleme', 'Okrika', 'Other'];
+      case 'Ogun':
+        return [
+          'Abeokuta North',
+          'Abeokuta South',
+          'Ijebu Ode',
+          'Sagamu',
+          'Other',
+        ];
+      case 'Kaduna':
+        return ['Kaduna North', 'Kaduna South', 'Chikun', 'Igabi', 'Other'];
+      default:
+        return ['Other'];
+    }
+  }
+
+  // Method to build country dropdown with search
+  Widget _buildCountryDropdown({
+    required String label,
+    required String? value,
+    required Function(String?) onChanged,
+    bool isRequired = false,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '$label${isRequired ? ' *' : ''}',
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: () {
+            showCountryPicker(
+              context: context,
+              onSelect: (Country country) {
+                onChanged(country.name);
+                setState(() {
+                  _selectedCountry = country.name;
+                  _selectedState = null; // Reset state when country changes
+                });
+              },
+              showPhoneCode: false,
+              showWorldWide: true,
+              favorite: [
+                'NG',
+                'US',
+                'GB',
+                'CA',
+                'GH',
+                'KE',
+                'ZA',
+                'IN',
+                'CN',
+                'BR',
+                'AU',
+                'DE',
+                'FR',
+                'JP',
+              ],
+            );
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.shade300),
+              borderRadius: BorderRadius.circular(8),
+              color: Colors.white,
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    value ?? 'Select Country',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color:
+                          value == null ? Colors.grey.shade500 : Colors.black87,
+                    ),
+                  ),
+                ),
+                const Icon(Icons.arrow_drop_down, color: Colors.grey),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Method to build state dropdown with dynamic states based on country
+  Widget _buildStateDropdown({
+    required String label,
+    required String? value,
+    required String? country,
+    required Function(String?) onChanged,
+    bool isRequired = false,
+  }) {
+    final states = _getStatesForCountry(country);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '$label${isRequired ? ' *' : ''}',
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(8),
+            color: Colors.white,
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: value,
+              hint: Text(
+                states.isEmpty ? 'Select country first' : 'Select State',
+                style: TextStyle(fontSize: 16, color: Colors.grey.shade500),
+              ),
+              isExpanded: true,
+              items:
+                  states.map((String state) {
+                    return DropdownMenuItem<String>(
+                      value: state,
+                      child: Text(state, style: const TextStyle(fontSize: 16)),
+                    );
+                  }).toList(),
+              onChanged: states.isEmpty ? null : onChanged,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   void initState() {
     super.initState();
     _countryController.text = 'Nigeria';
+    _selectedCountry = 'Nigeria';
+    _selectedState = 'Lagos';
     _fatherTitleController.text = 'Mr';
     _motherTitleController.text = 'Mrs';
     _loadClasses();
@@ -187,12 +662,7 @@ class _StudentRegistrationPageState
           _isLoadingClasses = false;
         });
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('No classes found'),
-              backgroundColor: Colors.orange,
-            ),
-          );
+          showSnackbar(context, 'No classes found');
         }
       }
     } catch (e) {
@@ -200,12 +670,7 @@ class _StudentRegistrationPageState
         _isLoadingClasses = false;
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error loading classes: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        showSnackbar(context, 'Error loading classes: $e');
       }
     }
   }
@@ -458,13 +923,15 @@ class _StudentRegistrationPageState
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: _buildDropdown(
+                child: _buildCountryDropdown(
                   label: 'Nationality',
                   value: _selectedNationality,
-                  items: _nationalities,
                   onChanged: (value) {
                     setState(() {
                       _selectedNationality = value;
+                      _selectedPersonalCountry = value;
+                      _selectedPersonalState =
+                          null; // Reset state when country changes
                     });
                   },
                   isRequired: true,
@@ -510,13 +977,16 @@ class _StudentRegistrationPageState
           Row(
             children: [
               Expanded(
-                child: _buildDropdown(
+                child: _buildStateDropdown(
                   label: 'State of Origin',
                   value: _selectedStateOfOrigin,
-                  items: _states,
+                  country: _selectedPersonalCountry,
                   onChanged: (value) {
                     setState(() {
                       _selectedStateOfOrigin = value;
+                      _selectedPersonalState = value;
+                      _selectedLocalGovernment =
+                          null; // Reset LGA when state changes
                     });
                   },
                   isRequired: true,
@@ -527,7 +997,7 @@ class _StudentRegistrationPageState
                 child: _buildDropdown(
                   label: 'Local Government',
                   value: _selectedLocalGovernment,
-                  items: _localGovernments,
+                  items: _getLocalGovernmentsForState(_selectedPersonalState),
                   onChanged: (value) {
                     setState(() {
                       _selectedLocalGovernment = value;
@@ -574,17 +1044,30 @@ class _StudentRegistrationPageState
           Row(
             children: [
               Expanded(
-                child: _buildTextField(
-                  controller: _cityController,
-                  label: 'City',
+                child: _buildCountryDropdown(
+                  label: 'Country',
+                  value: _selectedCountry,
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedCountry = value;
+                      _countryController.text = value ?? '';
+                    });
+                  },
                   isRequired: true,
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: _buildTextField(
-                  controller: _stateController,
+                child: _buildDropdown(
                   label: 'State',
+                  value: _selectedState,
+                  items: _getStatesForCountry(_selectedCountry),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedState = value;
+                      _stateController.text = value ?? '';
+                    });
+                  },
                   isRequired: true,
                 ),
               ),
@@ -595,11 +1078,12 @@ class _StudentRegistrationPageState
             children: [
               Expanded(
                 child: _buildTextField(
-                  controller: _countryController,
-                  label: 'Country',
+                  controller: _cityController,
+                  label: 'City',
                   isRequired: true,
                 ),
               ),
+
               const SizedBox(width: 16),
               Expanded(
                 child: _buildTextField(
@@ -1026,17 +1510,32 @@ class _StudentRegistrationPageState
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: _buildTextField(
-                  controller: _fatherWorkStateController,
+                child: _buildDropdown(
                   label: 'Work State',
+                  value: _selectedFatherWorkState,
+                  items: _getStatesForCountry(_selectedFatherWorkCountry),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedFatherWorkState = value;
+                      _fatherWorkStateController.text = value ?? '';
+                    });
+                  },
                 ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          _buildTextField(
-            controller: _fatherWorkCountryController,
+          _buildCountryDropdown(
             label: 'Work Country',
+            value: _selectedFatherWorkCountry,
+            onChanged: (value) {
+              setState(() {
+                _selectedFatherWorkCountry = value;
+                _fatherWorkCountryController.text = value ?? '';
+                _selectedFatherWorkState =
+                    null; // Reset state when country changes
+              });
+            },
           ),
         ],
       ),
@@ -1294,9 +1793,9 @@ class _StudentRegistrationPageState
       children: [
         Text(
           label + (isRequired ? ' *' : ''),
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.w500,
-            color: Colors.black87,
+            color: isRequired ? Colors.red : Colors.black87,
           ),
         ),
         const SizedBox(height: 8),
@@ -1482,12 +1981,7 @@ class _StudentRegistrationPageState
     } else {
       // Validate required fields before submission
       if (_selectedAdmissionDate == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please select an admission date'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        showSnackbar(context, 'Please select an admission date');
         return;
       }
       _submitForm();
@@ -1709,12 +2203,7 @@ class _StudentRegistrationPageState
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error creating student: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      showSnackbar(context, 'Error creating student: $e');
     } finally {
       if (mounted) {
         setState(() {
@@ -1744,12 +2233,7 @@ class _StudentRegistrationPageState
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error picking image: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        showSnackbar(context, 'Error picking image: $e');
       }
     }
   }
@@ -1758,13 +2242,9 @@ class _StudentRegistrationPageState
     try {
       // Check if camera is available (not available on web)
       if (kIsWeb) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Camera not available on web. Please use gallery instead.',
-            ),
-            backgroundColor: Colors.orange,
-          ),
+        showSnackbar(
+          context,
+          'Camera not available on web. Please use gallery instead.',
         );
         return;
       }
@@ -1786,12 +2266,7 @@ class _StudentRegistrationPageState
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error taking photo: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        showSnackbar(context, 'Error taking photo: $e');
       }
     }
   }
@@ -1825,12 +2300,7 @@ class _StudentRegistrationPageState
         });
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Image uploaded successfully!'),
-              backgroundColor: Colors.green,
-            ),
-          );
+          showSnackbar(context, 'Image uploaded successfully!');
         }
       } else {
         throw Exception(
@@ -1853,13 +2323,7 @@ class _StudentRegistrationPageState
           errorMessage = 'Error uploading image: ${e.toString()}';
         }
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
-          ),
-        );
+        showSnackbar(context, errorMessage);
       }
     } finally {
       if (mounted) {

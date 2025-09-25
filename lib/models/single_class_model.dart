@@ -134,15 +134,16 @@ class Class {
 }
 
 class ClassTeacher {
+  String? id;
   String? name;
   String? staffId;
 
-  ClassTeacher({this.name, this.staffId});
+  ClassTeacher({this.name, this.staffId, this.id});
 
   factory ClassTeacher.fromJson(Map<String, dynamic> json) =>
-      ClassTeacher(name: json["name"], staffId: json["staffId"]);
+      ClassTeacher(name: json["name"], staffId: json["staffId"],id: json["id"]);
 
-  Map<String, dynamic> toJson() => {"name": name, "staffId": staffId};
+  Map<String, dynamic> toJson() => {"name": name, "staffId": staffId, "id": id};
 }
 
 class Metrics {

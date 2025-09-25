@@ -4,6 +4,7 @@ import 'package:schmgtsystem/constants/appcolor.dart';
 import 'package:schmgtsystem/models/teacher_model.dart';
 import 'package:schmgtsystem/models/class_level_model.dart';
 import 'package:schmgtsystem/providers/provider.dart';
+import 'package:schmgtsystem/widgets/success_snack.dart';
 
 class AddClassDialog extends ConsumerStatefulWidget {
   final String academicYear;
@@ -192,21 +193,11 @@ class _AddClassDialogState extends ConsumerState<AddClassDialog>
 
         if (mounted) {
           Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Class created successfully!'),
-              backgroundColor: Colors.green,
-            ),
-          );
+          showSnackbar(context, 'Class created successfully!');
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error creating class: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          showSnackbar(context, 'Error creating class: $e');
         }
       } finally {
         if (mounted) {

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:schmgtsystem/constants/appcolor.dart';
 import 'package:schmgtsystem/models/class_metrics_model.dart';
 import 'package:schmgtsystem/providers/provider.dart';
+import 'package:schmgtsystem/widgets/success_snack.dart';
 
 class RemoveTeacherDialog extends ConsumerStatefulWidget {
   final Class classData;
@@ -638,20 +639,9 @@ class _RemoveTeacherDialogState extends ConsumerState<RemoveTeacherDialog>
       await ref
           .read(RiverpodProvider.classProvider)
           .getAllClassesWithMetric(context);
-
-    
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error removing teacher: $e'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-        );
+        showSnackbar(context, 'Error removing teacher: $e');
       }
     } finally {
       if (mounted) {

@@ -8,6 +8,7 @@ import 'package:schmgtsystem/providers/provider.dart';
 import 'package:schmgtsystem/widgets/add_class.dart';
 import 'package:schmgtsystem/widgets/add_teacher.dart';
 import 'package:schmgtsystem/widgets/remove_teacher_dialog.dart';
+import 'package:schmgtsystem/widgets/success_snack.dart';
 import 'package:schmgtsystem/widgets/prompt.dart';
 // import '../../models/class_metrics_model.dart'
 //     show Class, Teacher, Student, Attendance; // Import only what you need
@@ -52,12 +53,7 @@ class _SchoolClassesState extends ConsumerState<SchoolClasses> {
     final classes = classData.classes ?? [];
 
     if (classes.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No classes available'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      showSnackbar(context, 'No classes available');
       return;
     }
 
@@ -227,6 +223,279 @@ class _SchoolClassesState extends ConsumerState<SchoolClasses> {
     );
   }
 
+  void _showDeleteClassSelectionDialog() {
+    final classData = ref.watch(RiverpodProvider.classProvider).classData;
+    final classes = classData.classes ?? [];
+
+    if (classes.isEmpty) {
+      showSnackbar(context, 'No classes available');
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black.withOpacity(0.5),
+      builder:
+          (context) => Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.5,
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          Icons.delete_outline,
+                          color: Colors.red,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Text(
+                          'Select Class to Delete',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const Icon(Icons.close),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Choose a class to delete permanently:',
+                    style: TextStyle(fontSize: 14, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    height: 300,
+                    child: ListView.builder(
+                      itemCount: classes.length,
+                      itemBuilder: (context, index) {
+                        final singleClass = classes[index];
+                        final hasStudents =
+                            singleClass.students?.isNotEmpty ?? false;
+                        final hasTeachers =
+                            singleClass.classTeacher?.id != null ||
+                            (singleClass.subjectTeachers != null &&
+                                singleClass.subjectTeachers!.isNotEmpty);
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          child: ListTile(
+                            leading: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.red.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                Icons.class_,
+                                color: Colors.red,
+                                size: 20,
+                              ),
+                            ),
+                            title: Text(
+                              singleClass.name ?? 'Unknown Class',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(singleClass.level ?? 'Unknown Level'),
+                                if (hasStudents)
+                                  Text(
+                                    'Has ${singleClass.students?.length ?? 0} students',
+                                    style: TextStyle(
+                                      color: Colors.orange.shade600,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                if (hasTeachers)
+                                  Text(
+                                    'Has assigned teachers',
+                                    style: TextStyle(
+                                      color: Colors.orange.shade600,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                if (!hasStudents && !hasTeachers)
+                                  Text(
+                                    'Empty class',
+                                    style: TextStyle(
+                                      color: Colors.grey.shade600,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            trailing: const Icon(
+                              Icons.arrow_forward_ios,
+                              size: 16,
+                              color: Colors.grey,
+                            ),
+                            onTap: () {
+                              Navigator.of(context).pop();
+                              _showDeleteClassDialog(singleClass);
+                            },
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text('Cancel'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+    );
+  }
+
+  void _showDeleteClassDialog(Class classData) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black.withOpacity(0.5),
+      builder:
+          (context) => Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.4,
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(Icons.warning, color: Colors.red, size: 24),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Text(
+                          'Delete Class',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const Icon(Icons.close),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Are you sure you want to delete "${classData.name ?? 'Unknown Class'}"?',
+                    style: const TextStyle(fontSize: 16),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'This action cannot be undone. All class data, students, and teacher assignments will be permanently removed.',
+                    style: TextStyle(fontSize: 14, color: Colors.grey),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Text('Cancel'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            Navigator.of(context).pop();
+                            await _deleteClass(classData);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Text('Delete'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+    );
+  }
+
+  Future<void> _deleteClass(Class classData) async {
+    try {
+      final success = await ref
+          .read(RiverpodProvider.classProvider)
+          .deleteClassLevel(context, classData.id ?? '');
+
+      if (success) {
+        // Refresh the class data to reflect the deletion
+        await loadClassesData();
+      }
+    } catch (e) {
+      showSnackbar(context, 'Error deleting class: $e');
+    }
+  }
+
   String selectedLevel = 'All Levels';
   String sortBy = 'Sort by Alphabetical';
   bool isGridView = true;
@@ -377,12 +646,12 @@ class _SchoolClassesState extends ConsumerState<SchoolClasses> {
 
         ElevatedButton.icon(
           onPressed: () {
-            prompt(context);
+            _showDeleteClassSelectionDialog();
           },
-          icon: const Icon(Icons.download, size: 20),
-          label: const Text('Download Report'),
+          icon: const Icon(Icons.delete_outline, size: 20),
+          label: const Text('Delete Class'),
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF06B6D4),
+            backgroundColor: Colors.red.shade600,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             shape: RoundedRectangleBorder(
@@ -606,7 +875,7 @@ class _SchoolClassesState extends ConsumerState<SchoolClasses> {
         crossAxisCount: 4,
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
-        childAspectRatio: 0.7,
+        childAspectRatio: 0.75,
       ),
       itemCount: classData.classes?.length ?? 0,
       itemBuilder: (context, index) {
@@ -685,7 +954,7 @@ class _SchoolClassesState extends ConsumerState<SchoolClasses> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${classData.classTeacher?.personalInfo?.firstName} ${classData.classTeacher?.personalInfo?.lastName}  ',
+                      '${classData.classTeacher?.personalInfo?.firstName ?? ''} ${classData.classTeacher?.personalInfo?.lastName ?? 'No assigned teacher'}  ',
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
@@ -725,80 +994,82 @@ class _SchoolClassesState extends ConsumerState<SchoolClasses> {
           //   ),
           // ),
           const SizedBox(height: 10),
+
+          // View Class Details button - always present
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () async {
-                if (classData.classTeacher?.id == null) {
-                  showDialog(
-                    context: context,
-                    barrierDismissible: true,
-                    barrierColor: Colors.black.withOpacity(0.5),
-                    builder:
-                        (context) =>
-                            AssignNewTeacherDialog(classData: classData),
-                  );
-                } else {
-                  // Navigate to single class screen with classId
-                  context.go('/classes/single/${classData.id}');
-                }
+              onPressed: () {
+                // Navigate to single class screen with classId
+                context.go('/classes/single/${classData.id}');
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    classData.classTeacher?.id == null
-                        ? Colors.red
-                        : AppColors.secondary,
+                backgroundColor: AppColors.secondary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: Text(
-                classData.classTeacher?.id == null
-                    ? 'Assign Class Teacher'
-                    : 'View Class Details',
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
+              child: const Text(
+                'View Class Details',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
               ),
             ),
           ),
 
-          // Add Unassign Teacher button when teacher is assigned
-          if (classData.classTeacher?.id != null ||
-              (classData.subjectTeachers != null &&
-                  classData.subjectTeachers!.isNotEmpty))
-            const SizedBox(height: 8),
+          const SizedBox(height: 8),
 
-          if (classData.classTeacher?.id != null ||
-              (classData.subjectTeachers != null &&
-                  classData.subjectTeachers!.isNotEmpty))
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    barrierDismissible: true,
-                    barrierColor: Colors.black.withOpacity(0.5),
-                    builder:
-                        (context) => RemoveTeacherDialog(classData: classData),
-                  );
-                },
-                icon: const Icon(Icons.person_remove, size: 18),
-                label: const Text('Unassign Teachers'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.red.shade600,
-                  side: BorderSide(color: Colors.red.shade300),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-            ),
+          // Assign Class Teacher OR Unassign Teachers button (mutually exclusive)
+          SizedBox(
+            width: double.infinity,
+            child:
+                classData.classTeacher?.id == null
+                    ? ElevatedButton.icon(
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          barrierDismissible: true,
+                          barrierColor: Colors.black.withOpacity(0.5),
+                          builder:
+                              (context) =>
+                                  AssignNewTeacherDialog(classData: classData),
+                        );
+                      },
+                      icon: const Icon(Icons.person_add, size: 18),
+                      label: const Text('Assign Class Teacher'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    )
+                    : OutlinedButton.icon(
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          barrierDismissible: true,
+                          barrierColor: Colors.black.withOpacity(0.5),
+                          builder:
+                              (context) =>
+                                  RemoveTeacherDialog(classData: classData),
+                        );
+                      },
+                      icon: const Icon(Icons.person_remove, size: 18),
+                      label: const Text('Unassign Teachers'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.red.shade600,
+                        side: BorderSide(color: Colors.red.shade300),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+          ),
         ],
       ),
     );
@@ -833,7 +1104,7 @@ class _SchoolClassesState extends ConsumerState<SchoolClasses> {
             ),
             const SizedBox(width: 4),
             Text(
-              '${classData.maleStudents}',
+              '${classData.maleStudents ?? 'N/A'}',
               style: const TextStyle(fontSize: 10),
             ),
             const SizedBox(width: 8),
@@ -847,7 +1118,7 @@ class _SchoolClassesState extends ConsumerState<SchoolClasses> {
             ),
             const SizedBox(width: 4),
             Text(
-              '${classData.femaleStudents}',
+              '${classData.femaleStudents ?? 'N/A'}',
               style: const TextStyle(fontSize: 10),
             ),
           ],
@@ -861,7 +1132,7 @@ class _SchoolClassesState extends ConsumerState<SchoolClasses> {
               style: TextStyle(fontSize: 12, color: Colors.grey),
             ),
             Text(
-              '${classData.attendance}%',
+              '${classData.attendance ?? '0'}%',
               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
             ),
           ],
@@ -887,7 +1158,7 @@ class _SchoolClassesState extends ConsumerState<SchoolClasses> {
               style: TextStyle(fontSize: 12, color: Colors.grey),
             ),
             Text(
-              '${classData.averagePerformance}%',
+              '${classData.averagePerformance ?? '0'}%',
               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
             ),
           ],

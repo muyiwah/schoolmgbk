@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:schmgtsystem/providers/provider.dart';
 import 'package:schmgtsystem/models/class_level_model.dart';
+import 'package:schmgtsystem/widgets/success_snack.dart';
 
 class ClassLevelManagementScreen extends ConsumerStatefulWidget {
   const ClassLevelManagementScreen({Key? key}) : super(key: key);
@@ -833,6 +834,10 @@ class _ClassLevelManagementScreenState
                   .read(RiverpodProvider.classLevelProvider)
                   .bulkCreateClassLevels(context, data);
               if (success) {
+                await ref
+                    .read(RiverpodProvider.classProvider)
+                    .getAllClassesWithMetric(context);
+
                 Navigator.of(context).pop();
               }
             },
@@ -1155,11 +1160,9 @@ class _BulkCreateDialogState extends State<_BulkCreateDialog> {
                   : () {
                     // Additional validation before sending
                     if (_classLevels.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Please add at least one class level'),
-                          backgroundColor: Color(0xFFEF4444),
-                        ),
+                      showSnackbar(
+                        context,
+                        'Please add at least one class level',
                       );
                       return;
                     }
@@ -1172,13 +1175,9 @@ class _BulkCreateDialogState extends State<_BulkCreateDialog> {
                     );
 
                     if (hasInvalidLevels) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            'All levels must have name and display name',
-                          ),
-                          backgroundColor: Color(0xFFEF4444),
-                        ),
+                      showSnackbar(
+                        context,
+                        'All levels must have name and display name',
                       );
                       return;
                     }
@@ -1253,12 +1252,7 @@ class _BulkCreateDialogState extends State<_BulkCreateDialog> {
                     Navigator.of(context).pop();
                   } else {
                     // Show validation error
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Name and Display Name are required'),
-                        backgroundColor: Color(0xFFEF4444),
-                      ),
-                    );
+                    showSnackbar(context, 'Name and Display Name are required');
                   }
                 },
                 child: Text('Add'),

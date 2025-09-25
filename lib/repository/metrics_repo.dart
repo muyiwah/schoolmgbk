@@ -6,39 +6,89 @@ import 'package:schmgtsystem/utils/response_model.dart';
 class MetricsRepo {
   final _httpService = locator<HttpService>();
 
-  Future<HTTPResponseModel> dashboard(Map<String, dynamic> body) async {
-    return await _httpService.runApi(
-      type: ApiRequestType.get,
-      url: "/metrics/dashboard",
-      body: body,
-    );
+  // Get comprehensive metrics for dashboard
+  Future<HTTPResponseModel> getComprehensiveMetrics({
+    String? academicYear,
+    String? term,
+    Map<String, dynamic>? filters,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{};
+
+      if (academicYear != null) queryParams['academicYear'] = academicYear;
+      if (term != null) queryParams['term'] = term;
+      if (filters != null) queryParams.addAll(filters);
+
+      String url = "/metrics/get-comprehensive-metrics";
+      if (queryParams.isNotEmpty) {
+        final queryString = queryParams.entries
+            .map((e) => '${e.key}=${e.value}')
+            .join('&');
+        url += '?$queryString';
+      }
+
+      final response = await _httpService.runApi(
+        type: ApiRequestType.get,
+        url: url,
+      );
+
+      return response;
+    } catch (e) {
+      return HTTPResponseModel.jsonToMap({
+        "success": false,
+        "message": 'Failed to fetch comprehensive metrics: ${e.toString()}',
+      }, 500);
+    }
   }
-  Future<HTTPResponseModel> students(Map<String, dynamic> body) async {
-    return await _httpService.runApi(
-      type: ApiRequestType.get,
-      url: "/metrics/students",
-      body: body,
-    );
+
+  // Get metrics by date range
+  Future<HTTPResponseModel> getMetricsByDateRange({
+    required DateTime startDate,
+    required DateTime endDate,
+    String? academicYear,
+    String? term,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{
+        'startDate': startDate.toIso8601String(),
+        'endDate': endDate.toIso8601String(),
+      };
+
+      if (academicYear != null) queryParams['academicYear'] = academicYear;
+      if (term != null) queryParams['term'] = term;
+
+      final queryString = queryParams.entries
+          .map((e) => '${e.key}=${e.value}')
+          .join('&');
+
+      final response = await _httpService.runApi(
+        type: ApiRequestType.get,
+        url: "/metrics/get-comprehensive-metrics?$queryString",
+      );
+
+      return response;
+    } catch (e) {
+      return HTTPResponseModel.jsonToMap({
+        "success": false,
+        "message": 'Failed to fetch metrics by date range: ${e.toString()}',
+      }, 500);
+    }
   }
-  Future<HTTPResponseModel> financial(Map<String, dynamic> body) async {
-    return await _httpService.runApi(
-      type: ApiRequestType.get,
-      url: "/metrics/financial",
-      body: body,
-    );
-  }
-  Future<HTTPResponseModel> attendance(Map<String, dynamic> body) async {
-    return await _httpService.runApi(
-      type: ApiRequestType.get,
-      url: "/metrics/attendance",
-      body: body,
-    );
-  }
-  Future<HTTPResponseModel> performance(Map<String, dynamic> body) async {
-    return await _httpService.runApi(
-      type: ApiRequestType.get,
-      url: "/metrics/performance",
-      body: body,
-    );
+
+  // Get real-time metrics
+  Future<HTTPResponseModel> getRealTimeMetrics() async {
+    try {
+      final response = await _httpService.runApi(
+        type: ApiRequestType.get,
+        url: "/metrics/get-comprehensive-metrics?realTime=true",
+      );
+
+      return response;
+    } catch (e) {
+      return HTTPResponseModel.jsonToMap({
+        "success": false,
+        "message": 'Failed to fetch real-time metrics: ${e.toString()}',
+      }, 500);
+    }
   }
 }

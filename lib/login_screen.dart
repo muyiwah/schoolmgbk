@@ -161,7 +161,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
         // Title and Subtitle
         const Text(
-          'Welcome to SCHOOL MANAGENGENT',
+          'Welcome to LOVESPRING',
           textAlign: TextAlign.center,
           style: TextStyle(
             color: Colors.white,
@@ -197,18 +197,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Role Selection
-            const Text(
-              'Select Your Role',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            _buildRoleSelection(),
+           
 
             const SizedBox(height: 24),
 

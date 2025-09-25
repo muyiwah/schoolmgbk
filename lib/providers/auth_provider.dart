@@ -186,6 +186,8 @@ class AuthProvider extends ChangeNotifier {
     // Navigate based on user role
     if (userData.role?.toLowerCase() == 'parent') {
       context.go('/parent');
+    } else if (userData.role?.toLowerCase() == 'teacher') {
+      context.go('/teacher');
     } else {
       context.go('/dashboard');
     }

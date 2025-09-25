@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:schmgtsystem/constants/appcolor.dart';
+import 'package:schmgtsystem/models/communication_model.dart';
 import 'package:schmgtsystem/providers/provider.dart';
 import 'package:schmgtsystem/widgets/message_popup.dart';
 import 'package:schmgtsystem/widgets/success_snack.dart';
@@ -58,7 +59,7 @@ class _SingleParentState extends ConsumerState<SingleParent> {
       context: context,
       barrierDismissible: true,
       barrierColor: Colors.black.withOpacity(0.5),
-      builder: (context) => MessagePopup(title: title),
+      builder: (context) => MessagePopup(title: title,classId: '',communicationType: CommunicationType.adminParent),
     );
   }
 

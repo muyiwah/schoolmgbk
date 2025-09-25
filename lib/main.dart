@@ -63,7 +63,7 @@ class MyApp extends StatelessWidget {
             GlobalCupertinoLocalizations.delegate,
           ],
           supportedLocales: const [Locale('en'), Locale('fr'), Locale('es')],
-          title: 'School management',
+          title: 'LoveSpring Dashboard',
           theme: ThemeData(
             cardTheme: CardThemeData(
               color: Colors.blue,

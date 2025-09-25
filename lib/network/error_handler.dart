@@ -2,6 +2,8 @@ import 'dart:developer';
 import 'package:dio/dio.dart';
 import 'package:schmgtsystem/services/dialog_service.dart';
 import 'package:schmgtsystem/utils/enums.dart';
+import 'package:schmgtsystem/widgets/custom_toast_notification.dart';
+import 'package:schmgtsystem/widgets/success_snack.dart';
 
 class DioErrorHandler {
   handleStringError(String errorMessage) {
@@ -21,7 +23,6 @@ class DioErrorHandler {
           errorMessageParser(dioError.response?.data) ?? 'An error occured';
     }
     log('errorMessage:: $errorMessage');
-
     dialogService.showSnackBar(errorMessage, appToastType: AppToastType.error);
   }
 

@@ -7,6 +7,7 @@ import 'package:schmgtsystem/models/class_metrics_model.dart';
 import 'package:schmgtsystem/providers/student_provider.dart';
 import 'package:schmgtsystem/providers/class_provider.dart';
 import 'package:schmgtsystem/providers/provider.dart';
+import 'package:schmgtsystem/widgets/success_snack.dart';
 
 class ManageStudentClass extends ConsumerStatefulWidget {
   const ManageStudentClass({super.key});
@@ -163,12 +164,7 @@ class _ManageStudentClassState extends ConsumerState<ManageStudentClass> {
     final classes = classState.classData.classes ?? [];
 
     if (classes.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('No classes available'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      showSnackbar(context, 'No classes available');
       return;
     }
 
@@ -1113,10 +1109,11 @@ class _ManageStudentClassState extends ConsumerState<ManageStudentClass> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                ElevatedButton(style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.secondary,
-                  foregroundColor: Colors.white,
-                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.secondary,
+                    foregroundColor: Colors.white,
+                  ),
                   onPressed: () => _assignStudentToClass(student),
                   child: Text('Assign'),
                 ),

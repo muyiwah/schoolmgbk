@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:schmgtsystem/constants/appcolor.dart';
+import 'package:schmgtsystem/providers/provider.dart';
 
-class MetricScreen extends StatefulWidget {
+class MetricScreen extends ConsumerStatefulWidget {
   final Function navigateTo;
   MetricScreen({super.key, required this.navigateTo});
 
   @override
-  State<MetricScreen> createState() => _MetricScreenState();
+  ConsumerState<MetricScreen> createState() => _MetricScreenState();
 }
 
-class _MetricScreenState extends State<MetricScreen>
+class _MetricScreenState extends ConsumerState<MetricScreen>
     with TickerProviderStateMixin {
   late AnimationController _animationController;
   late AnimationController _fadeController;
@@ -34,9 +36,23 @@ class _MetricScreenState extends State<MetricScreen>
     _slideAnimation = Tween<double>(begin: 50.0, end: 0.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
     );
-    
+
     _fadeController.forward();
     _animationController.forward();
+
+    // Load metrics data
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadMetrics();
+    });
+  }
+
+  Future<void> _loadMetrics() async {
+    final metricsProvider = ref.read(RiverpodProvider.metricsProvider);
+    await metricsProvider.getComprehensiveMetrics();
+  }
+
+  Future<void> _refreshMetrics() async {
+    await _loadMetrics();
   }
 
   @override
@@ -57,7 +73,7 @@ class _MetricScreenState extends State<MetricScreen>
             final isMobile = screenWidth < 768;
             final isTablet = screenWidth >= 768 && screenWidth < 1024;
             final isDesktop = screenWidth >= 1024;
-            
+
             return SingleChildScrollView(
               padding: EdgeInsets.all(isMobile ? 16 : 20),
               child: Column(
@@ -109,7 +125,7 @@ class _MetricScreenState extends State<MetricScreen>
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'School Management System',
+                          'LoveSpring Dashboard',
                           style: TextStyle(
                             fontSize: isMobile ? 12 : 14,
                             color: Colors.grey[600],
@@ -179,7 +195,7 @@ class _MetricScreenState extends State<MetricScreen>
                     ),
                     const SizedBox(width: 12),
                     OutlinedButton.icon(
-                      onPressed: () {},
+                      onPressed: _refreshMetrics,
                       icon: Icon(Icons.refresh, size: isMobile ? 16 : 18),
                       label: Text(isMobile ? 'Refresh' : 'Refresh'),
                       style: OutlinedButton.styleFrom(
@@ -205,11 +221,15 @@ class _MetricScreenState extends State<MetricScreen>
   }
 
   Widget _buildStatsCards(bool isMobile, bool isTablet, bool isDesktop) {
+    final metricsProvider = ref.watch(RiverpodProvider.metricsProvider);
+    final metrics = metricsProvider.comprehensiveMetrics;
+
+    // Use real data from metrics or fallback to default values
     final statsData = [
       {
         'title': 'Total Students',
-        'value': '1,247',
-        'change': '+12%',
+        'value': _formatNumber(metrics?.data.overview.totalStudents ?? 1247),
+        'change': '+12%', // This could come from metrics comparison
         'changeText': 'from last month',
         'changeColor': const Color(0xFF10B981),
         'icon': Icons.people,
@@ -218,8 +238,8 @@ class _MetricScreenState extends State<MetricScreen>
       },
       {
         'title': 'Active Teachers',
-        'value': '87',
-        'change': '+3%',
+        'value': _formatNumber(metrics?.data.overview.totalStaff ?? 87),
+        'change': '+3%', // This could come from metrics comparison
         'changeText': 'from last month',
         'changeColor': const Color(0xFF10B981),
         'icon': Icons.school,
@@ -227,21 +247,24 @@ class _MetricScreenState extends State<MetricScreen>
         'gradient': [const Color(0xFF8B5CF6), const Color(0xFFEC4899)],
       },
       {
-        'title': 'Today\'s Attendance',
-        'value': '94.2%',
-        'change': '-2%',
-        'changeText': 'from yesterday',
-        'changeColor': const Color(0xFFEF4444),
-        'icon': Icons.assignment_turned_in,
+        'title': 'Total Classes',
+        'value': _formatNumber(metrics?.data.overview.totalClasses ?? 9),
+        'change': 'Active',
+        'changeText': 'classes available',
+        'changeColor': const Color(0xFF10B981),
+        'icon': Icons.class_,
         'iconColor': const Color(0xFF06B6D4),
         'gradient': [const Color(0xFF06B6D4), const Color(0xFF0891B2)],
       },
       {
-        'title': 'Monthly Revenue',
-        'value': '\$48,320',
-        'change': '+8%',
-        'changeText': 'from last month',
-        'changeColor': const Color(0xFF10B981),
+        'title': 'Outstanding Fees',
+        'value': _formatCurrency(
+          metrics?.data.finances.outstanding.total ?? 191800,
+        ),
+        'change':
+            '${metrics?.data.finances.feeStatus.where((f) => f.id == 'unpaid').first.count ?? 14} students',
+        'changeText': 'unpaid fees',
+        'changeColor': const Color(0xFFEF4444),
         'icon': Icons.attach_money,
         'iconColor': const Color(0xFF10B981),
         'gradient': [const Color(0xFF10B981), const Color(0xFF059669)],
@@ -360,7 +383,11 @@ class _MetricScreenState extends State<MetricScreen>
                     ),
                   ],
                 ),
-                child: Icon(icon, size: isMobile ? 16 : 20, color: Colors.white),
+                child: Icon(
+                  icon,
+                  size: isMobile ? 16 : 20,
+                  color: Colors.white,
+                ),
               ),
             ],
           ),
@@ -378,7 +405,7 @@ class _MetricScreenState extends State<MetricScreen>
             children: [
               Container(
                 padding: EdgeInsets.symmetric(
-                  horizontal: isMobile ? 6 : 8, 
+                  horizontal: isMobile ? 6 : 8,
                   vertical: isMobile ? 3 : 4,
                 ),
                 decoration: BoxDecoration(
@@ -735,10 +762,26 @@ class _MetricScreenState extends State<MetricScreen>
 
   Widget _buildQuickActions(bool isMobile) {
     final actions = [
-      {'title': 'Add Student', 'icon': Icons.person_add, 'color': const Color(0xFF6366F1)},
-      {'title': 'Mark Attendance', 'icon': Icons.check_circle, 'color': const Color(0xFF10B981)},
-      {'title': 'Create Exam', 'icon': Icons.quiz, 'color': const Color(0xFF8B5CF6)},
-      {'title': 'View Reports', 'icon': Icons.analytics, 'color': const Color(0xFF06B6D4)},
+      {
+        'title': 'Add Student',
+        'icon': Icons.person_add,
+        'color': const Color(0xFF6366F1),
+      },
+      {
+        'title': 'Mark Attendance',
+        'icon': Icons.check_circle,
+        'color': const Color(0xFF10B981),
+      },
+      {
+        'title': 'Create Exam',
+        'icon': Icons.quiz,
+        'color': const Color(0xFF8B5CF6),
+      },
+      {
+        'title': 'View Reports',
+        'icon': Icons.analytics,
+        'color': const Color(0xFF06B6D4),
+      },
     ];
 
     return Column(
@@ -754,19 +797,20 @@ class _MetricScreenState extends State<MetricScreen>
         ),
         SizedBox(height: isMobile ? 12 : 16),
         Row(
-          children: actions.map((action) {
-            return Expanded(
-              child: Container(
-                margin: EdgeInsets.only(right: isMobile ? 8 : 12),
-                child: _buildQuickActionCard(
-                  title: action['title'] as String,
-                  icon: action['icon'] as IconData,
-                  color: action['color'] as Color,
-                  isMobile: isMobile,
-                ),
-              ),
-            );
-          }).toList(),
+          children:
+              actions.map((action) {
+                return Expanded(
+                  child: Container(
+                    margin: EdgeInsets.only(right: isMobile ? 8 : 12),
+                    child: _buildQuickActionCard(
+                      title: action['title'] as String,
+                      icon: action['icon'] as IconData,
+                      color: action['color'] as Color,
+                      isMobile: isMobile,
+                    ),
+                  ),
+                );
+              }).toList(),
         ),
       ],
     );
@@ -817,11 +861,35 @@ class _MetricScreenState extends State<MetricScreen>
   }
 
   Widget _buildRecentActivity(bool isMobile) {
+    final metricsProvider = ref.watch(RiverpodProvider.metricsProvider);
+    final metrics = metricsProvider.comprehensiveMetrics;
+
+    // Create activities based on real metrics data
     final activities = [
-      {'title': 'New student enrolled', 'time': '2 hours ago', 'icon': Icons.person_add},
-      {'title': 'Exam results published', 'time': '4 hours ago', 'icon': Icons.assignment_turned_in},
-      {'title': 'Fee payment received', 'time': '6 hours ago', 'icon': Icons.payment},
-      {'title': 'Staff meeting scheduled', 'time': '1 day ago', 'icon': Icons.event},
+      {
+        'title': 'Recent Payments',
+        'time':
+            '${metrics?.data.finances.recentPayments.transactions ?? 0} transactions',
+        'icon': Icons.payment,
+      },
+      {
+        'title': 'Payment Amount',
+        'time': _formatCurrency(
+          metrics?.data.finances.recentPayments.amount ?? 0,
+        ),
+        'icon': Icons.attach_money,
+      },
+      {
+        'title': 'Enrollment Rate',
+        'time': '${metrics?.data.academics.classes.enrollment.rate ?? '0'}%',
+        'icon': Icons.trending_up,
+      },
+      {
+        'title': 'Capacity Utilization',
+        'time':
+            '${metrics?.data.academics.classes.enrollment.utilization ?? '0'}%',
+        'icon': Icons.pie_chart,
+      },
     ];
 
     return Column(
@@ -850,50 +918,51 @@ class _MetricScreenState extends State<MetricScreen>
             ],
           ),
           child: Column(
-            children: activities.map((activity) {
-              return Container(
-                padding: EdgeInsets.symmetric(vertical: isMobile ? 8 : 12),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(isMobile ? 6 : 8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF6366F1).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        activity['icon'] as IconData,
-                        size: isMobile ? 14 : 16,
-                        color: const Color(0xFF6366F1),
-                      ),
-                    ),
-                    SizedBox(width: isMobile ? 8 : 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            activity['title'] as String,
-                            style: TextStyle(
-                              fontSize: isMobile ? 13 : 14,
-                              fontWeight: FontWeight.w500,
-                              color: const Color(0xFF111827),
-                            ),
+            children:
+                activities.map((activity) {
+                  return Container(
+                    padding: EdgeInsets.symmetric(vertical: isMobile ? 8 : 12),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(isMobile ? 6 : 8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF6366F1).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          Text(
-                            activity['time'] as String,
-                            style: TextStyle(
-                              fontSize: isMobile ? 11 : 12,
-                              color: const Color(0xFF6B7280),
-                            ),
+                          child: Icon(
+                            activity['icon'] as IconData,
+                            size: isMobile ? 14 : 16,
+                            color: const Color(0xFF6366F1),
                           ),
-                        ],
-                      ),
+                        ),
+                        SizedBox(width: isMobile ? 8 : 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                activity['title'] as String,
+                                style: TextStyle(
+                                  fontSize: isMobile ? 13 : 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: const Color(0xFF111827),
+                                ),
+                              ),
+                              Text(
+                                activity['time'] as String,
+                                style: TextStyle(
+                                  fontSize: isMobile ? 11 : 12,
+                                  color: const Color(0xFF6B7280),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              );
-            }).toList(),
+                  );
+                }).toList(),
           ),
         ),
       ],
@@ -1041,5 +1110,25 @@ class _MetricScreenState extends State<MetricScreen>
         ],
       ),
     );
+  }
+
+  // Helper methods for formatting data
+  String _formatNumber(dynamic number) {
+    if (number == null) return '0';
+    final numValue =
+        number is num ? number : double.tryParse(number.toString()) ?? 0;
+    return numValue
+        .toStringAsFixed(0)
+        .replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (Match m) => '${m[1]},',
+        );
+  }
+
+  String _formatCurrency(dynamic amount) {
+    if (amount == null) return '\$0';
+    final numAmount =
+        amount is num ? amount : double.tryParse(amount.toString()) ?? 0;
+    return '\$${numAmount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}';
   }
 }

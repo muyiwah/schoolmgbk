@@ -571,7 +571,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(title: Text('School Management System')),
+        appBar: AppBar(title: Text('LoveSpring Dashboard')),
         body: Center(
           child: ElevatedButton(
             onPressed: () {
