@@ -7,8 +7,8 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:collection/collection.dart';
 import 'package:schmgtsystem/color_pallete.dart';
 
-class Edit5 extends StatelessWidget {
-  const Edit5({super.key});
+class CreateTimetable extends StatelessWidget {
+  const CreateTimetable({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +16,6 @@ class Edit5 extends StatelessWidget {
       title: 'School Timetable Creator',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.blue,
         fontFamily: 'Roboto',
         inputDecorationTheme: const InputDecorationTheme(
           border: OutlineInputBorder(),

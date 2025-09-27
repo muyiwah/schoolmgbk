@@ -12,6 +12,8 @@ import 'package:schmgtsystem/providers/teachers_provider.dart';
 import 'package:schmgtsystem/providers/admission_provider.dart';
 import 'package:schmgtsystem/providers/attendance_provider.dart';
 import 'package:schmgtsystem/providers/communication_provider.dart';
+import 'package:schmgtsystem/providers/timetable_provider.dart';
+import 'package:schmgtsystem/providers/subject_provider.dart';
 
 class RiverpodProvider {
   static final appNavProvider = ChangeNotifierProvider<AppNavProvider>(
@@ -65,4 +67,12 @@ class RiverpodProvider {
       ChangeNotifierProvider<CommunicationProvider>(
         (ref) => CommunicationProvider(),
       );
+
+  static final timetableProvider = ChangeNotifierProvider<TimetableProvider>(
+    (ref) => TimetableProvider(),
+  );
+
+  static final subjectProvider = ChangeNotifierProvider<SubjectProvider>(
+    (ref) => SubjectProvider(),
+  );
 }

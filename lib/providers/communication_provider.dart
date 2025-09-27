@@ -10,6 +10,8 @@ class CommunicationProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
   List<CommunicationModel> _communications = [];
+  List<CommunicationModel> _teacherToParentCommunications = [];
+  List<CommunicationModel> _adminToTeacherCommunications = [];
   CommunicationModel? _selectedCommunication;
   PaginationInfo? _pagination;
   DateTime? _lastUpdated;
@@ -18,6 +20,10 @@ class CommunicationProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   List<CommunicationModel> get communications => _communications;
+  List<CommunicationModel> get teacherToParentCommunications =>
+      _teacherToParentCommunications;
+  List<CommunicationModel> get adminToTeacherCommunications =>
+      _adminToTeacherCommunications;
   CommunicationModel? get selectedCommunication => _selectedCommunication;
   PaginationInfo? get pagination => _pagination;
   DateTime? get lastUpdated => _lastUpdated;
@@ -97,6 +103,7 @@ class CommunicationProvider extends ChangeNotifier {
   // Get communications for a class
   Future<bool> getClassCommunications({
     required String classId,
+    String? communicationType,
     int page = 1,
     int limit = 10,
     bool refresh = false,
@@ -107,29 +114,59 @@ class CommunicationProvider extends ChangeNotifier {
     try {
       final response = await _communicationRepo.getClasscommunication(
         classId: classId,
+        communicationType: communicationType,
         page: page,
         limit: limit,
       );
 
       if (HTTPResponseModel.isApiCallSuccess(response)) {
         final responseData = response.data as Map<String, dynamic>;
-        final communicationListResponse = CommunicationListResponse.fromJson(
-          responseData,
-        );
+
+        // Parse the new backend response format
+        final communicationsData = responseData['data'] as Map<String, dynamic>;
+        final communicationsList =
+            (communicationsData['communications'] as List<dynamic>).map((comm) {
+              if (kDebugMode) {
+                print('Parsing communication: $comm');
+              }
+              return CommunicationModel.fromJson(comm);
+            }).toList();
+
+        final paginationData =
+            communicationsData['pagination'] as Map<String, dynamic>;
+        final pagination = PaginationInfo.fromJson(paginationData);
 
         if (refresh || page == 1) {
-          _communications = communicationListResponse.data.communications;
+          _communications = communicationsList;
+
+          // Store communications in specific lists based on type
+          if (communicationType == CommunicationType.teacherParent.value) {
+            _teacherToParentCommunications = communicationsList;
+          } else if (communicationType ==
+              CommunicationType.adminTeacher.value) {
+            _adminToTeacherCommunications = communicationsList;
+          }
         } else {
-          _communications.addAll(communicationListResponse.data.communications);
+          _communications.addAll(communicationsList);
+
+          // Add to specific lists based on type
+          if (communicationType == CommunicationType.teacherParent.value) {
+            _teacherToParentCommunications.addAll(communicationsList);
+          } else if (communicationType ==
+              CommunicationType.adminTeacher.value) {
+            _adminToTeacherCommunications.addAll(communicationsList);
+          }
         }
 
-        _pagination = communicationListResponse.data.pagination;
+        _pagination = pagination;
         _lastUpdated = DateTime.now();
         _clearError();
 
         if (kDebugMode) {
           print('Class communications loaded successfully');
           print('Communications count: ${_communications.length}');
+          print('Communication type filter: $communicationType');
+          print('Raw response data: ${response.data}');
         }
         return true;
       } else {
@@ -151,6 +188,8 @@ class CommunicationProvider extends ChangeNotifier {
   Future<bool> getUserCommunications({
     int page = 1,
     int limit = 10,
+    String? communicationType,
+    bool unreadOnly = false,
     bool refresh = false,
   }) async {
     _setLoading(true);
@@ -160,6 +199,8 @@ class CommunicationProvider extends ChangeNotifier {
       final response = await _communicationRepo.getUsercommunication(
         page: page,
         limit: limit,
+        communicationType: communicationType,
+        unreadOnly: unreadOnly,
       );
 
       if (HTTPResponseModel.isApiCallSuccess(response)) {
@@ -257,9 +298,116 @@ class CommunicationProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Get communication thread with all replies
+  Future<bool> getCommunicationThread({
+    required String threadId,
+    int page = 1,
+    int limit = 20,
+    bool refresh = false,
+  }) async {
+    _setLoading(true);
+    _clearError();
+
+    try {
+      final response = await _communicationRepo.getCommunicationThread(
+        threadId: threadId,
+        page: page,
+        limit: limit,
+      );
+
+      if (HTTPResponseModel.isApiCallSuccess(response)) {
+        final responseData = response.data as Map<String, dynamic>;
+        final threadData = responseData['data'] as Map<String, dynamic>;
+        final messagesList =
+            (threadData['messages'] as List<dynamic>)
+                .map((message) => CommunicationModel.fromJson(message))
+                .toList();
+
+        if (refresh || page == 1) {
+          _communications = messagesList;
+        } else {
+          _communications.addAll(messagesList);
+        }
+
+        _pagination = PaginationInfo.fromJson(threadData['pagination']);
+        _lastUpdated = DateTime.now();
+        _clearError();
+
+        if (kDebugMode) {
+          print('Communication thread loaded successfully');
+          print('Messages count: ${_communications.length}');
+        }
+        return true;
+      } else {
+        _setError(response.message ?? 'Failed to get communication thread');
+        return false;
+      }
+    } catch (e) {
+      _setError('Error getting communication thread: ${e.toString()}');
+      if (kDebugMode) {
+        print('Error in getCommunicationThread: $e');
+      }
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // Mark communication as read
+  Future<bool> markAsRead({required String communicationId}) async {
+    try {
+      final response = await _communicationRepo.markAsRead(
+        communicationId: communicationId,
+      );
+
+      if (HTTPResponseModel.isApiCallSuccess(response)) {
+        if (kDebugMode) {
+          print('Communication marked as read');
+        }
+        return true;
+      } else {
+        _setError(response.message ?? 'Failed to mark communication as read');
+        return false;
+      }
+    } catch (e) {
+      _setError('Error marking communication as read: ${e.toString()}');
+      if (kDebugMode) {
+        print('Error in markAsRead: $e');
+      }
+      return false;
+    }
+  }
+
+  // Mark entire thread as read
+  Future<bool> markThreadAsRead({required String threadId}) async {
+    try {
+      final response = await _communicationRepo.markThreadAsRead(
+        threadId: threadId,
+      );
+
+      if (HTTPResponseModel.isApiCallSuccess(response)) {
+        if (kDebugMode) {
+          print('Thread marked as read');
+        }
+        return true;
+      } else {
+        _setError(response.message ?? 'Failed to mark thread as read');
+        return false;
+      }
+    } catch (e) {
+      _setError('Error marking thread as read: ${e.toString()}');
+      if (kDebugMode) {
+        print('Error in markThreadAsRead: $e');
+      }
+      return false;
+    }
+  }
+
   // Clear all data
   void clearData() {
     _communications.clear();
+    _teacherToParentCommunications.clear();
+    _adminToTeacherCommunications.clear();
     _selectedCommunication = null;
     _pagination = null;
     _lastUpdated = null;
@@ -292,6 +440,16 @@ class CommunicationProvider extends ChangeNotifier {
   List<CommunicationModel> getUnreadCommunications() {
     // This would need to be implemented based on your read/unread logic
     return _communications;
+  }
+
+  // Get teacher-to-parent communications specifically
+  List<CommunicationModel> getTeacherToParentCommunications() {
+    return _teacherToParentCommunications;
+  }
+
+  // Get admin-to-teacher communications specifically
+  List<CommunicationModel> getAdminToTeacherCommunications() {
+    return _adminToTeacherCommunications;
   }
 
   // Get communication statistics

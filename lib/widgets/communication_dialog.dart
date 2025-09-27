@@ -11,6 +11,7 @@ class CommunicationDialog extends ConsumerStatefulWidget {
   final String? studentId;
   final CommunicationType communicationType;
   final List<String>? parentIds;
+  final String? threadId; // Add threadId for thread-based communication
 
   const CommunicationDialog({
     Key? key,
@@ -18,6 +19,7 @@ class CommunicationDialog extends ConsumerStatefulWidget {
     this.studentId,
     required this.communicationType,
     this.parentIds,
+    this.threadId,
   }) : super(key: key);
 
   @override
@@ -30,6 +32,26 @@ class _CommunicationDialogState extends ConsumerState<CommunicationDialog> {
   final _messageController = TextEditingController();
   final _replyController = TextEditingController();
   bool _isSending = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCommunications();
+  }
+
+  Future<void> _loadCommunications() async {
+    if (widget.threadId != null) {
+      // Load thread if threadId is provided
+      await ref
+          .read(RiverpodProvider.communicationProvider.notifier)
+          .getCommunicationThread(threadId: widget.threadId!);
+    } else {
+      // Load class communications for new thread
+      await ref
+          .read(RiverpodProvider.communicationProvider.notifier)
+          .getClassCommunications(classId: widget.classId);
+    }
+  }
 
   @override
   void dispose() {
@@ -212,24 +234,27 @@ class _CommunicationDialogState extends ConsumerState<CommunicationDialog> {
   }
 
   Widget _buildWhatsAppStyleMessage(CommunicationModel communication) {
-    // Determine if this is an incoming or outgoing message
     final profileProvider = ref.read(RiverpodProvider.profileProvider);
     final currentUserId = profileProvider.user?.id;
-    final isOutgoing = communication.sender.id == currentUserId;
+
+    // Determine if this message is from the current user
+    final isFromCurrentUser = communication.sender.id == currentUserId;
+
+    // Check if message is seen by all recipients (for outgoing messages)
+    final isSeen = _isMessageSeen(communication, currentUserId);
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       child: Row(
         mainAxisAlignment:
-            isOutgoing ? MainAxisAlignment.end : MainAxisAlignment.start,
+            isFromCurrentUser ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          if (!isOutgoing) ...[
+          // Avatar for incoming messages (left side)
+          if (!isFromCurrentUser) ...[
             CircleAvatar(
               radius: 16,
-              backgroundColor: _getCommunicationTypeColor(
-                communication.communicationType,
-              ),
+              backgroundColor: _getSenderColor(communication.sender),
               child: Text(
                 communication.sender.firstName.isNotEmpty
                     ? communication.sender.firstName[0].toUpperCase()
@@ -251,12 +276,17 @@ class _CommunicationDialogState extends ConsumerState<CommunicationDialog> {
               ),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: isOutgoing ? const Color(0xFFDCF8C6) : Colors.white,
+                color:
+                    isFromCurrentUser
+                        ? const Color(
+                          0xFFDCF8C6,
+                        ) // WhatsApp green for sent messages
+                        : Colors.white, // White for received messages
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(18),
                   topRight: const Radius.circular(18),
-                  bottomLeft: Radius.circular(isOutgoing ? 18 : 4),
-                  bottomRight: Radius.circular(isOutgoing ? 4 : 18),
+                  bottomLeft: Radius.circular(isFromCurrentUser ? 18 : 4),
+                  bottomRight: Radius.circular(isFromCurrentUser ? 4 : 18),
                 ),
                 boxShadow: [
                   BoxShadow(
@@ -269,30 +299,14 @@ class _CommunicationDialogState extends ConsumerState<CommunicationDialog> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Communication type badge
-                  if (!isOutgoing) ...[
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _getCommunicationTypeColor(
-                          communication.communicationType,
-                        ).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        _getCommunicationTypeLabel(
-                          communication.communicationType,
-                        ),
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: _getCommunicationTypeColor(
-                            communication.communicationType,
-                          ),
-                        ),
+                  // Sender name for incoming messages
+                  if (!isFromCurrentUser) ...[
+                    Text(
+                      '${communication.sender.firstName} ${communication.sender.lastName}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[700],
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -305,7 +319,7 @@ class _CommunicationDialogState extends ConsumerState<CommunicationDialog> {
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
-                        color: isOutgoing ? Colors.black87 : Colors.black87,
+                        color: Colors.black87,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -314,15 +328,12 @@ class _CommunicationDialogState extends ConsumerState<CommunicationDialog> {
                   // Message content
                   Text(
                     communication.message,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isOutgoing ? Colors.black87 : Colors.black87,
-                    ),
+                    style: const TextStyle(fontSize: 14, color: Colors.black87),
                   ),
 
                   const SizedBox(height: 4),
 
-                  // Timestamp
+                  // Timestamp and read status
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -332,9 +343,13 @@ class _CommunicationDialogState extends ConsumerState<CommunicationDialog> {
                         ).format(DateTime.parse(communication.createdAt)),
                         style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                       ),
-                      if (isOutgoing) ...[
+                      if (isFromCurrentUser) ...[
                         const SizedBox(width: 4),
-                        Icon(Icons.done_all, size: 14, color: Colors.blue[600]),
+                        Icon(
+                          isSeen ? Icons.done_all : Icons.done,
+                          size: 14,
+                          color: isSeen ? Colors.blue[600] : Colors.grey[600],
+                        ),
                       ],
                     ],
                   ),
@@ -343,7 +358,8 @@ class _CommunicationDialogState extends ConsumerState<CommunicationDialog> {
             ),
           ),
 
-          if (isOutgoing) ...[
+          // Avatar for outgoing messages (right side)
+          if (isFromCurrentUser) ...[
             const SizedBox(width: 8),
             CircleAvatar(
               radius: 16,
@@ -351,7 +367,7 @@ class _CommunicationDialogState extends ConsumerState<CommunicationDialog> {
               child: Text(
                 profileProvider.user?.firstName?.isNotEmpty == true
                     ? profileProvider.user!.firstName![0].toUpperCase()
-                    : 'A',
+                    : 'M',
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -363,6 +379,44 @@ class _CommunicationDialogState extends ConsumerState<CommunicationDialog> {
         ],
       ),
     );
+  }
+
+  // Check if message is seen by all recipients
+  bool _isMessageSeen(CommunicationModel communication, String? currentUserId) {
+    if (currentUserId == null) return false;
+
+    // For outgoing messages, check if all recipients have read it
+    if (communication.sender.id == currentUserId) {
+      // Get all recipient IDs
+      final recipientIds = communication.recipients.map((r) => r.id).toSet();
+
+      // Get all read user IDs
+      final readUserIds = communication.readBy.map((r) => r.userId).toSet();
+
+      // Message is seen if all recipients have read it
+      return recipientIds.every(
+        (recipientId) => readUserIds.contains(recipientId),
+      );
+    }
+
+    return false;
+  }
+
+  // Get color for sender avatar
+  Color _getSenderColor(SenderInfo sender) {
+    // Generate consistent color based on sender ID
+    final hash = sender.id.hashCode;
+    final colors = [
+      Colors.blue,
+      Colors.green,
+      Colors.orange,
+      Colors.purple,
+      Colors.teal,
+      Colors.red,
+      Colors.indigo,
+      Colors.pink,
+    ];
+    return colors[hash.abs() % colors.length];
   }
 
   Color _getCommunicationTypeColor(String communicationType) {
@@ -419,7 +473,8 @@ class _CommunicationDialogState extends ConsumerState<CommunicationDialog> {
             ),
           ),
           const SizedBox(height: 8),
-          ...communication.replies.map((reply) => _buildReplyItem(reply)),
+          // TODO: Implement replies when backend provides reply content
+          // ...communication.replies.map((reply) => _buildReplyItem(reply)),
         ],
       ),
     );
@@ -572,12 +627,16 @@ class _CommunicationDialogState extends ConsumerState<CommunicationDialog> {
 
     try {
       final request = CreateCommunicationRequest(
-        // title: _titleController.text.trim(),
+        title:
+            _titleController.text.trim().isNotEmpty
+                ? _titleController.text.trim()
+                : null,
         message: _messageController.text.trim(),
         recipients: widget.parentIds ?? [],
         communicationType: widget.communicationType.value,
         classId: widget.classId,
-        senderId: senderId,
+        attachments: const [],
+        isAnnouncement: false,
       );
 
       final success = await ref

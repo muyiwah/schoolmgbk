@@ -1250,8 +1250,7 @@ class _StudentAdmissionFormState extends ConsumerState<StudentAdmissionForm> {
             _buildRadioOption('Male'),
             const SizedBox(width: 24),
             _buildRadioOption('Female'),
-            const SizedBox(width: 24),
-            _buildRadioOption('Other'),
+          
           ],
         ),
       ],

@@ -18,8 +18,12 @@ class CustomToastNotification {
         padding: EdgeInsets.symmetric(horizontal: 14.0, vertical: 12.0),
         margin: EdgeInsets.symmetric(horizontal: 36.0),
         decoration: BoxDecoration(
-          color: isFilled ? getToastColor(type) : AppColors.red.withOpacity(.8),
-          borderRadius: BorderRadius.circular(12.0),border: Border.all(color: AppColors.border),
+          color:
+              isFilled
+                  ? getToastColor(type)
+                  : getToastColor(type).withOpacity(.8),
+          borderRadius: BorderRadius.circular(12.0),
+          border: Border.all(color: AppColors.border),
           boxShadow: [
             BoxShadow(
               color: AppColors.shadowGrey.withOpacity(0.08),
@@ -29,7 +33,11 @@ class CustomToastNotification {
             ),
           ],
         ),
-        child: Text(title,style: TextStyle(fontSize: 18.5, color: AppColors.white),)),
+        child: Text(
+          title,
+          style: TextStyle(fontSize: 18.5, color: AppColors.white),
+        ),
+      ),
       // Container(
       //   padding: EdgeInsets.symmetric(horizontal: 14.0, vertical: 12.0),
       //   margin: EdgeInsets.symmetric(horizontal: 36.0),

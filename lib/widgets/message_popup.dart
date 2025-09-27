@@ -754,7 +754,6 @@ class _MessagePopupState extends ConsumerState<MessagePopup>
       List<String> recipients = [];
 
       if (widget.communicationType == CommunicationType.adminTeacher) {
-   
         // For class teacher communication - use class teacher's staffId
         final classTeacher = widget.classData?.dataClass?.classTeacher;
         if (classTeacher?.id != null) {
@@ -780,7 +779,7 @@ class _MessagePopupState extends ConsumerState<MessagePopup>
 
       // Create communication request
       final request = CreateCommunicationRequest(
-        subject:
+        title:
             _subjectController.text.trim().isNotEmpty
                 ? _subjectController.text.trim()
                 : null,
@@ -788,9 +787,10 @@ class _MessagePopupState extends ConsumerState<MessagePopup>
         recipients: recipients,
         communicationType: widget.communicationType.value,
         classId: widget.classId,
-        senderId: currentUser.id ?? '',
+        attachments: const [],
+        isAnnouncement: false,
       );
-print(request.toJson());
+      print(request.toJson());
       // Send communication
       final success = await ref
           .read(RiverpodProvider.communicationProvider.notifier)

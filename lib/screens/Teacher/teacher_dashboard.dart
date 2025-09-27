@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -106,9 +107,10 @@ class _TeacherDashboardScreenState
         _selectedClassId = classTeacherClass.id;
       });
 
-      // Load attendance for the assigned class
+      // Load attendance and communications for the assigned class
       if (_selectedClassId != null) {
         _loadAttendanceForDate(_selectedClassId!);
+        _loadCommunicationsForClass(_selectedClassId!);
       }
     } else {
       print('No Class Teacher Assignment Found:');
@@ -127,6 +129,34 @@ class _TeacherDashboardScreenState
         _isClassTeacher = false;
         _selectedClassId = null;
       });
+    }
+  }
+
+  Future<void> _loadCommunicationsForClass(String classId) async {
+    try {
+      // Load both teacher-to-parent and admin-to-teacher communications
+      // Also load user's inbox
+      await Future.wait([
+        ref
+            .read(RiverpodProvider.communicationProvider.notifier)
+            .getClassCommunications(
+              classId: classId,
+              communicationType: CommunicationType.teacherParent.value,
+            ),
+        ref
+            .read(RiverpodProvider.communicationProvider.notifier)
+            .getClassCommunications(
+              classId: classId,
+              communicationType: CommunicationType.adminTeacher.value,
+            ),
+        ref
+            .read(RiverpodProvider.communicationProvider.notifier)
+            .getUserCommunications(refresh: true),
+      ]);
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error loading communications for class: $e');
+      }
     }
   }
 
@@ -1858,8 +1888,18 @@ class _TeacherDashboardScreenState
 
           const SizedBox(height: 16),
 
+          // Inbox section
+          _buildInboxSection(),
+
+          const SizedBox(height: 16),
+
           // Recent communications preview
           _buildRecentCommunicationsPreview(),
+
+          const SizedBox(height: 16),
+
+          // Admin communications preview
+          _buildAdminCommunicationsPreview(),
         ],
       ),
     );
@@ -1897,6 +1937,172 @@ class _TeacherDashboardScreenState
     );
   }
 
+  Widget _buildInboxSection() {
+    return Consumer(
+      builder: (context, ref, child) {
+        final communicationProvider = ref.watch(
+          RiverpodProvider.communicationProvider,
+        );
+
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.grey[50],
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey[200]!),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.inbox, color: Colors.blue[700], size: 20),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Inbox',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1F2937),
+                    ),
+                  ),
+                  const Spacer(),
+                  TextButton(
+                    onPressed: () async {
+                      // Load user communications (inbox)
+                      await ref
+                          .read(RiverpodProvider.communicationProvider.notifier)
+                          .getUserCommunications(refresh: true);
+                      _showInboxDialog();
+                    },
+                    child: const Text(
+                      'View All',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // Show recent inbox messages
+              if (communicationProvider.hasCommunications)
+                ...communicationProvider.communications
+                    .take(3)
+                    .map((comm) => _buildInboxPreviewItem(comm))
+              else
+                const Text(
+                  'No messages in inbox',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildInboxPreviewItem(CommunicationModel communication) {
+    final isUnread =
+        !communication.readBy.any(
+          (read) =>
+              read.userId ==
+              ref.read(RiverpodProvider.profileProvider).user?.id,
+        );
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isUnread ? Colors.blue[50] : Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isUnread ? Colors.blue[200]! : Colors.grey[200]!,
+        ),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 16,
+            backgroundColor: _getCommunicationTypeColor(
+              communication.communicationType,
+            ),
+            child: Text(
+              communication.sender.firstName.isNotEmpty
+                  ? communication.sender.firstName[0].toUpperCase()
+                  : 'U',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        communication.title.isNotEmpty
+                            ? communication.title
+                            : communication.message,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight:
+                              isUnread ? FontWeight.w600 : FontWeight.normal,
+                          color: isUnread ? Colors.blue[800] : Colors.black87,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (isUnread)
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: Colors.blue[600],
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'From: ${communication.sender.firstName} ${communication.sender.lastName}',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            DateFormat(
+              'MMM dd',
+            ).format(DateTime.parse(communication.createdAt)),
+            style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showInboxDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black.withOpacity(0.5),
+      builder: (context) => _InboxDialog(),
+    );
+  }
+
   Widget _buildRecentCommunicationsPreview() {
     final communicationProvider = ref.watch(
       RiverpodProvider.communicationProvider,
@@ -1917,7 +2123,7 @@ class _TeacherDashboardScreenState
               Icon(Icons.history, size: 16, color: Colors.grey[600]),
               const SizedBox(width: 8),
               Text(
-                'Recent Communications',
+                'Messages to Parents',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -1926,23 +2132,47 @@ class _TeacherDashboardScreenState
               ),
               const Spacer(),
               TextButton(
-                onPressed:
-                    () => _showCommunicationDialog(
-                      CommunicationType.teacherParent,
-                      _selectedClassId!,
-                      null,
-                      [],
-                    ),
+                onPressed: () async {
+                  // Load teacher-to-parent communications
+                  await ref
+                      .read(RiverpodProvider.communicationProvider.notifier)
+                      .getClassCommunications(
+                        classId: _selectedClassId!,
+                        communicationType:
+                            CommunicationType.teacherParent.value,
+                      );
+                  _showCommunicationDialog(
+                    CommunicationType.teacherParent,
+                    _selectedClassId!,
+                    null,
+                    [],
+                  );
+                },
                 child: const Text('View All', style: TextStyle(fontSize: 12)),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          if (communicationProvider.hasCommunications)
-            ...communicationProvider.communications
+          if (communicationProvider.hasCommunications) ...[
+            // Show only teacher-to-parent communications
+            ...communicationProvider
+                .getTeacherToParentCommunications()
                 .take(2)
-                .map((comm) => _buildCommunicationPreviewItem(comm))
-          else
+                .map((comm) => _buildCommunicationPreviewItem(comm)),
+            // If no teacher-to-parent communications, show a message
+            if (communicationProvider
+                .getTeacherToParentCommunications()
+                .isEmpty)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text(
+                    'No teacher-to-parent communications yet',
+                    style: TextStyle(color: Colors.grey, fontSize: 14),
+                  ),
+                ),
+              ),
+          ] else
             const Center(
               child: Padding(
                 padding: EdgeInsets.all(16),
@@ -1957,7 +2187,119 @@ class _TeacherDashboardScreenState
     );
   }
 
+  Widget _buildAdminCommunicationsPreview() {
+    final communicationProvider = ref.watch(
+      RiverpodProvider.communicationProvider,
+    );
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.blue[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.blue[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.admin_panel_settings,
+                size: 16,
+                color: Colors.blue[700],
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Messages from Admin',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.blue[700],
+                ),
+              ),
+              const Spacer(),
+              TextButton(
+                onPressed: () async {
+                  // Load admin-to-teacher communications
+                  await ref
+                      .read(RiverpodProvider.communicationProvider.notifier)
+                      .getClassCommunications(
+                        classId: _selectedClassId!,
+                        communicationType: CommunicationType.adminTeacher.value,
+                      );
+                  _showCommunicationDialog(
+                    CommunicationType.adminTeacher,
+                    _selectedClassId!,
+                    null,
+                    [],
+                  );
+                },
+                child: Text(
+                  'View All',
+                  style: TextStyle(fontSize: 12, color: Colors.blue[700]),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (communicationProvider.hasCommunications) ...[
+            // Show only admin-to-teacher communications
+            ...communicationProvider
+                .getAdminToTeacherCommunications()
+                .take(2)
+                .map((comm) => _buildCommunicationPreviewItem(comm)),
+            // If no admin-to-teacher communications, show a message
+            if (communicationProvider.getAdminToTeacherCommunications().isEmpty)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text(
+                    'No messages from admin yet',
+                    style: TextStyle(color: Colors.grey, fontSize: 14),
+                  ),
+                ),
+              ),
+          ] else
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: Text(
+                  'No admin communications',
+                  style: TextStyle(color: Colors.grey, fontSize: 14),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildCommunicationPreviewItem(CommunicationModel communication) {
+    final isTeacherToParent =
+        communication.communicationType ==
+        CommunicationType.teacherParent.value;
+    final isAdminToTeacher =
+        communication.communicationType == CommunicationType.adminTeacher.value;
+
+    Color avatarColor;
+    Color textColor;
+    String typeLabel;
+
+    if (isTeacherToParent) {
+      avatarColor = Colors.teal[100]!;
+      textColor = Colors.teal[700]!;
+      typeLabel = 'Teacher → Parent';
+    } else if (isAdminToTeacher) {
+      avatarColor = Colors.blue[100]!;
+      textColor = Colors.blue[700]!;
+      typeLabel = 'Admin → Teacher';
+    } else {
+      avatarColor = Colors.grey[100]!;
+      textColor = Colors.grey[700]!;
+      typeLabel = communication.communicationType.replaceAll('_', ' → ');
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
@@ -1973,13 +2315,13 @@ class _TeacherDashboardScreenState
             children: [
               CircleAvatar(
                 radius: 12,
-                backgroundColor: Colors.blue[100],
+                backgroundColor: avatarColor,
                 child: Text(
                   communication.sender.firstName.isNotEmpty
                       ? communication.sender.firstName[0].toUpperCase()
                       : 'U',
                   style: TextStyle(
-                    color: Colors.blue[700],
+                    color: textColor,
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                   ),
@@ -1987,12 +2329,25 @@ class _TeacherDashboardScreenState
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(
-                  communication.sender.fullName,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      communication.sender.fullName,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      typeLabel,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: textColor,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               Text(
@@ -2030,10 +2385,13 @@ class _TeacherDashboardScreenState
     String? studentId,
     List<String>? parentIds,
   ) async {
-    // Load communications first
+    // Load communications with specific type filter
     await ref
         .read(RiverpodProvider.communicationProvider.notifier)
-        .getClassCommunications(classId: classId);
+        .getClassCommunications(
+          classId: classId,
+          communicationType: type.value,
+        );
 
     if (mounted) {
       showDialog(
@@ -2073,5 +2431,235 @@ class _TeacherDashboardScreenState
     return date.year == now.year &&
         date.month == now.month &&
         date.day == now.day;
+  }
+
+  Color _getCommunicationTypeColor(String communicationType) {
+    switch (communicationType) {
+      case 'ADMIN_TEACHER':
+        return Colors.blue;
+      case 'ADMIN_PARENT':
+        return Colors.green;
+      case 'TEACHER_ADMIN':
+        return Colors.orange;
+      case 'PARENT_TEACHER':
+        return Colors.purple;
+      case 'TEACHER_PARENT':
+        return Colors.teal;
+      default:
+        return Colors.grey;
+    }
+  }
+}
+
+class _InboxDialog extends ConsumerStatefulWidget {
+  @override
+  ConsumerState<_InboxDialog> createState() => _InboxDialogState();
+}
+
+class _InboxDialogState extends ConsumerState<_InboxDialog> {
+  @override
+  Widget build(BuildContext context) {
+    final communicationProvider = ref.watch(
+      RiverpodProvider.communicationProvider,
+    );
+
+    return AlertDialog(
+      backgroundColor: Colors.white,
+      surfaceTintColor: Colors.transparent,
+      contentPadding: const EdgeInsets.all(20),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Row(
+        children: [
+          Icon(Icons.inbox, color: Colors.blue[700], size: 24),
+          const SizedBox(width: 12),
+          const Text(
+            'Inbox',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1F2937),
+            ),
+          ),
+        ],
+      ),
+      content: SizedBox(
+        width: MediaQuery.of(context).size.width * 0.8,
+        height: MediaQuery.of(context).size.height * 0.6,
+        child:
+            communicationProvider.isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : communicationProvider.hasCommunications
+                ? ListView.builder(
+                  itemCount: communicationProvider.communications.length,
+                  itemBuilder: (context, index) {
+                    final communication =
+                        communicationProvider.communications[index];
+                    return _buildInboxItem(communication);
+                  },
+                )
+                : const Center(
+                  child: Text(
+                    'No messages in inbox',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+      ),
+    );
+  }
+
+  Widget _buildInboxItem(CommunicationModel communication) {
+    final isUnread =
+        !communication.readBy.any(
+          (read) =>
+              read.userId ==
+              ref.read(RiverpodProvider.profileProvider).user?.id,
+        );
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isUnread ? Colors.blue[50] : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isUnread ? Colors.blue[200]! : Colors.grey[200]!,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: InkWell(
+        onTap: () async {
+          // Mark as read
+          if (isUnread) {
+            await ref
+                .read(RiverpodProvider.communicationProvider.notifier)
+                .markAsRead(communicationId: communication.id);
+          }
+
+          // Show thread
+          await ref
+              .read(RiverpodProvider.communicationProvider.notifier)
+              .getCommunicationThread(threadId: communication.threadId);
+
+          Navigator.pop(context);
+          _showThreadDialog(communication);
+        },
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 20,
+              backgroundColor: _getCommunicationTypeColor(
+                communication.communicationType,
+              ),
+              child: Text(
+                communication.sender.firstName.isNotEmpty
+                    ? communication.sender.firstName[0].toUpperCase()
+                    : 'U',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          communication.title.isNotEmpty
+                              ? communication.title
+                              : communication.message,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight:
+                                isUnread ? FontWeight.w600 : FontWeight.w500,
+                            color: isUnread ? Colors.blue[800] : Colors.black87,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (isUnread)
+                        Container(
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: Colors.blue[600],
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'From: ${communication.sender.firstName} ${communication.sender.lastName}',
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    DateFormat(
+                      'MMM dd, yyyy • HH:mm',
+                    ).format(DateTime.parse(communication.createdAt)),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Color _getCommunicationTypeColor(String communicationType) {
+    switch (communicationType) {
+      case 'ADMIN_TEACHER':
+        return Colors.blue;
+      case 'ADMIN_PARENT':
+        return Colors.green;
+      case 'TEACHER_ADMIN':
+        return Colors.orange;
+      case 'PARENT_TEACHER':
+        return Colors.purple;
+      case 'TEACHER_PARENT':
+        return Colors.teal;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  void _showThreadDialog(CommunicationModel communication) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black.withOpacity(0.5),
+      builder:
+          (context) => CommunicationDialog(
+            classId: communication.classId ?? '',
+            communicationType: CommunicationType.values.firstWhere(
+              (type) => type.value == communication.communicationType,
+              orElse: () => CommunicationType.teacherParent,
+            ),
+            threadId:
+                communication
+                    .threadId, // Pass threadId for thread-based communication
+          ),
+    );
   }
 }

@@ -1,19 +1,25 @@
 class CommunicationModel {
   final String id;
+  final String threadId;
   final String title;
   final String message;
   final SenderInfo sender;
   final List<RecipientInfo> recipients;
   final String communicationType;
   final String? classId;
-  final List<ReplyInfo> replies;
+  final List<String> replies;
+  final String? parentMessage;
+  final bool isThreadStarter;
+  final int threadDepth;
   final List<AttachmentInfo> attachments;
   final bool isAnnouncement;
+  final List<ReadByInfo> readBy;
   final String createdAt;
   final String updatedAt;
 
   CommunicationModel({
     required this.id,
+    required this.threadId,
     required this.title,
     required this.message,
     required this.sender,
@@ -21,54 +27,81 @@ class CommunicationModel {
     required this.communicationType,
     this.classId,
     required this.replies,
+    this.parentMessage,
+    required this.isThreadStarter,
+    required this.threadDepth,
     required this.attachments,
     required this.isAnnouncement,
+    required this.readBy,
     required this.createdAt,
     required this.updatedAt,
   });
 
   factory CommunicationModel.fromJson(Map<String, dynamic> json) {
-    return CommunicationModel(
-      id: json['_id'] ?? '',
-      title: json['title'] ?? '',
-      message: json['message'] ?? '',
-      sender: SenderInfo.fromJson(json['sender'] ?? {}),
-      recipients:
-          (json['recipients'] as List<dynamic>?)
-              ?.map((recipient) => RecipientInfo.fromJson(recipient))
-              .toList() ??
-          [],
-      communicationType: json['communicationType'] ?? '',
-      classId: json['classId'],
-      replies:
-          (json['replies'] as List<dynamic>?)
-              ?.map((reply) => ReplyInfo.fromJson(reply))
-              .toList() ??
-          [],
-      attachments:
-          (json['attachments'] as List<dynamic>?)
-              ?.map((attachment) => AttachmentInfo.fromJson(attachment))
-              .toList() ??
-          [],
-      isAnnouncement: json['isAnnouncement'] ?? false,
-      createdAt: json['createdAt'] ?? '',
-      updatedAt: json['updatedAt'] ?? '',
-    );
+    try {
+      return CommunicationModel(
+        id: json['_id'] ?? '',
+        threadId: json['threadId'] ?? '',
+        title: json['title'] ?? '',
+        message: json['message'] ?? '',
+        sender: SenderInfo.fromJson(json['sender'] ?? {}),
+        recipients:
+            (json['recipients'] as List<dynamic>?)
+                ?.map((recipient) => RecipientInfo.fromJson(recipient))
+                .toList() ??
+            [],
+        communicationType: json['communicationType'] ?? '',
+        classId:
+            json['classId'] is String
+                ? json['classId']
+                : json['classId']?['_id'] ?? json['classId']?['id'] ?? null,
+        replies:
+            (json['replies'] as List<dynamic>?)
+                ?.map((reply) => reply.toString())
+                .toList() ??
+            [],
+        parentMessage: json['parentMessage'],
+        isThreadStarter: json['isThreadStarter'] ?? false,
+        threadDepth: json['threadDepth'] ?? 0,
+        attachments:
+            (json['attachments'] as List<dynamic>?)
+                ?.map((attachment) => AttachmentInfo.fromJson(attachment))
+                .toList() ??
+            [],
+        isAnnouncement: json['isAnnouncement'] ?? false,
+        readBy:
+            (json['readBy'] as List<dynamic>?)
+                ?.map((readBy) => ReadByInfo.fromJson(readBy))
+                .toList() ??
+            [],
+        createdAt: json['createdAt'] ?? '',
+        updatedAt: json['updatedAt'] ?? '',
+      );
+    } catch (e) {
+      print('Error parsing CommunicationModel: $e');
+      print('JSON data: $json');
+      rethrow;
+    }
   }
 
   Map<String, dynamic> toJson() {
     return {
       '_id': id,
+      'threadId': threadId,
       'title': title,
       'message': message,
       'sender': sender.toJson(),
       'recipients': recipients.map((recipient) => recipient.toJson()).toList(),
       'communicationType': communicationType,
       'classId': classId,
-      'replies': replies.map((reply) => reply.toJson()).toList(),
+      'replies': replies,
+      'parentMessage': parentMessage,
+      'isThreadStarter': isThreadStarter,
+      'threadDepth': threadDepth,
       'attachments':
           attachments.map((attachment) => attachment.toJson()).toList(),
       'isAnnouncement': isAnnouncement,
+      'readBy': readBy.map((readBy) => readBy.toJson()).toList(),
       'createdAt': createdAt,
       'updatedAt': updatedAt,
     };
@@ -193,6 +226,24 @@ class AttachmentInfo {
   }
 }
 
+class ReadByInfo {
+  final String userId;
+  final String readAt;
+
+  ReadByInfo({required this.userId, required this.readAt});
+
+  factory ReadByInfo.fromJson(Map<String, dynamic> json) {
+    return ReadByInfo(
+      userId: json['userId'] ?? '',
+      readAt: json['readAt'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'userId': userId, 'readAt': readAt};
+  }
+}
+
 class CommunicationListResponse {
   final bool success;
   final CommunicationListData data;
@@ -276,30 +327,33 @@ class PaginationInfo {
 }
 
 class CreateCommunicationRequest {
-  final String? subject;
+  final String? title;
   final String message;
   final List<String> recipients;
   final String communicationType;
   final String? classId;
-  final String senderId;
+  final List<Map<String, String>> attachments;
+  final bool isAnnouncement;
 
   CreateCommunicationRequest({
-    this.subject,
+    this.title,
     required this.message,
     required this.recipients,
     required this.communicationType,
     this.classId,
-    required this.senderId,
+    this.attachments = const [],
+    this.isAnnouncement = false,
   });
 
   Map<String, dynamic> toJson() {
     return {
-      'subject': subject,
+      'title': title,
       'message': message,
       'recipients': recipients,
       'communicationType': communicationType,
       'classId': classId,
-      'senderId': senderId,
+      'attachments': attachments,
+      'isAnnouncement': isAnnouncement,
     };
   }
 }

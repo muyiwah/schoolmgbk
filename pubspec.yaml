@@ -13,6 +13,7 @@ dependencies:
     sdk: flutter
 
   cupertino_icons: ^1.0.8
+  collection: ^1.18.0
   easy_sidemenu: ^0.6.1
   flutter_timetable: ^1.1.6
   intl:

@@ -1,118 +1,71 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:schmgtsystem/constants/appcolor.dart';
+import 'package:schmgtsystem/providers/provider.dart';
+import 'package:schmgtsystem/models/timetable_model.dart';
+import 'package:flutter/foundation.dart';
 
-class AllTables extends StatefulWidget {
+class AllTables extends ConsumerStatefulWidget {
   final Function navigateBack;
   AllTables({super.key, required this.navigateBack});
 
   @override
-  _AllTablesState createState() => _AllTablesState();
+  ConsumerState<AllTables> createState() => _AllTablesState();
 }
 
-class _AllTablesState extends State<AllTables> {
-  String selectedClass = 'Grade 1A';
+class _AllTablesState extends ConsumerState<AllTables> {
+  String? selectedClassId;
+  TimetableModel? selectedTimetable;
+  bool isLoadingTimetable = false;
 
-  final List<String> classes = [
-    'Grade 1A',
-    'Grade 2A',
-    'JSS1',
-    'JSS2',
-    'SS1',
-    'SS2',
-    'SS3',
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadClasses();
+  }
 
-  final Map<String, List<TimetableEntry>> timetableData = {
-    'Monday': [
-      TimetableEntry(
-        'Mathematics',
-        'Mr. Johnson',
-        'Room 101',
-        Colors.blue[100]!,
-      ),
-      TimetableEntry('English', 'Ms. Smith', 'Room 102', Colors.green[100]!),
-      TimetableEntry('Break', '', '', Colors.grey[100]!),
-      TimetableEntry('English', 'Ms. Smith', 'Room 102', Colors.green[100]!),
-      TimetableEntry('English', 'Ms. Smith', 'Room 102', Colors.red[100]!),
+  Future<void> _loadClasses() async {
+    await ref
+        .read(RiverpodProvider.classProvider.notifier)
+        .getAllClasses(context);
+  }
 
-      TimetableEntry('English', 'Ms. Smith', 'Room 102', Colors.blue[100]!),
-    ],
-    'Tuesday': [
-      TimetableEntry('English', 'Ms. Smith', 'Room 102', Colors.amber[100]!),
-      TimetableEntry(
-        'Mathematics',
-        'Mr. Johnson',
-        'Room 101',
-        Colors.blue[100]!,
-      ),
-      TimetableEntry('Science', 'Dr. Brown', 'Lab 1', Colors.purple[100]!),
-      TimetableEntry('English', 'Ms. Smith', 'Room 102', Colors.grey[100]!),
-      TimetableEntry('English', 'Ms. Smith', 'Room 102', Colors.red[100]!),
+  Future<void> _loadTimetableForClass(String classId) async {
+    if (classId.isEmpty) return;
 
-      TimetableEntry(
-        'English',
-        'Ms. Smith',
-        'Room 102',
-        Colors.deepPurple[100]!,
-      ),
-    ],
-    'Wednesday': [
-      TimetableEntry('Science', 'Dr. Brown', 'Lab 1', Colors.purple[100]!),
-      TimetableEntry('Break', '', '', Colors.grey[100]!),
-      TimetableEntry('English', 'Ms. Smith', 'Room 102', Colors.green[100]!),
-      TimetableEntry('English', 'Ms. Smith', 'Room 102', Colors.purple[100]!),
-      TimetableEntry('English', 'Ms. Smith', 'Room 102', Colors.red[100]!),
+    setState(() {
+      isLoadingTimetable = true;
+    });
 
-      TimetableEntry('English', 'Ms. Smith', 'Room 102', Colors.yellow[100]!),
-    ],
-    'Thursday': [
-      TimetableEntry('Art', 'Ms. Davis', 'Art Room', Colors.yellow[100]!),
-      TimetableEntry('History', 'Mr. Taylor', 'Room 103', Colors.orange[100]!),
-      TimetableEntry(
-        'Mathematics',
-        'Mr. Johnson',
-        'Room 101',
-        Colors.blue[100]!,
-      ),
-      TimetableEntry('English', 'Ms. Smith', 'Room 102', Colors.purple[100]!),
-      TimetableEntry(
-        'English',
-        'Ms. Smith',
-        'Room 102',
-        Colors.pinkAccent[100]!,
-      ),
+    try {
+      final success = await ref
+          .read(RiverpodProvider.timetableProvider.notifier)
+          .getClassTimetable(classId: classId);
 
-      TimetableEntry(
-        'English',
-        'Ms. Smith',
-        'Room 102',
-        Colors.deepOrange[100]!,
-      ),
-    ],
-    'Friday': [
-      TimetableEntry('PE', 'Mr. Wilson', 'Gym', Colors.red[100]!),
-      TimetableEntry('Music', 'Ms. Lee', 'Music Room', Colors.blue[100]!),
-      TimetableEntry('Free Period', '', '', Colors.grey[100]!),
-      TimetableEntry('English', 'Ms. Smith', 'Room 102', Colors.green[100]!),
-      TimetableEntry(
-        'English',
-        'Ms. Smith',
-        'Room 102',
-        Colors.deepPurple[100]!,
-      ),
+      if (success) {
+        final timetableProvider = ref.read(RiverpodProvider.timetableProvider);
+        setState(() {
+          selectedTimetable = timetableProvider.currentTimetable;
+        });
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error loading timetable for class $classId: $e');
+      }
+    } finally {
+      setState(() {
+        isLoadingTimetable = false;
+      });
+    }
+  }
 
-      TimetableEntry('English', 'Ms. Smith', 'Room 102', Colors.red[100]!),
-    ],
-  };
-
-  final List<String> timeSlots = [
-    '8:00-9:00',
-    '9:00-10:00',
-    '10:00-11:00',
-    '11:00-12:00',
-    '12:00-1:00',
-    '1:00-2:00',
-  ];
+  void _onClassSelected(String classId) {
+    setState(() {
+      selectedClassId = classId;
+      selectedTimetable = null;
+    });
+    _loadTimetableForClass(classId);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -158,7 +111,7 @@ class _AllTablesState extends State<AllTables> {
     );
   }
 
-  Widget _buildHeader({required  navigate}) {
+  Widget _buildHeader({required navigate}) {
     return Stack(
       children: [
         Container(
@@ -221,7 +174,10 @@ class _AllTablesState extends State<AllTables> {
   }
 
   Widget _buildClassSelector() {
-    return Card(color: Colors.white,
+    final classProvider = ref.watch(RiverpodProvider.classProvider);
+
+    return Card(
+      color: Colors.white,
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
@@ -238,42 +194,49 @@ class _AllTablesState extends State<AllTables> {
               ),
             ),
             const SizedBox(height: 16),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children:
-                  classes.map((className) {
-                    bool isSelected = className == selectedClass;
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          selectedClass = className;
-                        });
-                      },
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color:
-                              isSelected ? Color(0xFF6366F1) : Colors.grey[100],
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          className,
-                          style: TextStyle(
-                            color: isSelected ? Colors.white : Colors.grey[700],
-                            fontWeight:
+            if (classProvider.classData.classes?.isEmpty ?? true)
+              const Center(
+                child: Text(
+                  'No classes available',
+                  style: TextStyle(color: Colors.grey),
+                ),
+              )
+            else
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children:
+                    (classProvider.classData.classes ?? []).map((classItem) {
+                      bool isSelected = classItem.id == selectedClassId;
+                      return GestureDetector(
+                        onTap: () => _onClassSelected(classItem.id ?? ''),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color:
                                 isSelected
-                                    ? FontWeight.w600
-                                    : FontWeight.normal,
+                                    ? Color(0xFF6366F1)
+                                    : Colors.grey[100],
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            classItem.name ?? 'Unnamed Class',
+                            style: TextStyle(
+                              color:
+                                  isSelected ? Colors.white : Colors.grey[700],
+                              fontWeight:
+                                  isSelected
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                            ),
                           ),
                         ),
-                      ),
-                    );
-                  }).toList(),
-            ),
+                      );
+                    }).toList(),
+              ),
           ],
         ),
       ),
@@ -281,6 +244,12 @@ class _AllTablesState extends State<AllTables> {
   }
 
   Widget _buildTimetableCard() {
+    final classProvider = ref.watch(RiverpodProvider.classProvider);
+    final selectedClass =
+        (classProvider.classData.classes ?? [])
+            .where((c) => c.id == selectedClassId)
+            .firstOrNull;
+
     return Card(
       color: Colors.white,
       elevation: 2,
@@ -291,7 +260,7 @@ class _AllTablesState extends State<AllTables> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '$selectedClass - Weekly Timetable',
+              '${selectedClass?.name ?? 'Select a Class'} - Weekly Timetable',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -299,7 +268,24 @@ class _AllTablesState extends State<AllTables> {
               ),
             ),
             const SizedBox(height: 20),
-            _buildTimetableGrid(),
+            if (selectedClassId == null)
+              const Center(
+                child: Text(
+                  'Please select a class to view timetable',
+                  style: TextStyle(color: Colors.grey, fontSize: 16),
+                ),
+              )
+            else if (isLoadingTimetable)
+              const Center(child: CircularProgressIndicator())
+            else if (selectedTimetable == null)
+              const Center(
+                child: Text(
+                  'No timetable data available for this class',
+                  style: TextStyle(color: Colors.grey, fontSize: 16),
+                ),
+              )
+            else
+              _buildTimetableGrid(),
           ],
         ),
       ),
@@ -307,6 +293,18 @@ class _AllTablesState extends State<AllTables> {
   }
 
   Widget _buildTimetableGrid() {
+    if (selectedTimetable == null) return Container();
+
+    // Get all unique time slots from the schedule
+    final allTimeSlots = <String>{};
+    for (final daySchedule in selectedTimetable!.schedule) {
+      for (final period in daySchedule.periods) {
+        allTimeSlots.add('${period.startTime} - ${period.endTime}');
+      }
+    }
+
+    final sortedTimeSlots = allTimeSlots.toList()..sort();
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: DataTable(
@@ -323,10 +321,7 @@ class _AllTablesState extends State<AllTables> {
           ),
         ],
         rows:
-            timeSlots.asMap().entries.map((entry) {
-              int index = entry.key;
-              String timeSlot = entry.value;
-
+            sortedTimeSlots.map((timeSlot) {
               return DataRow(
                 cells: [
                   DataCell(
@@ -342,12 +337,36 @@ class _AllTablesState extends State<AllTables> {
                     'Thursday',
                     'Friday',
                   ].map((day) {
-                    List<TimetableEntry> dayEntries = timetableData[day] ?? [];
-                    TimetableEntry? entry =
-                        index < dayEntries.length ? dayEntries[index] : null;
+                    // Find the day schedule
+                    final daySchedule =
+                        selectedTimetable!.schedule
+                            .where(
+                              (schedule) =>
+                                  schedule.day.toLowerCase() ==
+                                  day.toLowerCase(),
+                            )
+                            .firstOrNull;
+
+                    // Find the period for this time slot
+                    final period =
+                        daySchedule?.periods
+                            .where(
+                              (p) =>
+                                  '${p.startTime} - ${p.endTime}' == timeSlot,
+                            )
+                            .firstOrNull;
 
                     return DataCell(
-                      entry != null ? _buildTimetableCell(entry) : Container(),
+                      period != null
+                          ? _buildTimetableCell(
+                            TimetableEntry(
+                              period.subject,
+                              period.teacher ?? '',
+                              period.room ?? '',
+                              _getSubjectColor(period.subject),
+                            ),
+                          )
+                          : Container(),
                     );
                   }),
                 ],
@@ -355,6 +374,25 @@ class _AllTablesState extends State<AllTables> {
             }).toList(),
       ),
     );
+  }
+
+  Color _getSubjectColor(String subject) {
+    // Generate consistent colors based on subject name
+    final colors = [
+      Colors.blue[100]!,
+      Colors.green[100]!,
+      Colors.purple[100]!,
+      Colors.orange[100]!,
+      Colors.red[100]!,
+      Colors.amber[100]!,
+      Colors.teal[100]!,
+      Colors.pink[100]!,
+      Colors.indigo[100]!,
+      Colors.cyan[100]!,
+    ];
+
+    final hash = subject.hashCode;
+    return colors[hash.abs() % colors.length];
   }
 
   Widget _buildTimetableCell(TimetableEntry entry) {
@@ -589,7 +627,7 @@ class _AllTablesState extends State<AllTables> {
 
     return Card(
       color: Colors.white,
-      
+
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(

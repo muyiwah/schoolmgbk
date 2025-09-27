@@ -11,6 +11,7 @@ import 'package:schmgtsystem/screens/accunts/class_payment_details.dart';
 import 'package:schmgtsystem/screens/accunts/fee_breakdown.dart';
 import 'package:schmgtsystem/screens/accunts/fee_verification.dart';
 import 'package:schmgtsystem/screens/exams/records.dart';
+import 'package:schmgtsystem/screens/Student/create_timetale.dart';
 import 'package:schmgtsystem/widgets/success_snack.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -141,11 +142,11 @@ final menuItemsProvider = Provider<List<MenuItem>>((ref) {
         //   icon: Icons.schedule,
         //   route: '/students/timetable',
         // ),
-        // MenuItem(
-        //   title: 'Create Time Table',
-        //   icon: Icons.create,
-        //   route: '/students/create-timetable',
-        // ),
+        MenuItem(
+          title: 'Create Time Table',
+          icon: Icons.create,
+          route: '/students/create-timetable',
+        ),
         // MenuItem(
         //   title: 'Attendance',
         //   icon: Icons.check_circle,
@@ -999,20 +1000,20 @@ class PersistentHeader extends ConsumerWidget {
           // Header Actions
           Row(
             children: [
-              // Role Switcher (for demo - only show for admin)
-              if (ref.watch(currentUserRoleProvider) == 'admin')
-                _buildRoleSelector(ref),
-              if (ref.watch(currentUserRoleProvider) == 'admin')
-                const SizedBox(width: 16),
-              // Notifications
-              IconButton(
-                icon: const Icon(Icons.notifications_outlined),
-                onPressed: () {
-                  // ScaffoldMessenger.of(context).showSnackBar(
-                  //   const SnackBar(content: Text('Notifications clicked')),
-                  // );
-                },
-              ),
+              // // Role Switcher (for demo - only show for admin)
+              // if (ref.watch(currentUserRoleProvider) == 'admin')
+              //   _buildRoleSelector(ref),
+              // if (ref.watch(currentUserRoleProvider) == 'admin')
+              //   const SizedBox(width: 16),
+              // // Notifications
+              // IconButton(
+              //   icon: const Icon(Icons.notifications_outlined),
+              //   onPressed: () {
+              //     // ScaffoldMessenger.of(context).showSnackBar(
+              //     //   const SnackBar(content: Text('Notifications clicked')),
+              //     // );
+              //   },
+              // ),
               const SizedBox(width: 8),
               // User Avatar
               CircleAvatar(
