@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:schmgtsystem/services/http_service.dart';
 import 'package:schmgtsystem/utils/enums.dart';
 import 'package:schmgtsystem/utils/locator.dart';
@@ -88,12 +89,26 @@ class TimeTableRepo {
     UpdateTimetableRequest request,
   ) async {
     try {
-      return await _httpService.runApi(
+      final requestBody = request.toJson();
+      if (kDebugMode) {
+        print('Update timetable request body: $requestBody');
+      }
+
+      final response = await _httpService.runApi(
         type: ApiRequestType.put,
         url: "/timetables/$timetableId",
-        body: request.toJson(),
+        body: requestBody,
       );
+
+      if (kDebugMode) {
+        print('Update timetable response: ${response.data}');
+      }
+
+      return response;
     } catch (e) {
+      if (kDebugMode) {
+        print('Update timetable error: $e');
+      }
       return HTTPResponseModel.jsonToMap({
         "success": false,
         "message": 'Failed to update timetable: ${e.toString()}',
@@ -133,10 +148,16 @@ class TimeTableRepo {
           .map((e) => '${e.key}=${e.value}')
           .join('&');
 
-      return await _httpService.runApi(
+      final response = await _httpService.runApi(
         type: ApiRequestType.get,
         url: "/timetables/class/$classId?$queryString",
       );
+
+      if (kDebugMode) {
+        print('getClassTimetable response: ${response.data}');
+      }
+
+      return response;
     } catch (e) {
       return HTTPResponseModel.jsonToMap({
         "success": false,

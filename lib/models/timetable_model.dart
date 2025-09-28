@@ -119,13 +119,52 @@ class Period {
 
   Map<String, dynamic> toJson() {
     return {
-      'startTime': startTime,
-      'endTime': endTime,
+      'startTime': _convertTo24HourFormat(startTime),
+      'endTime': _convertTo24HourFormat(endTime),
       'subject': subject,
       'teacher': teacher,
       'room': room,
       'notes': notes,
     };
+  }
+
+  // Convert 12-hour format (e.g., "8:45AM") to 24-hour format (e.g., "08:45")
+  String _convertTo24HourFormat(String time12Hour) {
+    try {
+      // Remove any extra spaces and convert to uppercase
+      final cleanTime = time12Hour.trim().toUpperCase();
+
+      // Check if it's already in 24-hour format (contains :)
+      if (cleanTime.contains(':') &&
+          !cleanTime.contains('AM') &&
+          !cleanTime.contains('PM')) {
+        return cleanTime;
+      }
+
+      // Parse 12-hour format
+      final timeRegex = RegExp(r'(\d{1,2}):(\d{2})(AM|PM)');
+      final match = timeRegex.firstMatch(cleanTime);
+
+      if (match == null) {
+        return time12Hour; // Return original if parsing fails
+      }
+
+      int hour = int.parse(match.group(1)!);
+      final minute = match.group(2)!;
+      final period = match.group(3)!;
+
+      // Convert to 24-hour format
+      if (period == 'AM') {
+        if (hour == 12) hour = 0;
+      } else {
+        // PM
+        if (hour != 12) hour += 12;
+      }
+
+      return '${hour.toString().padLeft(2, '0')}:$minute';
+    } catch (e) {
+      return time12Hour; // Return original if conversion fails
+    }
   }
 }
 
@@ -162,28 +201,34 @@ class CreateTimetableRequest {
 }
 
 class UpdateTimetableRequest {
+  final String? classId;
   final String? academicYear;
   final String? term;
   final String? type;
   final List<DaySchedule>? schedule;
   final bool? isActive;
+  final String? createdBy;
 
   UpdateTimetableRequest({
+    this.classId,
     this.academicYear,
     this.term,
     this.type,
     this.schedule,
     this.isActive,
+    this.createdBy,
   });
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = {};
+    if (classId != null) data['class'] = classId;
     if (academicYear != null) data['academicYear'] = academicYear;
     if (term != null) data['term'] = term;
     if (type != null) data['type'] = type;
     if (schedule != null)
       data['schedule'] = schedule!.map((day) => day.toJson()).toList();
     if (isActive != null) data['isActive'] = isActive;
+    if (createdBy != null) data['createdBy'] = createdBy;
     return data;
   }
 }

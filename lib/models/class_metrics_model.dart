@@ -67,6 +67,7 @@ class Class {
   bool? isAssignedClassTeacher;
   int? totalStudents;
   int? maleStudents;
+  String? curriculumUrl;
   int? femaleStudents;
   GenderDistribution? genderDistribution;
   Attendance? attendance;
@@ -105,6 +106,7 @@ class Class {
     this.isAssignedClassTeacher,
     this.totalStudents,
     this.maleStudents,
+    this.curriculumUrl,
     this.femaleStudents,
     this.genderDistribution,
     this.attendance,
@@ -185,6 +187,7 @@ class Class {
     isAssignedClassTeacher: json["isAssignedClassTeacher"],
     totalStudents: json["totalStudents"],
     maleStudents: json["maleStudents"],
+    curriculumUrl: json["curriculumUrl"],
     femaleStudents: json["femaleStudents"],
     genderDistribution:
         json["genderDistribution"] == null
@@ -246,6 +249,7 @@ class Class {
     "isAssignedClassTeacher": isAssignedClassTeacher,
     "totalStudents": totalStudents,
     "maleStudents": maleStudents,
+    "curriculumUrl": curriculumUrl,
     "femaleStudents": femaleStudents,
     "genderDistribution": genderDistribution?.toJson(),
     "attendance": attendance?.toJson(),

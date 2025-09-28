@@ -22,6 +22,8 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
   // Synchronized scroll controllers
   late ScrollController _headerScrollController;
   late ScrollController _bodyScrollController;
+  late ScrollController _classColumnScrollController;
+  late ScrollController _subjectColumnScrollController;
   int changesPending = 3;
 
   @override
@@ -32,10 +34,16 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
     // Initialize synchronized scroll controllers
     _headerScrollController = ScrollController();
     _bodyScrollController = ScrollController();
+    _classColumnScrollController = ScrollController();
+    _subjectColumnScrollController = ScrollController();
 
     // Synchronize scrolling between header and body
     _headerScrollController.addListener(_syncHeaderScroll);
     _bodyScrollController.addListener(_syncBodyScroll);
+
+    // Synchronize vertical scrolling between class column and subject columns
+    _classColumnScrollController.addListener(_syncClassColumnScroll);
+    _subjectColumnScrollController.addListener(_syncSubjectColumnScroll);
 
     // Load subjects and classes from backend
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -82,6 +90,8 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
     _searchController.dispose();
     _headerScrollController.dispose();
     _bodyScrollController.dispose();
+    _classColumnScrollController.dispose();
+    _subjectColumnScrollController.dispose();
     super.dispose();
   }
 
@@ -96,6 +106,26 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
     if (_headerScrollController.hasClients &&
         _bodyScrollController.hasClients) {
       _headerScrollController.jumpTo(_bodyScrollController.offset);
+    }
+  }
+
+  void _syncClassColumnScroll() {
+    // Sync subject columns with class column
+    if (_classColumnScrollController.hasClients &&
+        _subjectColumnScrollController.hasClients) {
+      _subjectColumnScrollController.jumpTo(
+        _classColumnScrollController.offset,
+      );
+    }
+  }
+
+  void _syncSubjectColumnScroll() {
+    // Sync class column with subject columns
+    if (_subjectColumnScrollController.hasClients &&
+        _classColumnScrollController.hasClients) {
+      _classColumnScrollController.jumpTo(
+        _subjectColumnScrollController.offset,
+      );
     }
   }
 
@@ -818,23 +848,37 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
                   ),
                   child: _buildClassColumnHeader(),
                 ),
-                // Fixed Body Rows
-                ...classSubjects.entries.map((entry) {
-                  final className = entry.key;
-                  final gradeText =
-                      className.contains('1') ? 'Grade 1' : 'Grade 2';
+                // Fixed Body Rows - Make scrollable
+                Expanded(
+                  child: SingleChildScrollView(
+                    controller: _classColumnScrollController,
+                    child: Column(
+                      children:
+                          classSubjects.entries.map((entry) {
+                            final className = entry.key;
+                            final gradeText =
+                                className.contains('1') ? 'Grade 1' : 'Grade 2';
 
-                  return Container(
-                    height: 70,
-                    decoration: const BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(color: Color(0xFFE2E8F0), width: 1),
-                        right: BorderSide(color: Color(0xFFE2E8F0), width: 1),
-                      ),
+                            return Container(
+                              height: 70,
+                              decoration: const BoxDecoration(
+                                border: Border(
+                                  bottom: BorderSide(
+                                    color: Color(0xFFE2E8F0),
+                                    width: 1,
+                                  ),
+                                  right: BorderSide(
+                                    color: Color(0xFFE2E8F0),
+                                    width: 1,
+                                  ),
+                                ),
+                              ),
+                              child: _buildClassCell(className, gradeText),
+                            );
+                          }).toList(),
                     ),
-                    child: _buildClassCell(className, gradeText),
-                  );
-                }),
+                  ),
+                ),
               ],
             ),
           ),
@@ -858,24 +902,36 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
                       ),
                       child: _buildSubjectHeaders(subjects),
                     ),
-                    // Subject Body Rows
-                    ...classSubjects.entries.map((entry) {
-                      final className = entry.key;
-                      final classData = entry.value;
+                    // Subject Body Rows - Make scrollable
+                    Expanded(
+                      child: SingleChildScrollView(
+                        controller: _subjectColumnScrollController,
+                        child: Column(
+                          children:
+                              classSubjects.entries.map((entry) {
+                                final className = entry.key;
+                                final classData = entry.value;
 
-                      return Container(
-                        height: 70,
-                        decoration: const BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(
-                              color: Color(0xFFE2E8F0),
-                              width: 1,
-                            ),
-                          ),
+                                return Container(
+                                  height: 70,
+                                  decoration: const BoxDecoration(
+                                    border: Border(
+                                      bottom: BorderSide(
+                                        color: Color(0xFFE2E8F0),
+                                        width: 1,
+                                      ),
+                                    ),
+                                  ),
+                                  child: _buildSubjectRow(
+                                    classData,
+                                    subjects,
+                                    className,
+                                  ),
+                                );
+                              }).toList(),
                         ),
-                        child: _buildSubjectRow(classData, subjects, className),
-                      );
-                    }),
+                      ),
+                    ),
                   ],
                 ),
               ),

@@ -10,6 +10,8 @@ import 'package:schmgtsystem/models/communication_model.dart';
 import 'package:schmgtsystem/widgets/success_snack.dart';
 import 'package:schmgtsystem/widgets/communication_dialog.dart';
 import 'package:schmgtsystem/RoleHome/teacher.dart';
+import 'package:schmgtsystem/screens/teacher/teacher_timetable_screen.dart';
+import 'package:schmgtsystem/screens/Student/create_timetale.dart';
 
 class TeacherDashboardScreen extends ConsumerStatefulWidget {
   const TeacherDashboardScreen({super.key});
@@ -914,6 +916,27 @@ class _TeacherDashboardScreenState
                 color: Colors.purple,
                 onTap: () {
                   showSnackbar(context, 'Navigate to messaging');
+                },
+              ),
+              _buildActionCard(
+                icon: Icons.schedule,
+                title: 'View Timetable',
+                color: Colors.blue,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const TeacherTimetableScreen(),
+                    ),
+                  );
+                },
+              ),
+              _buildActionCard(
+                icon: Icons.add_circle_outline,
+                title: 'Create Timetable',
+                color: Colors.indigo,
+                onTap: () {
+                  _navigateToCreateTimetable();
                 },
               ),
             ],
@@ -2422,6 +2445,21 @@ class _TeacherDashboardScreenState
                 // Second navigation callback for future use
               },
             ),
+      ),
+    );
+  }
+
+  void _navigateToCreateTimetable() {
+    if (!_isClassTeacher || _selectedClassId == null) {
+      showSnackbar(context, 'You must be a class teacher to create timetables');
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (context) => CreateTimetale(preselectedClassId: _selectedClassId),
       ),
     );
   }

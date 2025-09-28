@@ -269,6 +269,21 @@ class TimetableProvider extends ChangeNotifier {
         final responseData = response.data as Map<String, dynamic>;
         final data = responseData['data'] as Map<String, dynamic>;
 
+        if (kDebugMode) {
+          print('=== getClassTimetable Response Debug ===');
+          print('Full response data: $data');
+          print('Available keys: ${data.keys.toList()}');
+          print('_id field: ${data['_id']}');
+          print('id field: ${data['id']}');
+          print('class field: ${data['class']}');
+          print('academicYear: ${data['academicYear']}');
+          print('term: ${data['term']}');
+          print('type: ${data['type']}');
+          print('schedule length: ${(data['schedule'] as List).length}');
+          print('lastUpdated: ${data['lastUpdated']}');
+          print('=========================================');
+        }
+
         // Parse the formatted schedule back to TimetableModel
         final formattedSchedule = data['schedule'] as List<dynamic>;
         final schedule =
@@ -290,15 +305,53 @@ class TimetableProvider extends ChangeNotifier {
               return DaySchedule(day: day['day'], periods: periods);
             }).toList();
 
+        // Check if we have a real timetable ID
+        final realId = data['_id'] ?? data['id'];
+        if (kDebugMode) {
+          print('=== ID Detection Debug ===');
+          print('Raw _id: ${data['_id']}');
+          print('Raw id: ${data['id']}');
+          print('Extracted realId: $realId');
+          print('realId type: ${realId.runtimeType}');
+          print('realId toString: ${realId.toString()}');
+          print('Starts with temp_: ${realId.toString().startsWith('temp_')}');
+        }
+
+        if (realId == null || realId.toString().startsWith('temp_')) {
+          if (kDebugMode) {
+            print(
+              'No real timetable ID found, using temporary ID: temp_${classId}_${type}',
+            );
+          }
+        } else {
+          if (kDebugMode) {
+            print('✅ Found real timetable ID: $realId');
+          }
+        }
+
+        final finalId = realId?.toString() ?? 'temp_${classId}_${type}';
+
+        if (kDebugMode) {
+          print('=== TimetableModel Creation Debug ===');
+          print('Final ID to use: $finalId');
+          print('Class ID: $classId');
+          print('Academic Year: ${data['academicYear']}');
+          print('Term: ${data['term']}');
+          print('Type: ${data['type']}');
+          print('Schedule days: ${schedule.length}');
+          print('Created By: ${data['createdBy']}');
+          print('=====================================');
+        }
+
         _currentTimetable = TimetableModel(
-          id: 'temp_${classId}_${type}',
+          id: finalId,
           classId: classId,
           academicYear: data['academicYear'],
           term: data['term'],
           type: data['type'],
           schedule: schedule,
           isActive: true,
-          createdBy: '',
+          createdBy: data['createdBy']?.toString() ?? '',
           createdAt: DateTime.tryParse(data['lastUpdated']) ?? DateTime.now(),
           updatedAt: DateTime.tryParse(data['lastUpdated']) ?? DateTime.now(),
         );

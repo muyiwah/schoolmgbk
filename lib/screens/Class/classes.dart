@@ -10,6 +10,7 @@ import 'package:schmgtsystem/widgets/add_teacher.dart';
 import 'package:schmgtsystem/widgets/remove_teacher_dialog.dart';
 import 'package:schmgtsystem/widgets/success_snack.dart';
 import 'package:schmgtsystem/widgets/prompt.dart';
+import 'package:schmgtsystem/widgets/edit_class_dialog.dart';
 // import '../../models/class_metrics_model.dart'
 //     show Class, Teacher, Student, Attendance; // Import only what you need
 
@@ -1014,6 +1015,33 @@ class _SchoolClassesState extends ConsumerState<SchoolClasses> {
               child: const Text(
                 'View Class Details',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 8),
+
+          // Edit Class button
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  barrierDismissible: true,
+                  barrierColor: Colors.black.withOpacity(0.5),
+                  builder: (context) => EditClassDialog(classData: classData),
+                );
+              },
+              icon: const Icon(Icons.edit, size: 18),
+              label: const Text('Edit Class'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF3B82F6),
+                side: const BorderSide(color: Color(0xFF3B82F6)),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
             ),
           ),

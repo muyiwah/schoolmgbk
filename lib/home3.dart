@@ -20,6 +20,7 @@ import 'package:schmgtsystem/screens/Class/all_table.dart';
 import 'package:schmgtsystem/screens/Class/classes.dart';
 import 'package:schmgtsystem/screens/Class/single_class.dart';
 import 'package:schmgtsystem/screens/Class/class_level_management.dart';
+import 'package:schmgtsystem/screens/Class/curriculum_management_screen.dart';
 
 // Screen imports - Student
 import 'package:schmgtsystem/screens/Student/add_student.dart';
@@ -177,6 +178,11 @@ final menuItemsProvider = Provider<List<MenuItem>>((ref) {
           route: '/classes/level-management',
         ),
         MenuItem(
+          title: 'Curriculum Management',
+          icon: Icons.table_chart,
+          route: '/classes/curriculum-management',
+        ),
+        MenuItem(
           title: 'Assign Students',
           icon: Icons.assignment,
           route: '/classes/assign',
@@ -316,7 +322,7 @@ final menuItemsProvider = Provider<List<MenuItem>>((ref) {
       ],
     ),
     MenuItem(
-      title: 'Notifications',
+      title: 'Communications',
       icon: Icons.notifications,
       route: '/notifications',
       allowedRoles: ['admin'],
@@ -549,6 +555,10 @@ final router = GoRouter(
             GoRoute(
               path: 'level-management',
               builder: (context, state) => const ClassLevelManagementScreen(),
+            ),
+            GoRoute(
+              path: 'curriculum-management',
+              builder: (context, state) => const CurriculumManagementScreen(),
             ),
           ],
         ),

@@ -76,8 +76,28 @@ class ClassRepo {
       type:
           ApiRequestType
               .put, // or ApiRequestType.patch if that's what your backend expects
-      url: "/classes/update/$classId",
+      url: "/classes/$classId",
       body: body,
+    );
+  }
+
+  // ✅ Add curriculum to class
+  Future<HTTPResponseModel> addCurriculum(
+    String classId,
+    Map<String, dynamic> body,
+  ) async {
+    return await _httpService.runApi(
+      type: ApiRequestType.put,
+      url: "/classes/$classId/curriculum",
+      body: body,
+    );
+  }
+
+  // ✅ Delete curriculum from class
+  Future<HTTPResponseModel> deleteCurriculum(String classId) async {
+    return await _httpService.runApi(
+      type: ApiRequestType.delete,
+      url: "/classes/$classId/curriculum",
     );
   }
 

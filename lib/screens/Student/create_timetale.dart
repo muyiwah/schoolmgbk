@@ -12,7 +12,9 @@ import 'package:schmgtsystem/utils/locator.dart';
 import 'package:collection/collection.dart';
 
 class CreateTimetale extends ConsumerStatefulWidget {
-  const CreateTimetale({super.key});
+  final String? preselectedClassId;
+
+  const CreateTimetale({super.key, this.preselectedClassId});
 
   @override
   ConsumerState<CreateTimetale> createState() => _CreateTimetaleState();
@@ -163,6 +165,41 @@ class _CreateTimetaleState extends ConsumerState<CreateTimetale> {
     _loadClasses();
     _loadSubjects();
     _timeSlots = _generateTimeSlots();
+
+    // Set preselected class if provided
+    if (widget.preselectedClassId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _setPreselectedClass();
+      });
+    }
+  }
+
+  void _setPreselectedClass() async {
+    if (widget.preselectedClassId == null) return;
+
+    final classProvider = ref.read(RiverpodProvider.classProvider);
+    final classes = classProvider.classData.classes ?? [];
+
+    // Find the class that matches the preselected ID
+    final selectedClass = classes.firstWhereOrNull(
+      (c) => c.id == widget.preselectedClassId,
+    );
+
+    if (selectedClass != null) {
+      setState(() {
+        _selectedClass = selectedClass.level;
+      });
+
+      if (kDebugMode) {
+        print(
+          'Preselected class set: ${selectedClass.level} (ID: ${selectedClass.id})',
+        );
+      }
+    } else {
+      if (kDebugMode) {
+        print('Could not find class with ID: ${widget.preselectedClassId}');
+      }
+    }
   }
 
   void _loadClasses() async {
@@ -327,8 +364,8 @@ class _CreateTimetaleState extends ConsumerState<CreateTimetale> {
     final classes = classProvider.classData?.classes ?? [];
     final classNames =
         classes
-            .map<String>((c) => c.name?.toString() ?? '')
-            .where((String name) => name.isNotEmpty)
+            .map<String>((c) => c.level?.toString() ?? '')
+            .where((String level) => level.isNotEmpty)
             .toList();
 
     return Column(
@@ -1833,7 +1870,7 @@ class _CreateTimetaleState extends ConsumerState<CreateTimetale> {
         final sortedPeriods = List<Period>.from(periods);
         sortedPeriods.sort((a, b) => a.endTime.compareTo(b.endTime));
         final latestPeriod = sortedPeriods.last;
-        startTime = latestPeriod.endTime ?? '8:00AM';
+        startTime = latestPeriod.endTime;
         endTime = _getEndTime(startTime);
         if (kDebugMode) {
           print(
@@ -2037,7 +2074,7 @@ class _CreateTimetaleState extends ConsumerState<CreateTimetale> {
     final classProvider = ref.read(RiverpodProvider.classProvider);
     final classes = classProvider.classData.classes ?? [];
     final selectedClass = classes.cast<dynamic>().firstWhere(
-      (c) => c.name == _selectedClass,
+      (c) => c.level == _selectedClass,
       orElse: () => null,
     );
 

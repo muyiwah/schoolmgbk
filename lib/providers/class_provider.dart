@@ -505,4 +505,122 @@ class ClassProvider extends ChangeNotifier {
       return false;
     }
   }
+
+  // Update class
+  Future<bool> updateClass(
+    BuildContext context,
+    String classId,
+    Map<String, dynamic> updateData,
+  ) async {
+    try {
+      EasyLoading.show(status: 'Updating class...');
+
+      final response = await _classRepo.updateClass(classId, updateData);
+
+      if (HTTPResponseModel.isApiCallSuccess(response)) {
+        EasyLoading.dismiss();
+        CustomToastNotification.show(
+          'Class updated successfully',
+          type: ToastType.success,
+        );
+
+        // Refresh the class data
+        await getAllClassesWithMetric(context);
+
+        return true;
+      } else {
+        EasyLoading.dismiss();
+        CustomToastNotification.show(
+          response.message ?? 'Failed to update class',
+          type: ToastType.error,
+        );
+        return false;
+      }
+    } catch (e) {
+      EasyLoading.dismiss();
+      CustomToastNotification.show(
+        'Error updating class: $e',
+        type: ToastType.error,
+      );
+      return false;
+    }
+  }
+
+  // Add curriculum to class
+  Future<bool> addCurriculum(
+    BuildContext context,
+    String classId,
+    String curriculumUrl,
+  ) async {
+    try {
+      EasyLoading.show(status: 'Adding curriculum...');
+
+      final response = await _classRepo.addCurriculum(classId, {
+        'curriculumUrl': curriculumUrl,
+      });
+
+      if (HTTPResponseModel.isApiCallSuccess(response)) {
+        EasyLoading.dismiss();
+        CustomToastNotification.show(
+          'Curriculum added successfully',
+          type: ToastType.success,
+        );
+
+        // Refresh the class data
+        await getAllClassesWithMetric(context);
+
+        return true;
+      } else {
+        EasyLoading.dismiss();
+        CustomToastNotification.show(
+          response.message ?? 'Failed to add curriculum',
+          type: ToastType.error,
+        );
+        return false;
+      }
+    } catch (e) {
+      EasyLoading.dismiss();
+      CustomToastNotification.show(
+        'Error adding curriculum: $e',
+        type: ToastType.error,
+      );
+      return false;
+    }
+  }
+
+  // Delete curriculum from class
+  Future<bool> deleteCurriculum(BuildContext context, String classId) async {
+    try {
+      EasyLoading.show(status: 'Deleting curriculum...');
+
+      final response = await _classRepo.deleteCurriculum(classId);
+
+      if (HTTPResponseModel.isApiCallSuccess(response)) {
+        EasyLoading.dismiss();
+        CustomToastNotification.show(
+          'Curriculum deleted successfully',
+          type: ToastType.success,
+        );
+
+        // Refresh the class data
+        await getAllClassesWithMetric(context);
+
+        return true;
+      } else {
+        EasyLoading.dismiss();
+        CustomToastNotification.show(
+          response.message ?? 'Failed to delete curriculum',
+          type: ToastType.error,
+        );
+        return false;
+      }
+    } catch (e) {
+      EasyLoading.dismiss();
+      CustomToastNotification.show(
+        'Error deleting curriculum: $e',
+        type: ToastType.error,
+      );
+      return false;
+    }
+  }
 }

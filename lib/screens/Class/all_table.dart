@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:schmgtsystem/constants/appcolor.dart';
 import 'package:schmgtsystem/providers/provider.dart';
 import 'package:schmgtsystem/models/timetable_model.dart';
+import 'package:schmgtsystem/screens/Class/edit_timetable_screen.dart';
 import 'package:flutter/foundation.dart';
 
 class AllTables extends ConsumerStatefulWidget {
@@ -94,8 +95,8 @@ class _AllTablesState extends ConsumerState<AllTables> {
                           _buildClassSelector(),
                           const SizedBox(height: 20),
                           _buildTimetableCard(),
-                          const SizedBox(height: 20),
-                          _buildActionsSection(),
+                          // const SizedBox(height: 20),
+                          // _buildActionsSection(),
                         ],
                       ),
                     ),
@@ -144,7 +145,7 @@ class _AllTablesState extends ConsumerState<AllTables> {
               ),
               const SizedBox(height: 20),
               ElevatedButton.icon(
-                onPressed: () {},
+                onPressed: () => _navigateToEditTimetable(),
                 icon: Icon(Icons.edit, size: 16),
                 label: Text('Edit Timetable'),
                 style: ElevatedButton.styleFrom(
@@ -223,7 +224,7 @@ class _AllTablesState extends ConsumerState<AllTables> {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            classItem.name ?? 'Unnamed Class',
+                            classItem.level ?? 'Unnamed Class',
                             style: TextStyle(
                               color:
                                   isSelected ? Colors.white : Colors.grey[700],
@@ -303,7 +304,19 @@ class _AllTablesState extends ConsumerState<AllTables> {
       }
     }
 
-    final sortedTimeSlots = allTimeSlots.toList()..sort();
+    // Sort time slots chronologically by start time
+    final sortedTimeSlots = allTimeSlots.toList();
+    sortedTimeSlots.sort((a, b) {
+      // Extract start time from "8:00AM - 8:45AM" format
+      final startTimeA = a.split(' - ')[0];
+      final startTimeB = b.split(' - ')[0];
+
+      // Convert to DateTime for proper comparison
+      final timeA = _parseTime12Hour(startTimeA);
+      final timeB = _parseTime12Hour(startTimeB);
+
+      return timeA.compareTo(timeB);
+    });
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -374,6 +387,40 @@ class _AllTablesState extends ConsumerState<AllTables> {
             }).toList(),
       ),
     );
+  }
+
+  DateTime _parseTime12Hour(String timeString) {
+    try {
+      // Handle formats like "8:00AM", "10:15AM", "2:30PM"
+      final timeRegex = RegExp(
+        r'(\d{1,2}):(\d{2})(AM|PM)',
+        caseSensitive: false,
+      );
+      final match = timeRegex.firstMatch(timeString);
+
+      if (match == null) {
+        throw FormatException('Invalid time format: $timeString');
+      }
+
+      int hour = int.parse(match.group(1)!);
+      final minute = int.parse(match.group(2)!);
+      final period = match.group(3)!.toUpperCase();
+
+      // Convert to 24-hour format
+      if (period == 'PM' && hour != 12) {
+        hour += 12;
+      } else if (period == 'AM' && hour == 12) {
+        hour = 0;
+      }
+
+      return DateTime(2024, 1, 1, hour, minute);
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error parsing time "$timeString": $e');
+      }
+      // Return a default time if parsing fails
+      return DateTime(2024, 1, 1, 8, 0);
+    }
   }
 
   Color _getSubjectColor(String subject) {
@@ -690,6 +737,51 @@ class _AllTablesState extends ConsumerState<AllTables> {
         ),
       ),
     );
+  }
+
+  void _navigateToEditTimetable() {
+    if (selectedClassId == null || selectedTimetable == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a class with an existing timetable'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final classProvider = ref.read(RiverpodProvider.classProvider);
+    final selectedClass =
+        (classProvider.classData.classes ?? [])
+            .where((c) => c.id == selectedClassId)
+            .firstOrNull;
+
+    if (selectedClass == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Selected class not found'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (context) => EditTimetableScreen(
+              classId: selectedClassId!,
+              className: selectedClass.level ?? 'Unknown Class',
+              existingTimetable: selectedTimetable,
+            ),
+      ),
+    ).then((result) {
+      // Refresh timetable data if edit was successful
+      if (result == true) {
+        _loadTimetableForClass(selectedClassId!);
+      }
+    });
   }
 }
 
