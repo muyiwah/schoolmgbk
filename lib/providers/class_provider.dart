@@ -669,7 +669,9 @@ class ClassProvider extends ChangeNotifier {
     try {
       EasyLoading.show(status: 'Loading all terms statistics...');
 
-      HTTPResponseModel res = await _classRepo.getAllTermsClassStatistics();
+      HTTPResponseModel res = await _classRepo.getAllTermsClassStatistics(
+        includeAllClasses: true,
+      );
       EasyLoading.dismiss();
 
       if (HTTPResponseModel.isApiCallSuccess(res)) {

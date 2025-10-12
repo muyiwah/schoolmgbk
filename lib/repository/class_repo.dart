@@ -259,10 +259,19 @@ class ClassRepo {
   }
 
   // ✅ Get all classes statistics grouped by terms
-  Future<HTTPResponseModel> getAllTermsClassStatistics() async {
+  Future<HTTPResponseModel> getAllTermsClassStatistics({
+    bool includeAllClasses = true,
+  }) async {
+    Map<String, dynamic> queryParams = {};
+
+    if (includeAllClasses) {
+      queryParams['includeAllClasses'] = 'true';
+    }
+
     return await _httpService.runApi(
       type: ApiRequestType.get,
       url: "/classes/statistics/all-terms",
+      params: queryParams,
     );
   }
 

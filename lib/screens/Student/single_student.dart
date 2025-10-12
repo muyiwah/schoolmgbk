@@ -1284,13 +1284,13 @@ class _SingleStudentState extends ConsumerState<SingleStudent> {
                 context,
                 student,
               ),
-              const SizedBox(height: 8),
-              _buildActionButton(
-                'Contact Parent',
-                Icons.phone_outlined,
-                context,
-                student,
-              ),
+              // const SizedBox(height: 8),
+              // _buildActionButton(
+              //   'Contact Parent',
+              //   Icons.phone_outlined,
+              //   context,
+              //   student,
+              // ),
               const SizedBox(height: 8),
               _buildActionButton(
                 'Change Password',

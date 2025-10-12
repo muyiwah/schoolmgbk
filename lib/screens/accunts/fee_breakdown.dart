@@ -27,6 +27,7 @@ class _PaymentBreakdownScreenState
     _academicYearService = GlobalAcademicYearService();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadAllTermsStatistics();
+      _loadAllClasses();
     });
   }
 
@@ -52,6 +53,24 @@ class _PaymentBreakdownScreenState
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error refreshing data: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _loadAllClasses() async {
+    try {
+      await ref
+          .read(RiverpodProvider.classProvider.notifier)
+          .getAllClassesWithMetric(context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading classes: $e'),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 3),
           ),
@@ -936,8 +955,8 @@ class _PaymentBreakdownScreenState
   Widget build(BuildContext context) {
     final classState = ref.watch(RiverpodProvider.classProvider);
     final allTermsData = classState.allTermsClassStatisticsData;
+    final allClasses = classState.classData.classes ?? [];
     final groupedByTerm = allTermsData.groupedByTerm;
-    final overallStats = allTermsData.overallStats;
     final filters = allTermsData.filters;
     final availableTerms = allTermsData.availableTerms;
 
@@ -957,10 +976,16 @@ class _PaymentBreakdownScreenState
               children: [
                 Expanded(
                   flex: 3,
-                  child: _buildTermGroupedClassesSection(groupedByTerm),
+                  child: Column(
+                    children: [
+                      _buildAllClassesSection(allClasses),
+                      const SizedBox(height: 24),
+                      _buildTermGroupedClassesSection(groupedByTerm),
+                    ],
+                  ),
                 ),
                 const SizedBox(width: 24),
-                Expanded(flex: 1, child: _buildSummarySection(overallStats)),
+                // Expanded(flex: 1, child: _buildSummarySection(overallStats)),
               ],
             ),
           ],
@@ -997,35 +1022,6 @@ class _PaymentBreakdownScreenState
         ),
         Row(
           children: [
-            ElevatedButton.icon(
-              onPressed: () => _showBulkFeeStructureDialog(),
-              icon: const Icon(Icons.add_circle_outline, size: 16),
-              label: const Text('Bulk Add Fee Structures'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.secondary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
-                ),
-                elevation: 0,
-              ),
-            ),
-            const SizedBox(width: 12),
-            ElevatedButton.icon(
-              onPressed: () {},
-              icon: const Icon(Icons.download, size: 16),
-              label: const Text('Export Report'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF3B82F6),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
-                ),
-                elevation: 0,
-              ),
-            ),
             const SizedBox(width: 12),
             OutlinedButton.icon(
               onPressed:
@@ -1141,6 +1137,319 @@ class _PaymentBreakdownScreenState
         ),
       ],
     );
+  }
+
+  Widget _buildAllClassesSection(List<dynamic> allClasses) {
+    if (allClasses.isEmpty) {
+      return Container(
+        height: 200,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.school_outlined, size: 48, color: Colors.grey[400]),
+              SizedBox(height: 16),
+              Text(
+                'No classes available',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Add classes to see fee structures',
+                style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              'All Classes',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            const Spacer(),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.blue[200]!),
+              ),
+              child: Text(
+                '${allClasses.length} classes',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.blue[700],
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children:
+                allClasses.map((classData) {
+                  final index = allClasses.indexOf(classData);
+                  return Container(
+                    width: 280,
+                    margin: EdgeInsets.only(
+                      right: index < allClasses.length - 1 ? 16 : 0,
+                    ),
+                    child: _buildAllClassCard(classData),
+                  );
+                }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showAddFeeStructureForAllClasses(dynamic classData) {
+    // Convert dynamic classData to new_model.ClassStatistics
+    final classStatistics = _convertToClassStatistics(classData);
+
+    showDialog(
+      context: context,
+      builder:
+          (context) => _AddFeeStructureDialog(
+            classData: classStatistics,
+            onFeeStructureAdded: () {
+              _loadAllClasses(); // Refresh the all classes data
+              _loadAllTermsStatistics(); // Also refresh statistics
+            },
+          ),
+    );
+  }
+
+  new_model.ClassStatistics _convertToClassStatistics(dynamic classData) {
+    return new_model.ClassStatistics(
+      id: classData.id,
+      name: classData.name,
+      level: classData.level,
+      classLevel: null, // Set to null since Class doesn't have classLevel
+      section: classData.section,
+      academicYear: classData.academicYear,
+      term: 'First', // Default term since Class doesn't have currentTerm
+      studentCount: classData.totalStudents,
+      capacity: classData.capacity,
+      capacityUtilization:
+          classData.totalStudents != null && classData.capacity != null
+              ? (classData.totalStudents! / classData.capacity!) * 100
+              : 0.0,
+      feeStructureDetails: classData.feeStructureDetails,
+      expectedRevenue: classData.totalFees,
+      totalPaidAmount: 0, // Default value
+      paidStudentsCount: 0, // Default value
+      averageFeePerStudent: classData.totalFees,
+      paymentCollectionRate: 0.0, // Default value
+    );
+  }
+
+  Widget _buildAllClassCard(dynamic classData) {
+    final className = classData.name ?? 'Unknown Class';
+    final level = classData.level ?? 'Unknown Level';
+    final section = classData.section ?? '';
+    final academicYear = classData.academicYear ?? 'Unknown Year';
+    final hasFeeStructure = classData.hasFeeStructure == true;
+    final hasAllTermsFeeStructure = _hasAllTermsFeeStructure(classData);
+    final totalStudents = classData.totalStudents ?? 0;
+    final capacity = classData.capacity ?? 0;
+    final classTeacher = classData.classTeacher?.name ?? 'No Teacher Assigned';
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+        border: Border.all(
+          color:
+              hasAllTermsFeeStructure
+                  ? Colors.green[200]!
+                  : (hasFeeStructure ? Colors.blue[200]! : Colors.orange[200]!),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color:
+                      hasAllTermsFeeStructure
+                          ? Colors.green[100]
+                          : (hasFeeStructure
+                              ? Colors.blue[100]
+                              : Colors.orange[100]),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.school,
+                  color:
+                      hasAllTermsFeeStructure
+                          ? Colors.green[700]
+                          : (hasFeeStructure
+                              ? Colors.blue[700]
+                              : Colors.orange[700]),
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      className,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    Text(
+                      '$level $section',
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Academic Year
+          _buildInfoRow('Academic Year', academicYear),
+          const SizedBox(height: 8),
+
+          // Class Teacher
+          _buildInfoRow('Class Teacher', classTeacher),
+          const SizedBox(height: 8),
+
+          // Enrollment
+          _buildInfoRow('Enrollment', '$totalStudents / $capacity'),
+          const SizedBox(height: 8),
+
+          // Fee Structure Status
+          Row(
+            children: [
+              Icon(
+                hasAllTermsFeeStructure
+                    ? Icons.check_circle
+                    : (hasFeeStructure ? Icons.info : Icons.warning),
+                color:
+                    hasAllTermsFeeStructure
+                        ? Colors.green
+                        : (hasFeeStructure ? Colors.blue : Colors.orange),
+                size: 16,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                hasAllTermsFeeStructure
+                    ? 'Terms Set'
+                    : (hasFeeStructure ? 'Some Terms Set' : 'No Fee Structure'),
+                //    hasAllTermsFeeStructure
+                // ? 'All Terms Set'
+                // : (hasFeeStructure ? 'Some Terms Set' : 'No Fee Structure'),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color:
+                      hasAllTermsFeeStructure
+                          ? Colors.green
+                          : (hasFeeStructure ? Colors.blue : Colors.orange),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Add Fee Structure Button (only show if not all terms have fee structures)
+          if (!hasAllTermsFeeStructure)
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => _showAddFeeStructureForAllClasses(classData),
+                icon: const Icon(Icons.add, size: 16),
+                label: Text(
+                  hasFeeStructure ? 'Add Missing Terms' : 'Add Fee Structure',
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue[600],
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  bool _hasAllTermsFeeStructure(dynamic classData) {
+    // Check if the class has fee structure details for all three terms
+    final feeStructureDetails = classData.feeStructureDetails;
+    final hasFeeStructure = classData.hasFeeStructure == true;
+
+    // If the basic hasFeeStructure is false, then no terms are set
+    if (!hasFeeStructure) {
+      return false;
+    }
+
+    // If feeStructureDetails is null but hasFeeStructure is true,
+    // assume all terms are set (this is the case for your data structure)
+    if (feeStructureDetails == null) {
+      return true;
+    }
+
+    // Check if fee structure details contain all three terms
+    // This assumes the feeStructureDetails contains term information
+    // You may need to adjust this based on your actual data structure
+    final terms = ['First', 'Second', 'Third'];
+
+    // If feeStructureDetails is a Map, check for all terms
+    if (feeStructureDetails is Map<String, dynamic>) {
+      return terms.every((term) => feeStructureDetails.containsKey(term));
+    }
+
+    // If feeStructureDetails is a List, check if it has entries for all terms
+    if (feeStructureDetails is List) {
+      return feeStructureDetails.length >= 3;
+    }
+
+    // If it's a single object, assume it's only for one term
+    return false;
   }
 
   Widget _buildTermGroupedClassesSection(
