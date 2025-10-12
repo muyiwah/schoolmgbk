@@ -1,53 +1,55 @@
-import 'package:schmgtsystem/services/http_service.dart';
-import 'package:schmgtsystem/utils/enums.dart';
-import 'package:schmgtsystem/utils/locator.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:schmgtsystem/utils/constants.dart';
 import 'package:schmgtsystem/utils/response_model.dart';
 
-class PaymentRepo {
-  final _httpService = locator<HttpService>();
+class PaymentRepository {
+  Future<HTTPResponseModel> getFeesPaidReport({
+    int? page,
+    String? paymentStatus,
+    String? academicYear,
+    String? sortBy,
+    String? sortOrder,
+    String? classId,
+    String? search,
+  }) async {
+    try {
+      final queryParams = <String, String>{};
+      if (page != null) queryParams['page'] = page.toString();
+      if (paymentStatus != null) queryParams['paymentStatus'] = paymentStatus;
+      if (academicYear != null) queryParams['academicYear'] = academicYear;
+      if (sortBy != null) queryParams['sortBy'] = sortBy;
+      if (sortOrder != null) queryParams['sortOrder'] = sortOrder;
+      if (classId != null) queryParams['classId'] = classId;
+      if (search != null) queryParams['search'] = search;
 
-  Future<HTTPResponseModel> createManualPayment(
-    Map<String, dynamic> body,
-  ) async {
-    return await _httpService.runApi(
-      type: ApiRequestType.post,
-      url: "/payments/manual-entry",
-      body: body,
-    );
+      final uri = Uri.parse(
+        '${AppConstants.kBaseUrl}/payments/fees-paid-report',
+      ).replace(queryParameters: queryParams);
+
+      final response = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          // TODO: Add authorization header
+          // 'Authorization': 'Bearer $token',
+        },
+      );
+
+      final model = HTTPResponseModel();
+      model.setSuccess = response.statusCode;
+      model.setData = json.decode(response.body);
+      model.setErrorMessage =
+          response.statusCode == 200
+              ? 'Success'
+              : 'Failed to load fees paid report';
+      return model;
+    } catch (e) {
+      final model = HTTPResponseModel();
+      model.setSuccess = 500;
+      model.setData = null;
+      model.setErrorMessage = 'Error fetching fees paid report: $e';
+      return model;
+    }
   }
-
-  Future<HTTPResponseModel> initializePayment(
-    Map<String, dynamic> body,
-  ) async {
-    return await _httpService.runApi(
-      type: ApiRequestType.post,
-      url: "/payments/paystack/initialize",
-      body: body,
-    );
-  }
-
-  // Future<HTTPResponseModel> getDetailsOfSingeTimeTable(String classId) async {
-  //   return await _httpService.runApi(
-  //     type: ApiRequestType.get,
-  //     url: "/timetables/$classId",
-  //   );
-  // }
-
-  // Future<HTTPResponseModel> getClassTimeTable(String classId) async {
-  //   return await _httpService.runApi(
-  //     type: ApiRequestType.get,
-  //     url: "/timetables/$classId",
-  //   );
-  // }
-
-  // Future<HTTPResponseModel> updateClassTimeTble(
-  //   String classId,
-  //   Map<String, dynamic> body,
-  // ) async {
-  //   return await _httpService.runApi(
-  //     type: ApiRequestType.put,
-  //     url: "/timetables/$classId",
-  //     body: body,
-  //   );
-  // }
 }

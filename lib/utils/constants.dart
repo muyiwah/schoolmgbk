@@ -7,6 +7,13 @@ class AppConstants {
       'https://res.cloudinary.com/dor0zvihv/image/upload/';
   static const cloudinaryApiKey = '949159975861895';
   static const cloudinarySecretKey = '4XzXFZJzehyIIAviKEjUZKXoFUQ';
+
+
+
+ static String imagekitpublic= 'public_m++WkdN4BewCtFUwV4Bx9d3HVQM=';
+ static String imagekitprivate= 'private_91vcwYJ3I2ZRtNbLJX4fizQO3jw=';
+ static String imagekitId= 'dp750urb0';   
+ static String imagekitUrl= 'https://ik.imagekit.io/dp750urb0';
   static String token = 'token';
   static String email = 'email';
   static String password = 'password';

@@ -28,19 +28,28 @@ class StudentsRepo {
     // Add optional parameters only if they are provided
     if (classId != null && classId.isNotEmpty) queryParams['class'] = classId;
     if (gender != null && gender.isNotEmpty) queryParams['gender'] = gender;
-    if (feeStatus != null && feeStatus.isNotEmpty) queryParams['feeStatus'] = feeStatus;
+    if (feeStatus != null && feeStatus.isNotEmpty)
+      queryParams['feeStatus'] = feeStatus;
     if (status != null && status.isNotEmpty) queryParams['status'] = status;
-    if (academicYear != null && academicYear.isNotEmpty) queryParams['academicYear'] = academicYear;
+    if (academicYear != null && academicYear.isNotEmpty)
+      queryParams['academicYear'] = academicYear;
     if (search != null && search.isNotEmpty) queryParams['search'] = search;
+
+    // Debug logging
+    print('🔍 StudentsRepo: Query parameters: $queryParams');
+    print('🔍 StudentsRepo: Gender filter: $gender');
+    print('🔍 StudentsRepo: FeeStatus filter: $feeStatus');
+    print('🔍 StudentsRepo: ClassId filter: $classId');
 
     return await _httpService.runApi(
       type: ApiRequestType.get,
       url: "/students",
-      body: queryParams,
+      params: queryParams,
     );
   }
 
   Future<HTTPResponseModel> createStudent(Map<String, dynamic> body) async {
+    print('🔍 StudentsRepo: Creating student: $body');
     return await _httpService.runApi(
       type: ApiRequestType.post,
       url: "/students",
@@ -48,8 +57,8 @@ class StudentsRepo {
     );
   }
 
-Future<HTTPResponseModel> assignStudentToClass(
-  // body takes "classId": "68a386c5fc888b6066cff7e0"
+  Future<HTTPResponseModel> assignStudentToClass(
+    // body takes "classId": "68a386c5fc888b6066cff7e0"
     String studentId,
     Map<String, dynamic> body,
   ) async {
@@ -59,7 +68,6 @@ Future<HTTPResponseModel> assignStudentToClass(
       body: body,
     );
   }
-
 
   Future<HTTPResponseModel> getStudentById(String studentId) async {
     return await _httpService.runApi(
@@ -86,5 +94,4 @@ Future<HTTPResponseModel> assignStudentToClass(
       url: "/students/$studentId",
     );
   }
-
 }

@@ -1341,14 +1341,42 @@ class Parent {
   ParentPersonalInfo? personalInfo;
   ContactInfo? contactInfo;
   ProfessionalInfo? professionalInfo;
+  Identification? identification;
+  LegalInfo? legalInfo;
+  dynamic preferences; // Preferences class not defined, using dynamic
   User? user;
+  String? parentType;
+  List<Child>? children;
+  List<dynamic>? emergencyContacts;
+  DateTime? createdAt;
+  DateTime? updatedAt;
+  int? v;
+  String? parentId;
+  String? fullName;
+  String? parentTypeDisplay;
+  ComputedFields? computedFields;
+  ParentMetadata? metadata;
 
   Parent({
     this.id,
     this.personalInfo,
     this.contactInfo,
     this.professionalInfo,
+    this.identification,
+    this.legalInfo,
+    this.preferences,
     this.user,
+    this.parentType,
+    this.children,
+    this.emergencyContacts,
+    this.createdAt,
+    this.updatedAt,
+    this.v,
+    this.parentId,
+    this.fullName,
+    this.parentTypeDisplay,
+    this.computedFields,
+    this.metadata,
   });
 
   factory Parent.fromJson(Map<String, dynamic> json) {
@@ -1368,7 +1396,47 @@ class Parent {
             json["professionalInfo"] == null
                 ? null
                 : ProfessionalInfo.fromJson(json["professionalInfo"]),
+        identification:
+            json["identification"] == null
+                ? null
+                : Identification.fromJson(json["identification"]),
+        legalInfo:
+            json["legalInfo"] == null
+                ? null
+                : LegalInfo.fromJson(json["legalInfo"]),
+        preferences: null, // Preferences class not defined, set to null for now
         user: json["user"] == null ? null : User.fromJson(json["user"]),
+        parentType: safeParseString(json, "parentType"),
+        children:
+            json["children"] == null
+                ? []
+                : List<Child>.from(
+                  json["children"]!.map((x) => Child.fromJson(x)),
+                ),
+        emergencyContacts:
+            json["emergencyContacts"] == null
+                ? []
+                : List<dynamic>.from(json["emergencyContacts"]!.map((x) => x)),
+        createdAt:
+            json["createdAt"] == null
+                ? null
+                : DateTime.parse(json["createdAt"]),
+        updatedAt:
+            json["updatedAt"] == null
+                ? null
+                : DateTime.parse(json["updatedAt"]),
+        v: json["__v"],
+        parentId: safeParseString(json, "id"),
+        fullName: safeParseString(json, "fullName"),
+        parentTypeDisplay: safeParseString(json, "parentTypeDisplay"),
+        computedFields:
+            json["computedFields"] == null
+                ? null
+                : ComputedFields.fromJson(json["computedFields"]),
+        metadata:
+            json["metadata"] == null
+                ? null
+                : ParentMetadata.fromJson(json["metadata"]),
       );
     } catch (e) {
       print('DEBUG: Error in Parent.fromJson: $e');
@@ -1381,7 +1449,24 @@ class Parent {
     "personalInfo": personalInfo?.toJson(),
     "contactInfo": contactInfo?.toJson(),
     "professionalInfo": professionalInfo?.toJson(),
+    "identification": identification?.toJson(),
+    "legalInfo": legalInfo?.toJson(),
+    "preferences": preferences?.toJson(),
     "user": user?.toJson(),
+    "parentType": parentType,
+    "children":
+        children == null
+            ? []
+            : List<dynamic>.from(children!.map((x) => x.toJson())),
+    "emergencyContacts": emergencyContacts,
+    "createdAt": createdAt?.toIso8601String(),
+    "updatedAt": updatedAt?.toIso8601String(),
+    "__v": v,
+    "id": parentId,
+    "fullName": fullName,
+    "parentTypeDisplay": parentTypeDisplay,
+    "computedFields": computedFields?.toJson(),
+    "metadata": metadata?.toJson(),
   };
 }
 
@@ -1545,5 +1630,151 @@ class User {
     "_id": id,
     "email": email,
     "isActive": isActive,
+  };
+}
+
+// New model classes for enhanced parent data
+class Identification {
+  String? idType;
+  String? idNumber;
+  String? idPhotoUrl;
+
+  Identification({this.idType, this.idNumber, this.idPhotoUrl});
+
+  factory Identification.fromJson(Map<String, dynamic> json) => Identification(
+    idType: safeParseString(json, "idType"),
+    idNumber: safeParseString(json, "idNumber"),
+    idPhotoUrl: safeParseString(json, "idPhotoUrl"),
+  );
+
+  Map<String, dynamic> toJson() => {
+    "idType": idType,
+    "idNumber": idNumber,
+    "idPhotoUrl": idPhotoUrl,
+  };
+}
+
+class LegalInfo {
+  bool? parentalResponsibility;
+  bool? legalGuardianship;
+  bool? authorisedToCollectChild;
+  String? relationshipToChild;
+
+  LegalInfo({
+    this.parentalResponsibility,
+    this.legalGuardianship,
+    this.authorisedToCollectChild,
+    this.relationshipToChild,
+  });
+
+  factory LegalInfo.fromJson(Map<String, dynamic> json) => LegalInfo(
+    parentalResponsibility: json["parentalResponsibility"],
+    legalGuardianship: json["legalGuardianship"],
+    authorisedToCollectChild: json["authorisedToCollectChild"],
+    relationshipToChild: safeParseString(json, "relationshipToChild"),
+  );
+
+  Map<String, dynamic> toJson() => {
+    "parentalResponsibility": parentalResponsibility,
+    "legalGuardianship": legalGuardianship,
+    "authorisedToCollectChild": authorisedToCollectChild,
+    "relationshipToChild": relationshipToChild,
+  };
+}
+
+class ComputedFields {
+  String? fullName;
+  String? parentTypeDisplay;
+  int? childrenCount;
+  bool? hasMultipleChildren;
+  bool? isActive;
+  String? lastLoginFormatted;
+  String? createdAtFormatted;
+  String? updatedAtFormatted;
+
+  ComputedFields({
+    this.fullName,
+    this.parentTypeDisplay,
+    this.childrenCount,
+    this.hasMultipleChildren,
+    this.isActive,
+    this.lastLoginFormatted,
+    this.createdAtFormatted,
+    this.updatedAtFormatted,
+  });
+
+  factory ComputedFields.fromJson(Map<String, dynamic> json) => ComputedFields(
+    fullName: safeParseString(json, "fullName"),
+    parentTypeDisplay: safeParseString(json, "parentTypeDisplay"),
+    childrenCount:
+        json["childrenCount"] is int
+            ? json["childrenCount"]
+            : int.tryParse(json["childrenCount"]?.toString() ?? '0'),
+    hasMultipleChildren: json["hasMultipleChildren"],
+    isActive: json["isActive"],
+    lastLoginFormatted: safeParseString(json, "lastLoginFormatted"),
+    createdAtFormatted: safeParseString(json, "createdAtFormatted"),
+    updatedAtFormatted: safeParseString(json, "updatedAtFormatted"),
+  );
+
+  Map<String, dynamic> toJson() => {
+    "fullName": fullName,
+    "parentTypeDisplay": parentTypeDisplay,
+    "childrenCount": childrenCount,
+    "hasMultipleChildren": hasMultipleChildren,
+    "isActive": isActive,
+    "lastLoginFormatted": lastLoginFormatted,
+    "createdAtFormatted": createdAtFormatted,
+    "updatedAtFormatted": updatedAtFormatted,
+  };
+}
+
+class ParentMetadata {
+  int? totalChildren;
+  bool? hasEmergencyContacts;
+  int? emergencyContactsCount;
+  String? hasWorkAddress;
+  String? hasIdPhoto;
+  String? preferredContactMethod;
+  bool? receivesNewsletters;
+  bool? receivesEventNotifications;
+
+  ParentMetadata({
+    this.totalChildren,
+    this.hasEmergencyContacts,
+    this.emergencyContactsCount,
+    this.hasWorkAddress,
+    this.hasIdPhoto,
+    this.preferredContactMethod,
+    this.receivesNewsletters,
+    this.receivesEventNotifications,
+  });
+
+  factory ParentMetadata.fromJson(Map<String, dynamic> json) => ParentMetadata(
+    totalChildren:
+        json["totalChildren"] is int
+            ? json["totalChildren"]
+            : int.tryParse(json["totalChildren"]?.toString() ?? '0'),
+    hasEmergencyContacts: json["hasEmergencyContacts"],
+    emergencyContactsCount:
+        json["emergencyContactsCount"] is int
+            ? json["emergencyContactsCount"]
+            : int.tryParse(json["emergencyContactsCount"]?.toString() ?? '0'),
+    hasWorkAddress: safeParseString(json, "hasWorkAddress"),
+    hasIdPhoto: safeParseString(json, "hasIdPhoto"),
+    preferredContactMethod: safeParseString(json, "preferredContactMethod"),
+    receivesNewsletters: json["receivesNewsletters"],
+    receivesEventNotifications: json["receivesEventNotifications"],
+  );
+
+  Map<String, dynamic> toJson() => {
+    "totalChildren": totalChildren,
+    "hasEmergencyContacts": hasEmergencyContacts,
+    "emergencyContactsCount": emergencyContactsCount,
+    "hasWorkAddress": hasWorkAddress,
+    "hasIdPhoto": hasIdPhoto,
+    "preferredContactMethod": preferredContactMethod,
+    "receivesNewsletters": receivesNewsletters,
+    "receivesEventNotifications": receivesEventNotifications,
   };
 }

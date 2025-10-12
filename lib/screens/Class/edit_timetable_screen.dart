@@ -7,6 +7,7 @@ import 'package:schmgtsystem/models/timetable_model.dart';
 import 'package:schmgtsystem/services/dialog_service.dart';
 import 'package:schmgtsystem/utils/enums.dart';
 import 'package:schmgtsystem/utils/locator.dart';
+import 'package:schmgtsystem/utils/academic_year_helper.dart';
 import 'package:collection/collection.dart';
 
 class EditTimetableScreen extends ConsumerStatefulWidget {
@@ -94,7 +95,9 @@ class _EditTimetableScreenState extends ConsumerState<EditTimetableScreen> {
       }
     } else {
       // Set default values for new timetable
-      _academicYearController.text = '2024/2025';
+      _academicYearController.text = AcademicYearHelper.getCurrentAcademicYear(
+        ref,
+      );
       _selectedTerm = 'First';
       _selectedType = 'regular';
     }

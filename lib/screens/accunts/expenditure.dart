@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
-
 class ExpenditureScreen extends StatefulWidget {
   const ExpenditureScreen({Key? key}) : super(key: key);
 
@@ -174,7 +173,8 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> {
           Expanded(
             flex: 2,
             child: TextField(
-              decoration: InputDecoration(hintStyle: TextStyle(fontSize: 12),
+              decoration: InputDecoration(
+                hintStyle: TextStyle(fontSize: 12),
                 hintText: 'Search by keyword or description...',
                 prefixIcon: const Icon(Icons.search, color: Color(0xFF9CA3AF)),
                 border: OutlineInputBorder(
@@ -244,7 +244,10 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> {
       ),
       items:
           [value].map((String item) {
-            return DropdownMenuItem<String>(value: item, child: Text(item,style: TextStyle(fontSize: 12),));
+            return DropdownMenuItem<String>(
+              value: item,
+              child: Text(item, style: TextStyle(fontSize: 12)),
+            );
           }).toList(),
       onChanged: onChanged,
     );
@@ -256,7 +259,7 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> {
         Expanded(
           child: _buildStatCard(
             'Total This Year',
-            '₦2,450,000',
+            '£2,450,000',
             const Color(0xFFDCFDF7),
             const Color(0xFF06B6D4),
             Icons.trending_up,
@@ -266,7 +269,7 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> {
         Expanded(
           child: _buildStatCard(
             'Total This Term',
-            '₦820,000',
+            '£820,000',
             const Color(0xFFE0E7FF),
             const Color(0xFF6366F1),
             Icons.calendar_today,
@@ -397,7 +400,7 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> {
                       reservedSize: 80,
                       getTitlesWidget: (value, meta) {
                         return Text(
-                          '₦${(value / 1000).toInt()}K',
+                          '£${(value / 1000).toInt()}K',
                           style: const TextStyle(
                             fontSize: 12,
                             color: Color(0xFF6B7280),
@@ -724,7 +727,7 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> {
         Padding(
           padding: const EdgeInsets.all(16),
           child: Text(
-            '₦${record.amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
+            '£${record.amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,

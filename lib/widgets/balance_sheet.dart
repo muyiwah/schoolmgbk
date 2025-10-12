@@ -109,7 +109,7 @@ class _BalanceSheetReconciliationPopupState
         Expanded(
           child: _buildSummaryCard(
             title: 'Total Income',
-            amount: '₦5,250,000',
+            amount: '£5,250,000',
             subtitle: 'Current Term',
             status: 'Balanced',
             statusColor: Colors.green,
@@ -119,9 +119,9 @@ class _BalanceSheetReconciliationPopupState
         Expanded(
           child: _buildSummaryCard(
             title: 'Total Expenses',
-            amount: '₦4,580,000',
+            amount: '£4,580,000',
             subtitle:
-                'Salaries: ₦1,950,000\nRepairs: ₦500,000\nServices: ₦1,200,000\nOthers: ₦930,000',
+                'Salaries: £1,950,000\nRepairs: £500,000\nServices: £1,200,000\nOthers: £930,000',
             hasIcon: true,
           ),
         ),
@@ -129,7 +129,7 @@ class _BalanceSheetReconciliationPopupState
         Expanded(
           child: _buildSummaryCard(
             title: 'Net Balance',
-            amount: '₦670,000',
+            amount: '£670,000',
             subtitle: 'Positive Balance',
             status: 'Surplus',
             statusColor: Colors.orange,
@@ -324,18 +324,18 @@ class _BalanceSheetReconciliationPopupState
       rows: [
         _buildDataRow(
           'Salaries',
-          '₦2,000,000',
-          '₦1,950,000',
-          '-₦50,000',
+          '£2,000,000',
+          '£1,950,000',
+          '-£50,000',
           'Unmatched',
           false,
         ),
-        _buildDataRow('Repairs', '₦500,000', '₦500,000', '₦0', 'Matched', true),
+        _buildDataRow('Repairs', '£500,000', '£500,000', '£0', 'Matched', true),
         _buildDataRow(
           'Miscellaneous',
-          '₦150,000',
-          '₦130,000',
-          '-₦20,000',
+          '£150,000',
+          '£130,000',
+          '-£20,000',
           'Unmatched',
           false,
         ),

@@ -15,6 +15,28 @@ class AllParents extends ConsumerStatefulWidget {
 }
 
 class _AllParentsState extends ConsumerState<AllParents> {
+  // Filter state variables
+  String? _selectedClassId;
+  String? _selectedGender;
+  String? _selectedFeeStatus;
+  String? _selectedStatus;
+  String? _selectedAcademicYear;
+  String _searchQuery = '';
+  String _sortBy = "personalInfo.firstName";
+  String _sortOrder = "asc";
+  bool _showFilters = false;
+
+  // Filter options
+  final List<String> _genderOptions = ['Male', 'Female'];
+  final List<String> _feeStatusOptions = ['Paid', 'Partial', 'Unpaid'];
+  final List<String> _statusOptions = ['Active', 'Inactive'];
+  final List<String> _sortOptions = [
+    'personalInfo.firstName',
+    'personalInfo.lastName',
+    'personalInfo.email',
+    'createdAt',
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -23,6 +45,44 @@ class _AllParentsState extends ConsumerState<AllParents> {
       final provider = ref.read(RiverpodProvider.parentProvider.notifier);
       provider.setError(null); // Clear any previous errors
       provider.getAllParents(context);
+    });
+  }
+
+  // Method to apply filters
+  void _applyFilters() {
+    final provider = ref.read(RiverpodProvider.parentProvider.notifier);
+    provider.getAllParents(
+      context,
+      classId: _selectedClassId,
+      gender: _selectedGender,
+      feeStatus: _selectedFeeStatus,
+      status: _selectedStatus,
+      academicYear: _selectedAcademicYear,
+      search: _searchQuery.isNotEmpty ? _searchQuery : null,
+      sortBy: _sortBy,
+      sortOrder: _sortOrder,
+    );
+  }
+
+  // Method to clear all filters
+  void _clearFilters() {
+    setState(() {
+      _selectedClassId = null;
+      _selectedGender = null;
+      _selectedFeeStatus = null;
+      _selectedStatus = null;
+      _selectedAcademicYear = null;
+      _searchQuery = '';
+      _sortBy = "personalInfo.firstName";
+      _sortOrder = "asc";
+    });
+    _applyFilters();
+  }
+
+  // Method to toggle filters visibility
+  void _toggleFilters() {
+    setState(() {
+      _showFilters = !_showFilters;
     });
   }
 
@@ -68,6 +128,260 @@ class _AllParentsState extends ConsumerState<AllParents> {
     'assets/images/9.jpeg',
     'assets/images/10.jpeg',
   ];
+
+  // Build filter section widget
+  Widget _buildFilterSection() {
+    return Column(
+      children: [
+        // Filter toggle button
+        Row(
+          children: [
+            ElevatedButton.icon(
+              onPressed: _toggleFilters,
+              icon: Icon(
+                _showFilters ? Icons.filter_list_off : Icons.filter_list,
+              ),
+              label: Text(_showFilters ? 'Hide Filters' : 'Show Filters'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    _showFilters ? Colors.red[100] : Colors.blue[100],
+                foregroundColor:
+                    _showFilters ? Colors.red[700] : Colors.blue[700],
+              ),
+            ),
+            const SizedBox(width: 10),
+            if (_showFilters)
+              ElevatedButton.icon(
+                onPressed: _clearFilters,
+                icon: const Icon(Icons.clear),
+                label: const Text('Clear All'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey[200],
+                  foregroundColor: Colors.grey[700],
+                ),
+              ),
+            const Spacer(),
+            if (_showFilters)
+              ElevatedButton.icon(
+                onPressed: _applyFilters,
+                icon: const Icon(Icons.search),
+                label: const Text('Apply Filters'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green[100],
+                  foregroundColor: Colors.green[700],
+                ),
+              ),
+          ],
+        ),
+
+        // Filter options (shown when _showFilters is true)
+        if (_showFilters) ...[
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey[300]!),
+            ),
+            child: Column(
+              children: [
+                // Search input
+                TextField(
+                  decoration: const InputDecoration(
+                    labelText: 'Search Parents',
+                    hintText: 'Enter name, email, or phone number',
+                    prefixIcon: Icon(Icons.search),
+                    border: OutlineInputBorder(),
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value;
+                    });
+                  },
+                ),
+
+                const SizedBox(height: 16),
+
+                // Filter dropdowns in a grid
+                Row(
+                  children: [
+                    // Gender filter
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        decoration: const InputDecoration(
+                          labelText: 'Gender',
+                          border: OutlineInputBorder(),
+                        ),
+                        value: _selectedGender,
+                        items: [
+                          const DropdownMenuItem<String>(
+                            value: null,
+                            child: Text('All Genders'),
+                          ),
+                          ..._genderOptions.map(
+                            (gender) => DropdownMenuItem<String>(
+                              value: gender,
+                              child: Text(gender),
+                            ),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedGender = value;
+                          });
+                        },
+                      ),
+                    ),
+
+                    const SizedBox(width: 16),
+
+                    // Fee Status filter
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        decoration: const InputDecoration(
+                          labelText: 'Fee Status',
+                          border: OutlineInputBorder(),
+                        ),
+                        value: _selectedFeeStatus,
+                        items: [
+                          const DropdownMenuItem<String>(
+                            value: null,
+                            child: Text('All Fee Status'),
+                          ),
+                          ..._feeStatusOptions.map(
+                            (status) => DropdownMenuItem<String>(
+                              value: status,
+                              child: Text(status),
+                            ),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedFeeStatus = value;
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+
+                Row(
+                  children: [
+                    // Status filter
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        decoration: const InputDecoration(
+                          labelText: 'Status',
+                          border: OutlineInputBorder(),
+                        ),
+                        value: _selectedStatus,
+                        items: [
+                          const DropdownMenuItem<String>(
+                            value: null,
+                            child: Text('All Status'),
+                          ),
+                          ..._statusOptions.map(
+                            (status) => DropdownMenuItem<String>(
+                              value: status,
+                              child: Text(status),
+                            ),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedStatus = value;
+                          });
+                        },
+                      ),
+                    ),
+
+                    const SizedBox(width: 16),
+
+                    // Sort options
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        decoration: const InputDecoration(
+                          labelText: 'Sort By',
+                          border: OutlineInputBorder(),
+                        ),
+                        value: _sortBy,
+                        items:
+                            _sortOptions
+                                .map(
+                                  (option) => DropdownMenuItem<String>(
+                                    value: option,
+                                    child: Text(_getSortDisplayName(option)),
+                                  ),
+                                )
+                                .toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _sortBy = value!;
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+
+                // Sort order toggle
+                Row(
+                  children: [
+                    const Text(
+                      'Sort Order:',
+                      style: TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                    const SizedBox(width: 16),
+                    ChoiceChip(
+                      label: const Text('Ascending'),
+                      selected: _sortOrder == 'asc',
+                      onSelected: (selected) {
+                        setState(() {
+                          _sortOrder = 'asc';
+                        });
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    ChoiceChip(
+                      label: const Text('Descending'),
+                      selected: _sortOrder == 'desc',
+                      onSelected: (selected) {
+                        setState(() {
+                          _sortOrder = 'desc';
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  // Helper method to get display names for sort options
+  String _getSortDisplayName(String sortOption) {
+    switch (sortOption) {
+      case 'personalInfo.firstName':
+        return 'First Name';
+      case 'personalInfo.lastName':
+        return 'Last Name';
+      case 'personalInfo.email':
+        return 'Email';
+      case 'createdAt':
+        return 'Date Created';
+      default:
+        return sortOption;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -90,6 +404,11 @@ class _AllParentsState extends ConsumerState<AllParents> {
               showSearchBar: true,
               showDropdown: true,
             ),
+            const SizedBox(height: 20),
+
+            // Filter Section
+            _buildFilterSection(),
+
             const SizedBox(height: 20),
             Expanded(
               child: Consumer(
@@ -251,7 +570,10 @@ class _AllParentsState extends ConsumerState<AllParents> {
                                               backgroundColor: Colors.blue[300],
                                               child: Text(
                                                 '${parent.personalInfo?.firstName.toString().split('').first.toUpperCase() ?? ''} ${parent.personalInfo?.lastName.toString().split('').first.toUpperCase() ?? ''}',
-                                             style: TextStyle(color: Colors.white), ),
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                ),
+                                              ),
                                               radius: 20,
                                             ),
                                             const SizedBox(width: 10),

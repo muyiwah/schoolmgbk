@@ -28,10 +28,7 @@ class _TeacherTimetableScreenState
 
   Future<void> _loadTeacherData() async {
     try {
-      // Load user profile first
-      await ref
-          .read(RiverpodProvider.profileProvider.notifier)
-          .getUserProfile();
+   
 
       // Load teacher profile and classes
       await ref

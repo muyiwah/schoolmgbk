@@ -1,9 +1,8 @@
 import 'package:get_it/get_it.dart';
-import 'package:schmgtsystem/providers/class_provider.dart';
+import 'package:schmgtsystem/repository/academic_settings_repository.dart';
 import 'package:schmgtsystem/repository/assignment_repo.dart';
 import 'package:schmgtsystem/repository/attendance_repo.dart';
 import 'package:schmgtsystem/repository/auth_repo.dart';
-import 'package:schmgtsystem/providers/auth_provider.dart';
 import 'package:schmgtsystem/repository/class_repo.dart';
 import 'package:schmgtsystem/repository/class_level_repo.dart';
 import 'package:schmgtsystem/repository/metrics_repo.dart';
@@ -15,10 +14,11 @@ import 'package:schmgtsystem/repository/students_repo.dart';
 import 'package:schmgtsystem/repository/subject_repo.dart';
 import 'package:schmgtsystem/repository/teacher_repo.dart';
 import 'package:schmgtsystem/repository/time_table_repo.dart';
+import 'package:schmgtsystem/repository/promotion_repository.dart';
+import 'package:schmgtsystem/repository/payment_repo.dart';
 import 'package:schmgtsystem/services/dialog_service.dart';
 import 'package:schmgtsystem/services/http_service.dart';
 import 'package:schmgtsystem/services/navigator_service.dart';
-import 'package:schmgtsystem/teacher111.dart';
 
 GetIt locator = GetIt.instance;
 
@@ -35,6 +35,7 @@ Future<void> setupLocator({Env? env = Env.prod}) async {
   locator.registerLazySingleton(() => HttpService());
   locator.registerLazySingleton(() => DialogService());
 
+  locator.registerLazySingleton(() => AcademicSettingsRepository());
   locator.registerLazySingleton(() => AuthRepo());
   locator.registerLazySingleton(() => ProfileRepo());
   locator.registerLazySingleton(() => StudentsRepo());
@@ -51,6 +52,8 @@ Future<void> setupLocator({Env? env = Env.prod}) async {
   locator.registerLazySingleton(() => ClassRepo());
   locator.registerLazySingleton(() => ClassLevelRepo());
   locator.registerLazySingleton(() => SubjectRepo());
+  locator.registerLazySingleton(() => PromotionRepository());
+  locator.registerLazySingleton(() => PaymentRepository());
 }
 
 // Future<void> _setupSharedPreferences() async {

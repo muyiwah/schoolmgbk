@@ -1362,11 +1362,11 @@ class _DashboardDetailsState extends ConsumerState<DashboardDetails>
             ),
           ),
           SizedBox(height: isMobile ? 16 : 20),
-          _buildRevenueRow('Tuition Fees', '\$420,000', Colors.green, isMobile),
-          _buildRevenueRow('Activity Fees', '\$45,000', Colors.blue, isMobile),
+          _buildRevenueRow('Tuition Fees', '£420,000', Colors.green, isMobile),
+          _buildRevenueRow('Activity Fees', '£45,000', Colors.blue, isMobile),
           _buildRevenueRow(
             'Transport Fees',
-            '\$22,000',
+            '£22,000',
             Colors.orange,
             isMobile,
           ),
@@ -1442,9 +1442,9 @@ class _DashboardDetailsState extends ConsumerState<DashboardDetails>
             ),
           ),
           SizedBox(height: isMobile ? 16 : 20),
-          _buildExpenseRow('Salaries', '\$125,000', isMobile),
-          _buildExpenseRow('Utilities', '\$15,500', isMobile),
-          _buildExpenseRow('Maintenance', '\$8,200', isMobile),
+          _buildExpenseRow('Salaries', '£125,000', isMobile),
+          _buildExpenseRow('Utilities', '£15,500', isMobile),
+          _buildExpenseRow('Maintenance', '£8,200', isMobile),
         ],
       ),
     );
@@ -1504,19 +1504,19 @@ class _DashboardDetailsState extends ConsumerState<DashboardDetails>
           SizedBox(height: isMobile ? 16 : 20),
           _buildPaymentRow(
             'Vendor Payments',
-            '\$8,450',
+            '£8,450',
             'Due in 5 days',
             isMobile,
           ),
           _buildPaymentRow(
             'Staff Bonuses',
-            '\$15,200',
+            '£15,200',
             'Due in 2 days',
             isMobile,
           ),
           _buildPaymentRow(
             'Equipment Purchase',
-            '\$32,100',
+            '£32,100',
             'Due in 10 days',
             isMobile,
           ),
@@ -2278,15 +2278,15 @@ class _DashboardDetailsState extends ConsumerState<DashboardDetails>
   }
 
   String _formatCurrency(dynamic amount) {
-    if (amount == null) return '\$0';
+    if (amount == null) return '£0';
     final numAmount =
         amount is num ? amount : double.tryParse(amount.toString()) ?? 0;
     if (numAmount >= 1000000) {
-      return '\$${(numAmount / 1000000).toStringAsFixed(1)}M';
+      return '£${(numAmount / 1000000).toStringAsFixed(1)}M';
     } else if (numAmount >= 1000) {
-      return '\$${(numAmount / 1000).toStringAsFixed(1)}K';
+      return '£${(numAmount / 1000).toStringAsFixed(1)}K';
     } else {
-      return '\$${numAmount.toStringAsFixed(0)}';
+      return '£${numAmount.toStringAsFixed(0)}';
     }
   }
 }

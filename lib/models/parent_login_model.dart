@@ -290,7 +290,7 @@ class ProfessionalInfo {
         workAddress: json["workAddress"],
         occupation: json["occupation"],
         employer: json["employer"],
-        annualIncome: json["annualIncome"],
+        annualIncome: _parseInt(json["annualIncome"]),
       );
 
   Map<String, dynamic> toJson() => {
@@ -309,23 +309,43 @@ class Child {
 
   Child({this.student, this.currentTerm, this.paymentHistory, this.feeSummary});
 
-  factory Child.fromJson(Map<String, dynamic> json) => Child(
-    student: json["student"] == null ? null : Student.fromJson(json["student"]),
-    currentTerm:
-        json["currentTerm"] == null
-            ? null
-            : CurrentTerm.fromJson(json["currentTerm"]),
-    paymentHistory:
-        json["paymentHistory"] == null
-            ? []
-            : List<PaymentHistory>.from(
-              json["paymentHistory"]!.map((x) => PaymentHistory.fromJson(x)),
-            ),
-    feeSummary:
-        json["feeSummary"] == null
-            ? null
-            : FeeSummary.fromJson(json["feeSummary"]),
-  );
+  factory Child.fromJson(Map<String, dynamic> json) {
+    try {
+      return Child(
+        student:
+            json["student"] == null ? null : Student.fromJson(json["student"]),
+        currentTerm:
+            json["currentTerm"] == null
+                ? null
+                : CurrentTerm.fromJson(json["currentTerm"]),
+        paymentHistory:
+            json["paymentHistory"] == null
+                ? []
+                : List<PaymentHistory>.from(
+                  json["paymentHistory"]!.map(
+                    (x) => PaymentHistory.fromJson(x),
+                  ),
+                ),
+        feeSummary:
+            json["feeSummary"] == null
+                ? null
+                : FeeSummary.fromJson(json["feeSummary"]),
+      );
+    } catch (e) {
+      print('🔍 DEBUG: Error parsing Child from JSON: $e');
+      print('🔍 DEBUG: Child JSON keys: ${json.keys.toList()}');
+      print('🔍 DEBUG: Child JSON: $json');
+
+      // Return a minimal Child object to prevent complete failure
+      return Child(
+        student:
+            json["student"] != null ? Student.fromJson(json["student"]) : null,
+        currentTerm: null,
+        paymentHistory: [],
+        feeSummary: null,
+      );
+    }
+  }
 
   Map<String, dynamic> toJson() => {
     "student": student?.toJson(),
@@ -433,8 +453,8 @@ class CurrentClass {
     id: json["_id"],
     name: json["name"],
     level: json["level"],
-    totalFees: json["totalFees"],
-    currentEnrollment: json["currentEnrollment"],
+    totalFees: _parseInt(json["totalFees"]),
+    currentEnrollment: _parseInt(json["currentEnrollment"]),
     availableSlots: json["availableSlots"],
     feeStructureDetails: json["feeStructureDetails"],
   );
@@ -464,10 +484,10 @@ class FinancialInfo {
   });
 
   factory FinancialInfo.fromJson(Map<String, dynamic> json) => FinancialInfo(
-    outstandingBalance: json["outstandingBalance"],
+    outstandingBalance: _parseInt(json["outstandingBalance"]),
     feeStatus: json["feeStatus"],
-    totalFees: json["totalFees"],
-    paidAmount: json["paidAmount"],
+    totalFees: _parseInt(json["totalFees"]),
+    paidAmount: _parseInt(json["paidAmount"]),
   );
 
   Map<String, dynamic> toJson() => {
@@ -484,6 +504,7 @@ class CurrentTerm {
   FeeRecord? feeRecord;
   String? status;
   int? amountOwed;
+  FeeDetails? feeDetails;
 
   CurrentTerm({
     this.academicYear,
@@ -491,6 +512,7 @@ class CurrentTerm {
     this.feeRecord,
     this.status,
     this.amountOwed,
+    this.feeDetails,
   });
 
   factory CurrentTerm.fromJson(Map<String, dynamic> json) => CurrentTerm(
@@ -501,7 +523,11 @@ class CurrentTerm {
             ? null
             : FeeRecord.fromJson(json["feeRecord"]),
     status: json["status"],
-    amountOwed: json["amountOwed"],
+    amountOwed: _parseInt(json["amountOwed"]),
+    feeDetails:
+        json["feeDetails"] == null
+            ? null
+            : FeeDetails.fromJson(json["feeDetails"]),
   );
 
   Map<String, dynamic> toJson() => {
@@ -510,6 +536,7 @@ class CurrentTerm {
     "feeRecord": feeRecord?.toJson(),
     "status": status,
     "amountOwed": amountOwed,
+    "feeDetails": feeDetails?.toJson(),
   };
 }
 
@@ -563,14 +590,14 @@ class FeeRecord {
             ),
     createdAt: json["createdAt"],
     updatedAt: json["updatedAt"],
-    amountPaid: json["amountPaid"],
-    baseFeePaid: json["baseFeePaid"],
-    baseFeeBalance: json["baseFeeBalance"],
+    amountPaid: _parseInt(json["amountPaid"]),
+    baseFeePaid: _parseInt(json["baseFeePaid"]),
+    baseFeeBalance: _parseInt(json["baseFeeBalance"]),
     addOnBalances:
         json["addOnBalances"] == null
             ? []
             : List<dynamic>.from(json["addOnBalances"]!.map((x) => x)),
-    balance: json["balance"],
+    balance: _parseInt(json["balance"]),
     status: json["status"],
   );
 
@@ -625,8 +652,8 @@ class FeeDetails {
   FeeDetails({this.baseFee, this.totalFee, this.addOns});
 
   factory FeeDetails.fromJson(Map<String, dynamic> json) => FeeDetails(
-    baseFee: json["baseFee"],
-    totalFee: json["totalFee"],
+    baseFee: _parseInt(json["baseFee"]),
+    totalFee: _parseInt(json["totalFee"]),
     addOns:
         json["addOns"] == null
             ? []
@@ -672,7 +699,7 @@ class Payment {
         json["paymentBreakdown"] == null
             ? null
             : PaymentBreakdown.fromJson(json["paymentBreakdown"]),
-    amount: json["amount"],
+    amount: _parseInt(json["amount"]),
     date: json["date"],
     method: json["method"],
     reference: json["reference"],
@@ -710,7 +737,7 @@ class PaymentBreakdown {
 
   factory PaymentBreakdown.fromJson(Map<String, dynamic> json) =>
       PaymentBreakdown(
-        baseFeeAmount: json["baseFeeAmount"],
+        baseFeeAmount: _parseInt(json["baseFeeAmount"]),
         addOnPayments:
             json["addOnPayments"] == null
                 ? []
@@ -791,12 +818,12 @@ class GatewayResponse {
 
   factory GatewayResponse.fromJson(Map<String, dynamic> json) =>
       GatewayResponse(
-        id: json["id"],
+        id: _parseInt(json["id"]),
         domain: json["domain"],
         status: json["status"],
         reference: json["reference"],
         receiptNumber: json["receipt_number"],
-        amount: json["amount"],
+        amount: _parseInt(json["amount"]),
         message: json["message"],
         gatewayResponse: json["gateway_response"],
         paidAt: json["paid_at"],
@@ -806,7 +833,7 @@ class GatewayResponse {
         ipAddress: json["ip_address"],
         metadata: json["metadata"],
         log: json["log"] == null ? null : Log.fromJson(json["log"]),
-        fees: json["fees"],
+        fees: _parseInt(json["fees"]),
         feesSplit: json["fees_split"],
         authorization:
             json["authorization"] == null
@@ -820,7 +847,7 @@ class GatewayResponse {
         orderId: json["order_id"],
         paidAt2: json["paidAt"],
         createdAt2: json["createdAt"],
-        requestedAmount: json["requested_amount"],
+        requestedAmount: _parseInt(json["requested_amount"]),
         posTransactionData: json["pos_transaction_data"],
         source: json["source"],
         feesBreakdown: json["fees_breakdown"],
@@ -882,10 +909,10 @@ class Log {
   });
 
   factory Log.fromJson(Map<String, dynamic> json) => Log(
-    startTime: json["start_time"],
-    timeSpent: json["time_spent"],
-    attempts: json["attempts"],
-    errors: json["errors"],
+    startTime: _parseInt(json["start_time"]),
+    timeSpent: _parseInt(json["time_spent"]),
+    attempts: _parseInt(json["attempts"]),
+    errors: _parseInt(json["errors"]),
     success: json["success"],
     mobile: json["mobile"],
     input:
@@ -922,8 +949,11 @@ class History {
 
   History({this.type, this.message, this.time});
 
-  factory History.fromJson(Map<String, dynamic> json) =>
-      History(type: json["type"], message: json["message"], time: json["time"]);
+  factory History.fromJson(Map<String, dynamic> json) => History(
+    type: json["type"],
+    message: json["message"],
+    time: _parseInt(json["time"]),
+  );
 
   Map<String, dynamic> toJson() => {
     "type": type,
@@ -1073,7 +1103,7 @@ class PaymentHistory {
 
   factory PaymentHistory.fromJson(Map<String, dynamic> json) => PaymentHistory(
     id: json["_id"],
-    amount: json["amount"],
+    amount: _parseInt(json["amount"]),
     method: json["method"],
     status: json["status"],
     reference: json["reference"],
@@ -1111,9 +1141,9 @@ class FeeSummary {
   });
 
   factory FeeSummary.fromJson(Map<String, dynamic> json) => FeeSummary(
-    totalFees: json["totalFees"],
-    totalPaid: json["totalPaid"],
-    outstandingBalance: json["outstandingBalance"],
+    totalFees: _parseInt(json["totalFees"]),
+    totalPaid: _parseInt(json["totalPaid"]),
+    outstandingBalance: _parseInt(json["outstandingBalance"]),
     feeStatus: json["feeStatus"],
     allFeeRecords:
         json["allFeeRecords"] == null
@@ -1158,9 +1188,9 @@ class AllFeeRecord {
     academicYear: json["academicYear"],
     term: json["term"],
     class_: json["class"] == null ? null : CurrentClass.fromJson(json["class"]),
-    totalFee: json["totalFee"],
-    amountPaid: json["amountPaid"],
-    balance: json["balance"],
+    totalFee: _parseInt(json["totalFee"]),
+    amountPaid: _parseInt(json["amountPaid"]),
+    balance: _parseInt(json["balance"]),
     status: json["status"],
   );
 
@@ -1311,12 +1341,14 @@ class FinancialSummary {
 
   factory FinancialSummary.fromJson(Map<String, dynamic> json) =>
       FinancialSummary(
-        totalFees: json["totalFees"],
-        totalAmountPaid: json["totalAmountPaid"],
-        totalAmountOwed: json["totalAmountOwed"],
-        numberOfChildren: json["numberOfChildren"],
-        childrenWithOutstandingFees: json["childrenWithOutstandingFees"],
-        paymentCompletion: json["paymentCompletion"]?.toDouble(),
+        totalFees: _parseInt(json["totalFees"]),
+        totalAmountPaid: _parseInt(json["totalAmountPaid"]),
+        totalAmountOwed: _parseInt(json["totalAmountOwed"]),
+        numberOfChildren: _parseInt(json["numberOfChildren"]),
+        childrenWithOutstandingFees: _parseInt(
+          json["childrenWithOutstandingFees"],
+        ),
+        paymentCompletion: _parseDouble(json["paymentCompletion"]),
       );
 
   Map<String, dynamic> toJson() => {
@@ -1327,4 +1359,21 @@ class FinancialSummary {
     "childrenWithOutstandingFees": childrenWithOutstandingFees,
     "paymentCompletion": paymentCompletion,
   };
+}
+
+// Helper functions for safe parsing
+int? _parseInt(dynamic value) {
+  if (value == null) return null;
+  if (value is int) return value;
+  if (value is String) return int.tryParse(value);
+  if (value is double) return value.toInt();
+  return null;
+}
+
+double? _parseDouble(dynamic value) {
+  if (value == null) return null;
+  if (value is double) return value;
+  if (value is int) return value.toDouble();
+  if (value is String) return double.tryParse(value);
+  return null;
 }

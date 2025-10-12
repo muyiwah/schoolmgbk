@@ -3,7 +3,10 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:schmgtsystem/models/class_metrics_model.dart';
 import 'package:schmgtsystem/models/single_class_model.dart' as single_class;
 import 'package:schmgtsystem/models/students_with_fees_model.dart';
-import 'package:schmgtsystem/models/class_statistics_model.dart';
+import 'package:schmgtsystem/models/class_statistics_model.dart' as old_model;
+import 'package:schmgtsystem/models/all_terms_class_statistics_model.dart'
+    as new_model;
+import 'package:schmgtsystem/models/imagekit_model.dart';
 import 'package:schmgtsystem/repository/class_repo.dart';
 import 'package:schmgtsystem/utils/locator.dart';
 import 'package:schmgtsystem/utils/response_model.dart';
@@ -26,6 +29,12 @@ class ClassProvider extends ChangeNotifier {
   ClassMetricModel get classData => _classData;
   setClassData(data) {
     _classData = data;
+    notifyListeners();
+  }
+
+  // Method to clear cached class data
+  void clearClassDataCache() {
+    _classData = ClassMetricModel();
     notifyListeners();
   }
 
@@ -55,10 +64,28 @@ class ClassProvider extends ChangeNotifier {
   StudentsWithFeesModel get studentsWithFeesData => _studentsWithFeesData;
 
   // Class statistics data
-  ClassStatisticsModel _classStatisticsData = ClassStatisticsModel();
-  ClassStatisticsModel get classStatisticsData => _classStatisticsData;
+  old_model.ClassStatisticsModel _classStatisticsData =
+      old_model.ClassStatisticsModel();
+  old_model.ClassStatisticsModel get classStatisticsData =>
+      _classStatisticsData;
   setClassStatisticsData(data) {
     _classStatisticsData = data;
+    notifyListeners();
+  }
+
+  new_model.AllTermsClassStatisticsModel _allTermsClassStatisticsData =
+      new_model.AllTermsClassStatisticsModel(
+        classes: [],
+        groupedByTerm: [],
+        overallStats: new_model.OverallStats(),
+        availableTerms: [],
+        availableAcademicYears: [],
+        filters: new_model.Filters(),
+      );
+  new_model.AllTermsClassStatisticsModel get allTermsClassStatisticsData =>
+      _allTermsClassStatisticsData;
+  setAllTermsClassStatisticsData(data) {
+    _allTermsClassStatisticsData = data;
     notifyListeners();
   }
 
@@ -155,7 +182,17 @@ class ClassProvider extends ChangeNotifier {
     }
   }
 
-  getAllClassesWithMetric(BuildContext context) async {
+  getAllClassesWithMetric(
+    BuildContext context, {
+    bool forceRefresh = false,
+  }) async {
+    // Check if we already have cached data and not forcing refresh
+    if (!forceRefresh &&
+        _classData.classes != null &&
+        _classData.classes!.isNotEmpty) {
+      return _classData;
+    }
+
     EasyLoading.show(status: 'getting classes...');
 
     HTTPResponseModel res = await _classRepo.getAllClasses();
@@ -302,6 +339,9 @@ class ClassProvider extends ChangeNotifier {
 
     if (HTTPResponseModel.isApiCallSuccess(res)) {
       CustomToastNotification.show(res.message ?? '', type: ToastType.success);
+      // Clear cache and refresh class data
+      clearClassDataCache();
+      await getAllClassesWithMetric(context, forceRefresh: true);
     } else {
       CustomToastNotification.show(
         res.message ?? 'unable to get class data',
@@ -436,6 +476,157 @@ class ClassProvider extends ChangeNotifier {
     }
   }
 
+  // ✅ Update fee structure
+  Future<bool> updateFeeStructure(
+    BuildContext context,
+    String feeStructureId,
+    Map<String, dynamic> feeStructureData,
+  ) async {
+    try {
+      EasyLoading.show(status: 'Updating fee structure...');
+
+      HTTPResponseModel res = await _classRepo.updateFeeStructure(
+        feeStructureId,
+        feeStructureData,
+      );
+      EasyLoading.dismiss();
+
+      if (HTTPResponseModel.isApiCallSuccess(res)) {
+        CustomToastNotification.show(
+          res.message ?? 'Fee structure updated successfully',
+          type: ToastType.success,
+        );
+
+        // Refresh class data to reflect changes
+        await getAllClassesWithMetric(context);
+        return true;
+      } else {
+        CustomToastNotification.show(
+          res.message ?? 'Failed to update fee structure',
+          type: ToastType.error,
+        );
+        return false;
+      }
+    } catch (e) {
+      EasyLoading.dismiss();
+      CustomToastNotification.show(
+        'Error updating fee structure: $e',
+        type: ToastType.error,
+      );
+      return false;
+    }
+  }
+
+  // ✅ Delete fee structure
+  Future<bool> deleteFeeStructure(
+    BuildContext context,
+    String feeStructureId,
+  ) async {
+    try {
+      EasyLoading.show(status: 'Deleting fee structure...');
+
+      HTTPResponseModel res = await _classRepo.deleteFeeStructure(
+        feeStructureId,
+      );
+      EasyLoading.dismiss();
+
+      if (HTTPResponseModel.isApiCallSuccess(res)) {
+        CustomToastNotification.show(
+          res.message ?? 'Fee structure deleted successfully',
+          type: ToastType.success,
+        );
+
+        // Refresh class data to reflect changes
+        await getAllClassesWithMetric(context);
+        return true;
+      } else {
+        CustomToastNotification.show(
+          res.message ?? 'Failed to delete fee structure',
+          type: ToastType.error,
+        );
+        return false;
+      }
+    } catch (e) {
+      EasyLoading.dismiss();
+      CustomToastNotification.show(
+        'Error deleting fee structure: $e',
+        type: ToastType.error,
+      );
+      return false;
+    }
+  }
+
+  // ✅ Set active fee structure for class
+  Future<bool> setActiveFeeStructure(
+    BuildContext context,
+    String classId,
+    Map<String, dynamic> feeStructureData,
+  ) async {
+    try {
+      EasyLoading.show(status: 'Setting active fee structure...');
+
+      HTTPResponseModel res = await _classRepo.setActiveFeeStructure(
+        classId,
+        feeStructureData,
+      );
+      EasyLoading.dismiss();
+
+      if (HTTPResponseModel.isApiCallSuccess(res)) {
+        CustomToastNotification.show(
+          res.message ?? 'Active fee structure set successfully',
+          type: ToastType.success,
+        );
+
+        // Refresh class data to reflect changes
+        await getAllClassesWithMetric(context);
+        return true;
+      } else {
+        CustomToastNotification.show(
+          res.message ?? 'Failed to set active fee structure',
+          type: ToastType.error,
+        );
+        return false;
+      }
+    } catch (e) {
+      EasyLoading.dismiss();
+      CustomToastNotification.show(
+        'Error setting active fee structure: $e',
+        type: ToastType.error,
+      );
+      return false;
+    }
+  }
+
+  // ✅ Get fee structures for a class
+  Future<Map<String, dynamic>?> getClassFeeStructures(
+    BuildContext context,
+    String classId,
+  ) async {
+    try {
+      EasyLoading.show(status: 'Loading fee structures...');
+
+      HTTPResponseModel res = await _classRepo.getClassFeeStructure(classId);
+      EasyLoading.dismiss();
+
+      if (HTTPResponseModel.isApiCallSuccess(res)) {
+        return res.data;
+      } else {
+        CustomToastNotification.show(
+          res.message ?? 'Failed to load fee structures',
+          type: ToastType.error,
+        );
+        return null;
+      }
+    } catch (e) {
+      EasyLoading.dismiss();
+      CustomToastNotification.show(
+        'Error loading fee structures: $e',
+        type: ToastType.error,
+      );
+      return null;
+    }
+  }
+
   // ✅ Get class statistics
   Future<bool> getClassStatistics(
     BuildContext context, {
@@ -452,7 +643,9 @@ class ClassProvider extends ChangeNotifier {
       EasyLoading.dismiss();
 
       if (HTTPResponseModel.isApiCallSuccess(res)) {
-        final statisticsData = ClassStatisticsModel.fromJson(res.data);
+        final statisticsData = old_model.ClassStatisticsModel.fromJson(
+          res.data,
+        );
         setClassStatisticsData(statisticsData);
         return true;
       } else {
@@ -466,6 +659,36 @@ class ClassProvider extends ChangeNotifier {
       EasyLoading.dismiss();
       CustomToastNotification.show(
         'Error loading statistics: $e',
+        type: ToastType.error,
+      );
+      return false;
+    }
+  }
+
+  Future<bool> getAllTermsClassStatistics(BuildContext context) async {
+    try {
+      EasyLoading.show(status: 'Loading all terms statistics...');
+
+      HTTPResponseModel res = await _classRepo.getAllTermsClassStatistics();
+      EasyLoading.dismiss();
+
+      if (HTTPResponseModel.isApiCallSuccess(res)) {
+        final allTermsData = new_model.AllTermsClassStatisticsModel.fromJson(
+          res.data,
+        );
+        setAllTermsClassStatisticsData(allTermsData);
+        return true;
+      } else {
+        CustomToastNotification.show(
+          res.message ?? 'Failed to load all terms statistics',
+          type: ToastType.error,
+        );
+        return false;
+      }
+    } catch (e) {
+      EasyLoading.dismiss();
+      CustomToastNotification.show(
+        'Error loading all terms statistics: $e',
         type: ToastType.error,
       );
       return false;
@@ -486,8 +709,9 @@ class ClassProvider extends ChangeNotifier {
           type: ToastType.success,
         );
 
-        // Refresh class data to reflect changes
-        await getAllClassesWithMetric(context);
+        // Clear cache and refresh class data to reflect changes
+        clearClassDataCache();
+        await getAllClassesWithMetric(context, forceRefresh: true);
         return true;
       } else {
         CustomToastNotification.show(
@@ -524,8 +748,9 @@ class ClassProvider extends ChangeNotifier {
           type: ToastType.success,
         );
 
-        // Refresh the class data
-        await getAllClassesWithMetric(context);
+        // Clear cache and refresh the class data
+        clearClassDataCache();
+        await getAllClassesWithMetric(context, forceRefresh: true);
 
         return true;
       } else {
@@ -621,6 +846,48 @@ class ClassProvider extends ChangeNotifier {
         type: ToastType.error,
       );
       return false;
+    }
+  }
+
+  // Get ImageKit authentication parameters
+  Future<ImageKitAuthData?> getImageKitAuth(BuildContext context) async {
+    try {
+      EasyLoading.show(status: 'Getting authentication...');
+
+      final response = await _classRepo.getImageKitAuth();
+
+      if (HTTPResponseModel.isApiCallSuccess(response)) {
+        EasyLoading.dismiss();
+        final authData = ImageKitAuthModel.fromJson(response.data!);
+
+        if (authData.success && authData.data != null) {
+          CustomToastNotification.show(
+            'Authentication successful',
+            type: ToastType.success,
+          );
+          return authData.data!;
+        } else {
+          CustomToastNotification.show(
+            authData.message ?? 'Invalid authentication response',
+            type: ToastType.error,
+          );
+          return null;
+        }
+      } else {
+        EasyLoading.dismiss();
+        CustomToastNotification.show(
+          response.message ?? 'Failed to get authentication',
+          type: ToastType.error,
+        );
+        return null;
+      }
+    } catch (e) {
+      EasyLoading.dismiss();
+      CustomToastNotification.show(
+        'Error getting authentication: $e',
+        type: ToastType.error,
+      );
+      return null;
     }
   }
 }

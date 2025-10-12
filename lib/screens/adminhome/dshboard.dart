@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:schmgtsystem/constants/appcolor.dart';
 import 'package:schmgtsystem/providers/provider.dart';
+import 'package:schmgtsystem/services/global_academic_year_service.dart';
 
 class MetricScreen extends ConsumerStatefulWidget {
   final Function navigateTo;
@@ -18,10 +19,14 @@ class _MetricScreenState extends ConsumerState<MetricScreen>
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
   late Animation<double> _slideAnimation;
+  late GlobalAcademicYearService _academicYearService;
 
   @override
   void initState() {
     super.initState();
+    _academicYearService = GlobalAcademicYearService();
+    _academicYearService.addListener(_onAcademicYearChanged);
+
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
@@ -46,6 +51,14 @@ class _MetricScreenState extends ConsumerState<MetricScreen>
     });
   }
 
+  void _onAcademicYearChanged() {
+    if (mounted) {
+      setState(() {
+        // Trigger rebuild when academic year changes
+      });
+    }
+  }
+
   Future<void> _loadMetrics() async {
     final metricsProvider = ref.read(RiverpodProvider.metricsProvider);
     await metricsProvider.getComprehensiveMetrics();
@@ -57,6 +70,7 @@ class _MetricScreenState extends ConsumerState<MetricScreen>
 
   @override
   void dispose() {
+    _academicYearService.removeListener(_onAcademicYearChanged);
     _animationController.dispose();
     _fadeController.dispose();
     super.dispose();
@@ -112,27 +126,61 @@ class _MetricScreenState extends ConsumerState<MetricScreen>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Dashboard',
-                          style: TextStyle(
-                            fontSize: isMobile ? 20 : 24,
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFF111827),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Dashboard',
+                            style: TextStyle(
+                              fontSize: isMobile ? 20 : 24,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF111827),
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'LoveSpring Dashboard',
-                          style: TextStyle(
-                            fontSize: isMobile ? 12 : 14,
-                            color: Colors.grey[600],
-                            fontWeight: FontWeight.w500,
+                          const SizedBox(height: 4),
+                          Text(
+                            'LoveSpring Dashboard',
+                            style: TextStyle(
+                              fontSize: isMobile ? 12 : 14,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: isMobile ? 10 : 12,
+                              vertical: isMobile ? 6 : 8,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(
+                                    0xFF6366F1,
+                                  ).withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Text(
+                              '${_academicYearService.currentAcademicYearString} • ${_academicYearService.currentTermString} Term',
+                              style: TextStyle(
+                                fontSize: isMobile ? 12 : 14,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     Row(
                       children: [
@@ -1126,9 +1174,9 @@ class _MetricScreenState extends ConsumerState<MetricScreen>
   }
 
   String _formatCurrency(dynamic amount) {
-    if (amount == null) return '\$0';
+    if (amount == null) return '£0';
     final numAmount =
         amount is num ? amount : double.tryParse(amount.toString()) ?? 0;
-    return '\$${numAmount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}';
+    return '£${numAmount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}';
   }
 }

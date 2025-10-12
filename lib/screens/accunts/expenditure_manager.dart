@@ -158,7 +158,7 @@ class _ExpenditureMangerState extends State<ExpenditureManger> {
         Expanded(
           child: _buildStatCard(
             'Total Income This Term',
-            '\$125,400',
+            '£125,400',
             Colors.blue,
             Icons.trending_up,
             true,
@@ -168,7 +168,7 @@ class _ExpenditureMangerState extends State<ExpenditureManger> {
         Expanded(
           child: _buildStatCard(
             'Total Expenditures',
-            '\$98,750',
+            '£98,750',
             Colors.red,
             Icons.trending_down,
             false,
@@ -178,7 +178,7 @@ class _ExpenditureMangerState extends State<ExpenditureManger> {
         Expanded(
           child: _buildStatCard(
             'Unpaid Salaries',
-            '\$15,200',
+            '£15,200',
             Colors.orange,
             Icons.warning,
             null,
@@ -350,18 +350,25 @@ class _ExpenditureMangerState extends State<ExpenditureManger> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         margin: const EdgeInsets.only(right: 8),
         decoration: BoxDecoration(
-          color: selectedServiceTab==index ? const Color(0xFF00BCD4) : Colors.transparent,
+          color:
+              selectedServiceTab == index
+                  ? const Color(0xFF00BCD4)
+                  : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
           border:
-              selectedServiceTab==index
+              selectedServiceTab == index
                   ? null
                   : Border(bottom: BorderSide(color: Colors.grey[300]!)),
         ),
         child: Text(
           title,
           style: TextStyle(
-            color: selectedServiceTab==index ? Colors.white : Colors.grey[600],
-            fontWeight: selectedServiceTab==index ? FontWeight.w600 : FontWeight.normal,
+            color:
+                selectedServiceTab == index ? Colors.white : Colors.grey[600],
+            fontWeight:
+                selectedServiceTab == index
+                    ? FontWeight.w600
+                    : FontWeight.normal,
           ),
         ),
       ),
@@ -606,7 +613,7 @@ class _ExpenditureMangerState extends State<ExpenditureManger> {
                       style: TextStyle(fontSize: 14, color: Colors.grey),
                     ),
                     const Text(
-                      '\$125,400',
+                      '£125,400',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -625,7 +632,7 @@ class _ExpenditureMangerState extends State<ExpenditureManger> {
                       style: TextStyle(fontSize: 14, color: Colors.grey),
                     ),
                     const Text(
-                      '\$98,750',
+                      '£98,750',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -649,7 +656,7 @@ class _ExpenditureMangerState extends State<ExpenditureManger> {
                       style: TextStyle(fontSize: 14, color: Colors.grey),
                     ),
                     const Text(
-                      '\$26,650',
+                      '£26,650',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -668,7 +675,7 @@ class _ExpenditureMangerState extends State<ExpenditureManger> {
                       style: TextStyle(fontSize: 14, color: Colors.grey),
                     ),
                     const Text(
-                      '\$26,650',
+                      '£26,650',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -971,7 +978,7 @@ class _ExpenditureMangerState extends State<ExpenditureManger> {
                 'Teacher Salary - January',
                 'Salary',
                 'Salary',
-                '\$3,500',
+                '£3,500',
                 'Paid',
                 true,
               ),
@@ -980,7 +987,7 @@ class _ExpenditureMangerState extends State<ExpenditureManger> {
                 'Electricity Bill',
                 '',
                 '',
-                '\$450',
+                '£450',
                 'Pending',
                 false,
               ),

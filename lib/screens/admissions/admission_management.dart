@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:schmgtsystem/models/admission_model.dart' as admission_model;
+import 'package:schmgtsystem/models/adminssion_intent_model.dart'
+    as intent_model;
 import 'package:schmgtsystem/models/admission_model.dart';
 import 'package:schmgtsystem/providers/provider.dart';
 import 'package:schmgtsystem/widgets/success_snack.dart';
@@ -429,16 +432,21 @@ class _AdmissionManagementScreenState
                 _buildDetailRow('Full Name', admission.fullName),
                 _buildDetailRow(
                   'Date of Birth',
-                  _formatDate(admission.studentInfo.dateOfBirth),
+                  _formatDate(admission.personalInfo.dateOfBirth),
                 ),
                 _buildDetailRow(
                   'Gender',
-                  admission.studentInfo.gender.toUpperCase(),
+                  admission.personalInfo.gender.toUpperCase(),
                 ),
-                if (admission.studentInfo.previousSchool != null)
+                if (admission.personalInfo.nationality != null)
+                  _buildDetailRow(
+                    'Nationality',
+                    admission.personalInfo.nationality!,
+                  ),
+                if (admission.personalInfo.previousSchool != null)
                   _buildDetailRow(
                     'Previous School',
-                    admission.studentInfo.previousSchool!,
+                    admission.personalInfo.previousSchool!,
                   ),
               ],
             ),
@@ -450,11 +458,35 @@ class _AdmissionManagementScreenState
               Icons.family_restroom,
               Colors.green,
               [
-                _buildDetailRow('Parent Name', admission.parentInfo.name),
-                _buildDetailRow('Phone', admission.parentInfo.phone),
-                _buildDetailRow('Email', admission.parentInfo.email),
-                _buildDetailRow('Occupation', admission.parentInfo.occupation),
-                _buildDetailRow('Address', admission.parentInfo.address),
+                if (admission.parentInfo.legacy != null) ...[
+                  _buildDetailRow(
+                    'Parent Name',
+                    admission.parentInfo.legacy!.name,
+                  ),
+                  _buildDetailRow('Phone', admission.parentInfo.legacy!.phone),
+                  _buildDetailRow('Email', admission.parentInfo.legacy!.email),
+                  _buildDetailRow(
+                    'Occupation',
+                    admission.parentInfo.legacy!.occupation,
+                  ),
+                  _buildDetailRow(
+                    'Address',
+                    admission.parentInfo.legacy!.address,
+                  ),
+                ] else ...[
+                  _buildDetailRow(
+                    'Father ID',
+                    admission.parentInfo.father ?? 'Not provided',
+                  ),
+                  _buildDetailRow(
+                    'Mother ID',
+                    admission.parentInfo.mother ?? 'Not provided',
+                  ),
+                  _buildDetailRow(
+                    'Guardian ID',
+                    admission.parentInfo.guardian ?? 'Not provided',
+                  ),
+                ],
               ],
             ),
             const SizedBox(height: 16),
@@ -473,6 +505,16 @@ class _AdmissionManagementScreenState
                   'Academic Year',
                   admission.academicInfo.academicYear,
                 ),
+                if (admission.academicInfo.studentType != null)
+                  _buildDetailRow(
+                    'Student Type',
+                    admission.academicInfo.studentType!,
+                  ),
+                if (admission.academicInfo.admissionDate != null)
+                  _buildDetailRow(
+                    'Admission Date',
+                    _formatDate(admission.academicInfo.admissionDate!),
+                  ),
                 _buildDetailRow(
                   'Submitted At',
                   _formatDate(admission.submittedAt),
@@ -481,28 +523,127 @@ class _AdmissionManagementScreenState
             ),
             const SizedBox(height: 16),
 
-            // Review Information Section (if available)
-            if (admission.reviewInfo != null) ...[
+            // Contact Information Section
+            _buildDetailSection(
+              'Contact Information',
+              Icons.contact_phone,
+              Colors.teal,
+              [
+                _buildDetailRow(
+                  'Phone',
+                  admission.contactInfo.phone ?? 'Not provided',
+                ),
+                _buildDetailRow(
+                  'Email',
+                  admission.contactInfo.email ?? 'Not provided',
+                ),
+                _buildDetailRow(
+                  'Street',
+                  admission.contactInfo.address.streetName ?? 'Not provided',
+                ),
+                _buildDetailRow(
+                  'City',
+                  admission.contactInfo.address.city ?? 'Not provided',
+                ),
+                _buildDetailRow(
+                  'State',
+                  admission.contactInfo.address.state ?? 'Not provided',
+                ),
+                _buildDetailRow(
+                  'Country',
+                  admission.contactInfo.address.country ?? 'Not provided',
+                ),
+                _buildDetailRow(
+                  'Postal Code',
+                  admission.contactInfo.address.postalCode ?? 'Not provided',
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Medical Information Section (if available)
+            if (admission.medicalInfo != null) ...[
               _buildDetailSection(
-                'Review Information',
-                Icons.rate_review,
+                'Medical Information',
+                Icons.medical_services,
+                Colors.red,
+                [
+                  if (admission.medicalInfo!.medicalHistory != null)
+                    _buildDetailRow(
+                      'Medical History',
+                      admission.medicalInfo!.medicalHistory!,
+                    ),
+                  if (admission.medicalInfo!.allergies != null &&
+                      admission.medicalInfo!.allergies!.isNotEmpty)
+                    _buildDetailRow(
+                      'Allergies',
+                      admission.medicalInfo!.allergies!.join(', '),
+                    ),
+                  if (admission.medicalInfo!.currentMedication != null)
+                    _buildDetailRow(
+                      'Current Medication',
+                      admission.medicalInfo!.currentMedication!,
+                    ),
+                  if (admission.medicalInfo!.dietaryRequirements != null)
+                    _buildDetailRow(
+                      'Dietary Requirements',
+                      admission.medicalInfo!.dietaryRequirements!,
+                    ),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
+
+            // Session Information Section (if available)
+            if (admission.sessionInfo != null) ...[
+              _buildDetailSection(
+                'Session Information',
+                Icons.schedule,
                 Colors.orange,
                 [
-                  if (admission.reviewInfo!.reviewedAt != null)
+                  if (admission.sessionInfo!.requestedStartDate != null)
                     _buildDetailRow(
-                      'Reviewed At',
-                      _formatDate(admission.reviewInfo!.reviewedAt!),
+                      'Requested Start Date',
+                      admission.sessionInfo!.requestedStartDate!,
                     ),
-                  if (admission.reviewInfo!.reviewNotes != null)
+                  if (admission.sessionInfo!.daysOfAttendance != null)
                     _buildDetailRow(
-                      'Review Notes',
-                      admission.reviewInfo!.reviewNotes!,
+                      'Days of Attendance',
+                      admission.sessionInfo!.daysOfAttendance!,
                     ),
-                  if (admission.reviewInfo!.rejectionReason != null)
+                  if (admission.sessionInfo!.fundedHours != null)
                     _buildDetailRow(
-                      'Rejection Reason',
-                      admission.reviewInfo!.rejectionReason!,
+                      'Funded Hours',
+                      admission.sessionInfo!.fundedHours!,
                     ),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
+
+            // Financial Information Section (if available)
+            if (admission.financialInfo != null) ...[
+              _buildDetailSection(
+                'Financial Information',
+                Icons.account_balance_wallet,
+                Colors.green,
+                [
+                  _buildDetailRow(
+                    'Fee Status',
+                    admission.financialInfo!.feeStatus,
+                  ),
+                  _buildDetailRow(
+                    'Total Fees',
+                    '£${admission.financialInfo!.totalFees.toStringAsFixed(2)}',
+                  ),
+                  _buildDetailRow(
+                    'Paid Amount',
+                    '£${admission.financialInfo!.paidAmount.toStringAsFixed(2)}',
+                  ),
+                  _buildDetailRow(
+                    'Outstanding Balance',
+                    '£${admission.financialInfo!.outstandingBalance.toStringAsFixed(2)}',
+                  ),
                 ],
               ),
               const SizedBox(height: 16),
@@ -675,10 +816,10 @@ class _AdmissionManagementScreenState
                   radius: 25,
                   backgroundColor: Colors.blue[100],
                   child:
-                      admission.studentInfo.picture != null
+                      admission.personalInfo.profileImage != null
                           ? ClipOval(
                             child: Image.network(
-                              admission.studentInfo.picture!,
+                              admission.personalInfo.profileImage!,
                               width: 50,
                               height: 50,
                               fit: BoxFit.cover,
@@ -711,11 +852,11 @@ class _AdmissionManagementScreenState
                         ),
                       ),
                       Text(
-                        'Age: ${admission.age} years • ${admission.studentInfo.gender}',
+                        'Age: ${admission.age} years • ${admission.personalInfo.gender}',
                         style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                       ),
                       Text(
-                        'Parent: ${admission.parentInfo.name}',
+                        'Parent: ${admission.parentInfo.legacy?.name ?? 'Not provided'}',
                         style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                       ),
                     ],
@@ -790,7 +931,7 @@ class _AdmissionManagementScreenState
     );
   }
 
-  Widget _buildActionButtons(AdmissionModel admission) {
+  Widget _buildActionButtons(admission_model.AdmissionModel admission) {
     return Row(
       children: [
         if (admission.status == 'pending') ...[
@@ -871,15 +1012,276 @@ class _AdmissionManagementScreenState
     );
   }
 
-  void _showAdmissionModal(AdmissionModel admission) {
+  void _showAdmissionModal(admission_model.AdmissionModel admission) {
+    // Convert AdmissionModel to AdmissionIntentModel.Admission
+    final admissionData = intent_model.Admission(
+      id: admission.id,
+      personalInfo: intent_model.PersonalInfo(
+        firstName: admission.personalInfo.firstName,
+        middleName: admission.personalInfo.middleName,
+        lastName: admission.personalInfo.lastName,
+        dateOfBirth: admission.personalInfo.dateOfBirth,
+        gender: admission.personalInfo.gender,
+        nationality: admission.personalInfo.nationality,
+        stateOfOrigin: admission.personalInfo.stateOfOrigin,
+        localGovernment: admission.personalInfo.localGovernment,
+        religion: admission.personalInfo.religion,
+        bloodGroup: admission.personalInfo.bloodGroup,
+        languagesSpokenAtHome: admission.personalInfo.languagesSpokenAtHome,
+        ethnicBackground: admission.personalInfo.ethnicBackground,
+        formOfIdentification: admission.personalInfo.formOfIdentification,
+        idNumber: admission.personalInfo.idNumber,
+        hasSiblings: admission.personalInfo.hasSiblings,
+        siblingDetails:
+            admission.personalInfo.siblingDetails
+                ?.map(
+                  (s) => intent_model.SiblingDetail(
+                    name: s.name,
+                    age: s.age,
+                    relationship: s.relationship,
+                  ),
+                )
+                .toList(),
+        profileImage: admission.personalInfo.profileImage,
+        previousSchool: admission.personalInfo.previousSchool,
+      ),
+      contactInfo: intent_model.ContactInfo(
+        address: intent_model.Address(
+          streetNumber: admission.contactInfo.address.streetNumber,
+          streetName: admission.contactInfo.address.streetName,
+          city: admission.contactInfo.address.city,
+          state: admission.contactInfo.address.state,
+          country: admission.contactInfo.address.country,
+          postalCode: admission.contactInfo.address.postalCode,
+        ),
+        phone: admission.contactInfo.phone,
+        email: admission.contactInfo.email,
+      ),
+      academicInfo: intent_model.AcademicInfo(
+        desiredClass:
+            admission.academicInfo.desiredClass != null
+                ? intent_model.DesiredClass(
+                  id: admission.academicInfo.desiredClass,
+                  name: '',
+                  level: '',
+                  section: '',
+                  capacity: 0,
+                )
+                : null,
+        academicYear: admission.academicInfo.academicYear,
+        admissionDate: admission.academicInfo.admissionDate,
+        studentType: admission.academicInfo.studentType,
+      ),
+      parentInfo: intent_model.ParentInfo(
+        father: admission.parentInfo.father,
+        mother: admission.parentInfo.mother,
+        guardian: admission.parentInfo.guardian,
+        legacy:
+            admission.parentInfo.legacy != null
+                ? intent_model.Legacy(
+                  name: admission.parentInfo.legacy!.name,
+                  phone: admission.parentInfo.legacy!.phone,
+                  email: admission.parentInfo.legacy!.email,
+                  occupation: admission.parentInfo.legacy!.occupation,
+                  address: admission.parentInfo.legacy!.address,
+                )
+                : null,
+      ),
+      medicalInfo:
+          admission.medicalInfo != null
+              ? intent_model.MedicalInfo(
+                generalPractitioner:
+                    admission.medicalInfo!.generalPractitioner != null
+                        ? intent_model.GeneralPractitioner(
+                          name:
+                              admission.medicalInfo!.generalPractitioner!.name,
+                          address:
+                              admission
+                                  .medicalInfo!
+                                  .generalPractitioner!
+                                  .address,
+                          telephoneNumber:
+                              admission
+                                  .medicalInfo!
+                                  .generalPractitioner!
+                                  .telephoneNumber,
+                        )
+                        : null,
+                medicalHistory: admission.medicalInfo!.medicalHistory,
+                allergies: admission.medicalInfo!.allergies,
+                ongoingMedicalConditions:
+                    admission.medicalInfo!.ongoingMedicalConditions,
+                specialNeeds: admission.medicalInfo!.specialNeeds,
+                currentMedication: admission.medicalInfo!.currentMedication,
+                immunisationRecord: admission.medicalInfo!.immunisationRecord,
+                dietaryRequirements: admission.medicalInfo!.dietaryRequirements,
+                emergencyContact:
+                    admission.medicalInfo!.emergencyContact != null
+                        ? intent_model.EmergencyContact(
+                          name: admission.medicalInfo!.emergencyContact!.name,
+                          relationship:
+                              admission
+                                  .medicalInfo!
+                                  .emergencyContact!
+                                  .relationship,
+                          phone: admission.medicalInfo!.emergencyContact!.phone,
+                          email: admission.medicalInfo!.emergencyContact!.email,
+                          address:
+                              admission
+                                          .medicalInfo!
+                                          .emergencyContact!
+                                          .address !=
+                                      null
+                                  ? intent_model.Address(
+                                    streetNumber:
+                                        admission
+                                            .medicalInfo!
+                                            .emergencyContact!
+                                            .address!
+                                            .streetNumber,
+                                    streetName:
+                                        admission
+                                            .medicalInfo!
+                                            .emergencyContact!
+                                            .address!
+                                            .streetName,
+                                    city:
+                                        admission
+                                            .medicalInfo!
+                                            .emergencyContact!
+                                            .address!
+                                            .city,
+                                    state:
+                                        admission
+                                            .medicalInfo!
+                                            .emergencyContact!
+                                            .address!
+                                            .state,
+                                    country:
+                                        admission
+                                            .medicalInfo!
+                                            .emergencyContact!
+                                            .address!
+                                            .country,
+                                    postalCode:
+                                        admission
+                                            .medicalInfo!
+                                            .emergencyContact!
+                                            .address!
+                                            .postalCode,
+                                  )
+                                  : null,
+                          authorisedToCollectChild:
+                              admission
+                                  .medicalInfo!
+                                  .emergencyContact!
+                                  .authorisedToCollectChild,
+                        )
+                        : null,
+              )
+              : null,
+      senInfo:
+          admission.senInfo != null
+              ? intent_model.SenInfo(
+                hasSpecialNeeds: admission.senInfo!.hasSpecialNeeds,
+                receivingAdditionalSupport:
+                    admission.senInfo!.receivingAdditionalSupport,
+                supportDetails: admission.senInfo!.supportDetails,
+                hasEhcp: admission.senInfo!.hasEHCP,
+                ehcpDetails: admission.senInfo!.ehcpDetails,
+              )
+              : null,
+      permissions:
+          admission.permissions != null
+              ? intent_model.Permissions(
+                emergencyMedicalTreatment:
+                    admission.permissions!.emergencyMedicalTreatment,
+                administrationOfMedication:
+                    admission.permissions!.administrationOfMedication,
+                firstAidConsent: admission.permissions!.firstAidConsent,
+                outingsAndTrips: admission.permissions!.outingsAndTrips,
+                transportConsent: admission.permissions!.transportConsent,
+                useOfPhotosVideos: admission.permissions!.useOfPhotosVideos,
+                suncreamApplication: admission.permissions!.suncreamApplication,
+                observationAndAssessment:
+                    admission.permissions!.observationAndAssessment,
+              )
+              : null,
+      sessionInfo:
+          admission.sessionInfo != null
+              ? intent_model.SessionInfo(
+                requestedStartDate:
+                    admission.sessionInfo!.requestedStartDate != null
+                        ? DateTime.tryParse(
+                          admission.sessionInfo!.requestedStartDate!,
+                        )
+                        : null,
+                daysOfAttendance: admission.sessionInfo!.daysOfAttendance,
+                fundedHours: admission.sessionInfo!.fundedHours,
+                additionalPaidSessions:
+                    admission.sessionInfo!.additionalPaidSessions,
+                preferredSettlingInSessions:
+                    admission.sessionInfo!.preferredSettlingInSessions,
+              )
+              : null,
+      backgroundInfo:
+          admission.backgroundInfo != null
+              ? intent_model.BackgroundInfo(
+                previousChildcareProvider:
+                    admission.backgroundInfo!.previousChildcareProvider,
+                siblings:
+                    admission.backgroundInfo!.siblings
+                        ?.map(
+                          (s) => intent_model.Sibling(name: s.name, age: s.age),
+                        )
+                        .toList(),
+                interests: admission.backgroundInfo!.interests,
+                toiletTrainingStatus:
+                    admission.backgroundInfo!.toiletTrainingStatus,
+                comfortItems: admission.backgroundInfo!.comfortItems,
+                sleepRoutine: admission.backgroundInfo!.sleepRoutine,
+                behaviouralConcerns:
+                    admission.backgroundInfo!.behaviouralConcerns,
+                languagesSpokenAtHome:
+                    admission.backgroundInfo!.languagesSpokenAtHome,
+              )
+              : null,
+      legalInfo:
+          admission.legalInfo != null
+              ? intent_model.LegalInfo(
+                legalResponsibility: admission.legalInfo!.legalResponsibility,
+                courtOrders: admission.legalInfo!.courtOrders,
+                safeguardingDisclosure:
+                    admission.legalInfo!.safeguardingDisclosure,
+                parentSignature: admission.legalInfo!.parentSignature,
+                signatureDate:
+                    admission.legalInfo!.signatureDate != null
+                        ? DateTime.tryParse(admission.legalInfo!.signatureDate!)
+                        : null,
+              )
+              : null,
+      fundingInfo:
+          admission.fundingInfo != null
+              ? intent_model.FundingInfo(
+                agreementToPayFees: admission.fundingInfo!.agreementToPayFees,
+                fundingAgreement: admission.fundingInfo!.fundingAgreement,
+              )
+              : null,
+
+      additionalInfo: admission.additionalInfo,
+      status: admission.status,
+      submittedAt: admission.submittedAt,
+      submittedBy: admission.submittedBy,
+    );
+
     showDialog(
       context: context,
       builder:
           (context) => AdmissionDetailsModal(
-            admission: admission,
-            onApprove: (additionalData) async {
+            admissionData: admissionData,
+            onApprove: (updatedData) async {
               Navigator.pop(context);
-              await _admitStudentWithDetails(admission.id, additionalData);
+              await _admitStudentWithDetails(admission.id, updatedData);
             },
           ),
     );
@@ -962,26 +1364,35 @@ class _AdmissionManagementScreenState
                 children: [
                   _buildDetailRow('Student Name', admission.fullName),
                   _buildDetailRow('Age', '${admission.age} years'),
-                  _buildDetailRow('Gender', admission.studentInfo.gender),
+                  _buildDetailRow('Gender', admission.personalInfo.gender),
                   _buildDetailRow(
                     'Date of Birth',
-                    _formatDate(admission.studentInfo.dateOfBirth),
+                    _formatDate(admission.personalInfo.dateOfBirth),
                   ),
                   _buildDetailRow(
                     'Previous School',
-                    admission.studentInfo.previousSchool ?? 'N/A',
+                    admission.personalInfo.previousSchool ?? 'N/A',
                   ),
                   const Divider(),
-                  _buildDetailRow('Parent Name', admission.parentInfo.name),
-                  _buildDetailRow('Parent Phone', admission.parentInfo.phone),
-                  _buildDetailRow('Parent Email', admission.parentInfo.email),
+                  _buildDetailRow(
+                    'Parent Name',
+                    admission.parentInfo.legacy?.name ?? 'N/A',
+                  ),
+                  _buildDetailRow(
+                    'Parent Phone',
+                    admission.parentInfo.legacy?.phone ?? 'N/A',
+                  ),
+                  _buildDetailRow(
+                    'Parent Email',
+                    admission.parentInfo.legacy?.email ?? 'N/A',
+                  ),
                   _buildDetailRow(
                     'Parent Occupation',
-                    admission.parentInfo.occupation,
+                    admission.parentInfo.legacy?.occupation ?? 'N/A',
                   ),
                   _buildDetailRow(
                     'Parent Address',
-                    admission.parentInfo.address,
+                    admission.parentInfo.legacy?.address ?? 'N/A',
                   ),
                   const Divider(),
                   _buildDetailRow(
@@ -1029,12 +1440,13 @@ class _AdmissionManagementScreenState
 }
 
 class AdmissionDetailsModal extends ConsumerStatefulWidget {
-  final AdmissionModel admission;
+  final intent_model.Admission
+  admissionData; // Use AdmissionIntentModel.Admission
   final Function(Map<String, dynamic>) onApprove;
 
   const AdmissionDetailsModal({
     super.key,
-    required this.admission,
+    required this.admissionData,
     required this.onApprove,
   });
 
@@ -1057,18 +1469,115 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
   final ImagePicker _imagePicker = ImagePicker();
 
   // Form controllers - Student Personal Info
-  final _streetController = TextEditingController();
+  // Personal Info
+  final _firstNameController = TextEditingController();
+  final _middleNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
+  final _dobController = TextEditingController();
+  final _nationalityController = TextEditingController();
+  final _stateOfOriginController = TextEditingController();
+  final _localGovernmentController = TextEditingController();
+  final _religionController = TextEditingController();
+  final _bloodGroupController = TextEditingController();
+  final _languagesSpokenController = TextEditingController();
+  final _ethnicBackgroundController = TextEditingController();
+  final _formOfIdentificationController = TextEditingController();
+  final _idNumberController = TextEditingController();
+  final _previousSchoolController = TextEditingController();
+  String? _selectedGender;
+  DateTime? _selectedDob;
+  bool _hasSiblings = false;
+  List<Map<String, dynamic>> _siblingDetails = [];
+
+  // Contact Info
+  final _streetNumberController = TextEditingController();
+  final _streetNameController = TextEditingController();
   final _cityController = TextEditingController();
   final _stateController = TextEditingController();
   final _countryController = TextEditingController();
+  final _postalCodeController = TextEditingController();
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
+
+  // Academic Info
+  final _academicYearController = TextEditingController();
+  final _studentTypeController = TextEditingController();
+  String? _selectedClassId;
+
+  // Medical Info
+  final _gpNameController = TextEditingController();
+  final _gpAddressController = TextEditingController();
+  final _gpPhoneController = TextEditingController();
+  final _medicalHistoryController = TextEditingController();
   final _allergiesController = TextEditingController();
-  final _medicationsController = TextEditingController();
-  final _medicalConditionsController = TextEditingController();
+  final _ongoingConditionsController = TextEditingController();
+  final _specialNeedsController = TextEditingController();
+  final _currentMedicationController = TextEditingController();
+  final _immunisationController = TextEditingController();
+  final _dietaryRequirementsController = TextEditingController();
   final _emergencyContactNameController = TextEditingController();
   final _emergencyContactPhoneController = TextEditingController();
   final _emergencyContactRelationshipController = TextEditingController();
+  final _emergencyContactEmailController = TextEditingController();
+  final _emergencyStreetNumberController = TextEditingController();
+  final _emergencyStreetNameController = TextEditingController();
+  final _emergencyCityController = TextEditingController();
+  final _emergencyStateController = TextEditingController();
+  final _emergencyCountryController = TextEditingController();
+  final _emergencyPostalCodeController = TextEditingController();
+  bool _emergencyAuthorisedToCollect = false;
+
+  // SEN Info
+  bool _hasSpecialNeeds = false;
+  bool _receivingAdditionalSupport = false;
+  final _supportDetailsController = TextEditingController();
+  bool _hasEHCP = false;
+  final _ehcpDetailsController = TextEditingController();
+
+  // Permissions
+  bool _emergencyMedicalTreatment = false;
+  bool _administrationOfMedication = false;
+  bool _firstAidConsent = false;
+  bool _outingsAndTrips = false;
+  bool _transportConsent = false;
+  bool _useOfPhotosVideos = false;
+  bool _suncreamApplication = false;
+  bool _observationAndAssessment = false;
+
+  // Session Info
+  final _requestedStartDateController = TextEditingController();
+  final _daysOfAttendanceController = TextEditingController();
+  final _fundedHoursController = TextEditingController();
+  final _additionalPaidSessionsController = TextEditingController();
+  final _preferredSettlingController = TextEditingController();
+
+  // Background Info
+  final _previousChildcareController = TextEditingController();
+  final _interestsController = TextEditingController();
+  final _toiletTrainingController = TextEditingController();
+  final _comfortItemsController = TextEditingController();
+  final _sleepRoutineController = TextEditingController();
+  final _behaviouralConcernsController = TextEditingController();
+
+  // Legal Info
+  final _legalResponsibilityController = TextEditingController();
+  final _courtOrdersController = TextEditingController();
+  final _safeguardingController = TextEditingController();
+  final _parentSignatureController = TextEditingController();
+  final _signatureDateController = TextEditingController();
+
+  // Funding Info
+  bool _agreementToPayFees = false;
+  final _fundingAgreementController = TextEditingController();
+
+  // Financial Info
+  final _feeStatusController = TextEditingController();
+  final _totalFeesController = TextEditingController();
+  final _paidAmountController = TextEditingController();
+  final _outstandingBalanceController = TextEditingController();
+
+  // Additional Info
+  final _additionalInfoController = TextEditingController();
 
   // Parent controllers - Father
   final _fatherTitleController = TextEditingController();
@@ -1399,12 +1908,11 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
       'West Grand Bahama',
     ],
   };
-  String? _selectedClassId;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 8, vsync: this);
     _admissionNumberController.text =
         'ADM-${DateTime.now().year}-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}';
     _selectedAdmissionDate = DateTime.now();
@@ -1416,18 +1924,99 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
   @override
   void dispose() {
     _tabController.dispose();
-    _streetController.dispose();
+
+    // Personal Info
+    _firstNameController.dispose();
+    _middleNameController.dispose();
+    _lastNameController.dispose();
+    _dobController.dispose();
+    _nationalityController.dispose();
+    _stateOfOriginController.dispose();
+    _localGovernmentController.dispose();
+    _religionController.dispose();
+    _bloodGroupController.dispose();
+    _languagesSpokenController.dispose();
+    _ethnicBackgroundController.dispose();
+    _formOfIdentificationController.dispose();
+    _idNumberController.dispose();
+    _previousSchoolController.dispose();
+
+    // Contact Info
+    _streetNumberController.dispose();
+    _streetNameController.dispose();
     _cityController.dispose();
     _stateController.dispose();
     _countryController.dispose();
+    _postalCodeController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
+
+    // Academic Info
+    _academicYearController.dispose();
+    _admissionDateController.dispose();
+    _studentTypeController.dispose();
+
+    // Medical Info
+    _gpNameController.dispose();
+    _gpAddressController.dispose();
+    _gpPhoneController.dispose();
+    _medicalHistoryController.dispose();
     _allergiesController.dispose();
-    _medicationsController.dispose();
-    _medicalConditionsController.dispose();
+    _ongoingConditionsController.dispose();
+    _specialNeedsController.dispose();
+    _currentMedicationController.dispose();
+    _immunisationController.dispose();
+    _dietaryRequirementsController.dispose();
     _emergencyContactNameController.dispose();
     _emergencyContactPhoneController.dispose();
     _emergencyContactRelationshipController.dispose();
+    _emergencyContactEmailController.dispose();
+    _emergencyStreetNumberController.dispose();
+    _emergencyStreetNameController.dispose();
+    _emergencyCityController.dispose();
+    _emergencyStateController.dispose();
+    _emergencyCountryController.dispose();
+    _emergencyPostalCodeController.dispose();
+
+    // SEN Info
+    _supportDetailsController.dispose();
+    _ehcpDetailsController.dispose();
+
+    // Session Info
+    _requestedStartDateController.dispose();
+    _daysOfAttendanceController.dispose();
+    _fundedHoursController.dispose();
+    _additionalPaidSessionsController.dispose();
+    _preferredSettlingController.dispose();
+
+    // Background Info
+    _previousChildcareController.dispose();
+    _interestsController.dispose();
+    _toiletTrainingController.dispose();
+    _comfortItemsController.dispose();
+    _sleepRoutineController.dispose();
+    _behaviouralConcernsController.dispose();
+
+    // Legal Info
+    _legalResponsibilityController.dispose();
+    _courtOrdersController.dispose();
+    _safeguardingController.dispose();
+    _parentSignatureController.dispose();
+    _signatureDateController.dispose();
+
+    // Funding Info
+    _fundingAgreementController.dispose();
+
+    // Financial Info
+    _feeStatusController.dispose();
+    _totalFeesController.dispose();
+    _paidAmountController.dispose();
+    _outstandingBalanceController.dispose();
+
+    // Additional Info
+    _additionalInfoController.dispose();
+
+    // Parent controllers
     _fatherTitleController.dispose();
     _fatherFirstNameController.dispose();
     _fatherLastNameController.dispose();
@@ -1449,24 +2038,217 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
     _motherEmployerController.dispose();
     _motherAddressController.dispose();
     _admissionNumberController.dispose();
-    _admissionDateController.dispose();
+
     super.dispose();
   }
 
   void _populateExistingData() {
-    // Populate parent data from admission
-    final parentName = widget.admission.parentInfo.name.split(' ');
-    _fatherFirstNameController.text =
-        parentName.isNotEmpty ? parentName[0] : '';
-    _fatherLastNameController.text =
-        parentName.length > 1 ? parentName.sublist(1).join(' ') : '';
-    _fatherPhoneController.text = widget.admission.parentInfo.phone;
-    _fatherEmailController.text = widget.admission.parentInfo.email;
-    _fatherOccupationController.text = widget.admission.parentInfo.occupation;
-    _fatherAddressController.text = widget.admission.parentInfo.address;
+    final data = widget.admissionData;
 
-    // Set the desired class
-    _selectedClassId = widget.admission.academicInfo.desiredClassId;
+    // Personal Info
+    _firstNameController.text = data.personalInfo?.firstName ?? '';
+    _middleNameController.text = data.personalInfo?.middleName ?? '';
+    _lastNameController.text = data.personalInfo?.lastName ?? '';
+    _selectedDob = data.personalInfo?.dateOfBirth;
+    _dobController.text =
+        _selectedDob != null ? _formatDate(_selectedDob!) : '';
+    _selectedGender = data.personalInfo?.gender;
+    _nationalityController.text = data.personalInfo?.nationality ?? '';
+    _stateOfOriginController.text = data.personalInfo?.stateOfOrigin ?? '';
+    _localGovernmentController.text = data.personalInfo?.localGovernment ?? '';
+    _religionController.text = data.personalInfo?.religion ?? '';
+    _bloodGroupController.text = data.personalInfo?.bloodGroup ?? '';
+    _languagesSpokenController.text =
+        data.personalInfo?.languagesSpokenAtHome ?? '';
+    _ethnicBackgroundController.text =
+        data.personalInfo?.ethnicBackground ?? '';
+    _formOfIdentificationController.text =
+        data.personalInfo?.formOfIdentification ?? '';
+    _idNumberController.text = data.personalInfo?.idNumber ?? '';
+    _previousSchoolController.text = data.personalInfo?.previousSchool ?? '';
+    _hasSiblings = data.personalInfo?.hasSiblings ?? false;
+    _siblingDetails =
+        data.personalInfo?.siblingDetails
+            ?.map(
+              (s) => {
+                'name': s.name,
+                'age': s.age,
+                'relationship': s.relationship,
+              },
+            )
+            .toList() ??
+        [];
+    _imageUrl = data.personalInfo?.profileImage;
+
+    // Contact Info
+    _streetNumberController.text =
+        data.contactInfo?.address?.streetNumber ?? '';
+    _streetNameController.text = data.contactInfo?.address?.streetName ?? '';
+    _cityController.text = data.contactInfo?.address?.city ?? '';
+    _stateController.text = data.contactInfo?.address?.state ?? '';
+    _countryController.text = data.contactInfo?.address?.country ?? '';
+    _postalCodeController.text = data.contactInfo?.address?.postalCode ?? '';
+    _phoneController.text = data.contactInfo?.phone ?? '';
+    _emailController.text = data.contactInfo?.email ?? '';
+
+    // Academic Info
+    _academicYearController.text = data.academicInfo?.academicYear ?? '';
+    _studentTypeController.text = data.academicInfo?.studentType ?? '';
+    _selectedAdmissionDate = data.academicInfo?.admissionDate;
+    if (_selectedAdmissionDate != null) {
+      _admissionDateController.text = _formatDate(_selectedAdmissionDate!);
+    }
+    _selectedClassId = data.academicInfo?.desiredClass?.id;
+
+    // Medical Info
+    if (data.medicalInfo != null) {
+      _gpNameController.text =
+          data.medicalInfo!.generalPractitioner?.name ?? '';
+      _gpAddressController.text =
+          data.medicalInfo!.generalPractitioner?.address ?? '';
+      _gpPhoneController.text =
+          data.medicalInfo!.generalPractitioner?.telephoneNumber ?? '';
+      _medicalHistoryController.text = data.medicalInfo!.medicalHistory ?? '';
+      _allergiesController.text = data.medicalInfo!.allergies?.join(', ') ?? '';
+      _ongoingConditionsController.text =
+          data.medicalInfo!.ongoingMedicalConditions ?? '';
+      _specialNeedsController.text = data.medicalInfo!.specialNeeds ?? '';
+      _currentMedicationController.text =
+          data.medicalInfo!.currentMedication ?? '';
+      _immunisationController.text = data.medicalInfo!.immunisationRecord ?? '';
+      _dietaryRequirementsController.text =
+          data.medicalInfo!.dietaryRequirements ?? '';
+
+      if (data.medicalInfo!.emergencyContact != null) {
+        _emergencyContactNameController.text =
+            data.medicalInfo!.emergencyContact!.name ?? '';
+        _emergencyContactPhoneController.text =
+            data.medicalInfo!.emergencyContact!.phone ?? '';
+        _emergencyContactRelationshipController.text =
+            data.medicalInfo!.emergencyContact!.relationship ?? '';
+        _emergencyContactEmailController.text =
+            data.medicalInfo!.emergencyContact!.email ?? '';
+        _emergencyAuthorisedToCollect =
+            data.medicalInfo!.emergencyContact!.authorisedToCollectChild ??
+            false;
+
+        if (data.medicalInfo!.emergencyContact!.address != null) {
+          _emergencyStreetNumberController.text =
+              data.medicalInfo!.emergencyContact!.address!.streetNumber ?? '';
+          _emergencyStreetNameController.text =
+              data.medicalInfo!.emergencyContact!.address!.streetName ?? '';
+          _emergencyCityController.text =
+              data.medicalInfo!.emergencyContact!.address!.city ?? '';
+          _emergencyStateController.text =
+              data.medicalInfo!.emergencyContact!.address!.state ?? '';
+          _emergencyCountryController.text =
+              data.medicalInfo!.emergencyContact!.address!.country ?? '';
+          _emergencyPostalCodeController.text =
+              data.medicalInfo!.emergencyContact!.address!.postalCode ?? '';
+        }
+      }
+    }
+
+    // SEN Info
+    if (data.senInfo != null) {
+      _hasSpecialNeeds = data.senInfo!.hasSpecialNeeds ?? false;
+      _receivingAdditionalSupport =
+          data.senInfo!.receivingAdditionalSupport ?? false;
+      _supportDetailsController.text = data.senInfo!.supportDetails ?? '';
+      _hasEHCP = data.senInfo!.hasEhcp ?? false;
+      _ehcpDetailsController.text = data.senInfo!.ehcpDetails ?? '';
+    }
+
+    // Permissions
+    if (data.permissions != null) {
+      _emergencyMedicalTreatment =
+          data.permissions!.emergencyMedicalTreatment ?? false;
+      _administrationOfMedication =
+          data.permissions!.administrationOfMedication ?? false;
+      _firstAidConsent = data.permissions!.firstAidConsent ?? false;
+      _outingsAndTrips = data.permissions!.outingsAndTrips ?? false;
+      _transportConsent = data.permissions!.transportConsent ?? false;
+      _useOfPhotosVideos = data.permissions!.useOfPhotosVideos ?? false;
+      _suncreamApplication = data.permissions!.suncreamApplication ?? false;
+      _observationAndAssessment =
+          data.permissions!.observationAndAssessment ?? false;
+    }
+
+    // Session Info
+    if (data.sessionInfo != null) {
+      _requestedStartDateController.text =
+          data.sessionInfo!.requestedStartDate?.toIso8601String().split(
+            'T',
+          )[0] ??
+          '';
+      _daysOfAttendanceController.text =
+          data.sessionInfo!.daysOfAttendance ?? '';
+      _fundedHoursController.text = data.sessionInfo!.fundedHours ?? '';
+      _additionalPaidSessionsController.text =
+          data.sessionInfo!.additionalPaidSessions ?? '';
+      _preferredSettlingController.text =
+          data.sessionInfo!.preferredSettlingInSessions ?? '';
+    }
+
+    // Background Info
+    if (data.backgroundInfo != null) {
+      _previousChildcareController.text =
+          data.backgroundInfo!.previousChildcareProvider ?? '';
+      _interestsController.text = data.backgroundInfo!.interests ?? '';
+      _toiletTrainingController.text =
+          data.backgroundInfo!.toiletTrainingStatus ?? '';
+      _comfortItemsController.text = data.backgroundInfo!.comfortItems ?? '';
+      _sleepRoutineController.text = data.backgroundInfo!.sleepRoutine ?? '';
+      _behaviouralConcernsController.text =
+          data.backgroundInfo!.behaviouralConcerns ?? '';
+    }
+
+    // Legal Info
+    if (data.legalInfo != null) {
+      _legalResponsibilityController.text =
+          data.legalInfo!.legalResponsibility ?? '';
+      _courtOrdersController.text = data.legalInfo!.courtOrders ?? '';
+      _safeguardingController.text =
+          data.legalInfo!.safeguardingDisclosure ?? '';
+      _parentSignatureController.text = data.legalInfo!.parentSignature ?? '';
+      _signatureDateController.text =
+          data.legalInfo!.signatureDate?.toIso8601String().split('T')[0] ?? '';
+    }
+
+    // Funding Info
+    if (data.fundingInfo != null) {
+      _agreementToPayFees = data.fundingInfo!.agreementToPayFees ?? false;
+      _fundingAgreementController.text =
+          data.fundingInfo!.fundingAgreement ?? '';
+    }
+
+    // Financial Info
+    if (data.financialInfo != null) {
+      _feeStatusController.text = data.financialInfo!.feeStatus ?? '';
+      _totalFeesController.text =
+          data.financialInfo!.totalFees?.toString() ?? '';
+      _paidAmountController.text =
+          data.financialInfo!.paidAmount?.toString() ?? '';
+      _outstandingBalanceController.text =
+          data.financialInfo!.outstandingBalance?.toString() ?? '';
+    }
+
+    // Additional Info
+    _additionalInfoController.text = data.additionalInfo ?? '';
+
+    // Parent Info (Legacy)
+    if (data.parentInfo?.legacy != null) {
+      final parentName = data.parentInfo!.legacy!.name?.split(' ') ?? [];
+      _fatherFirstNameController.text =
+          parentName.isNotEmpty ? parentName[0] : '';
+      _fatherLastNameController.text =
+          parentName.length > 1 ? parentName.sublist(1).join(' ') : '';
+      _fatherPhoneController.text = data.parentInfo!.legacy!.phone ?? '';
+      _fatherEmailController.text = data.parentInfo!.legacy!.email ?? '';
+      _fatherOccupationController.text =
+          data.parentInfo!.legacy!.occupation ?? '';
+      _fatherAddressController.text = data.parentInfo!.legacy!.address ?? '';
+    }
   }
 
   Future<void> _loadClasses() async {
@@ -1503,9 +2285,9 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
       final selectedClass = _classes.firstWhere(
         (c) => c?.id == _selectedClassId,
       );
-      return'${ selectedClass?.level} (${selectedClass?.name})' ?? 'Unknown';
+      return '${selectedClass?.level} (${selectedClass?.name})';
     } catch (e) {
-      return 'Unknown';
+      return null;
     }
   }
 
@@ -1597,106 +2379,6 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
     );
   }
 
-  // Method to build state dropdown with dynamic states based on country
-  Widget _buildStateDropdown({
-    required String label,
-    required String? value,
-    required String? country,
-    required Function(String?) onChanged,
-    bool isRequired = false,
-  }) {
-    final states = _getStatesForCountry(country);
-
-    // Debug print to help troubleshoot
-    print(
-      'State dropdown - Country: $country, States: $states, Selected: $value',
-    );
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '$label${isRequired ? ' *' : ''}',
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Colors.black87,
-          ),
-        ),
-        const SizedBox(height: 8),
-
-        // Debug info
-        if (country != null)
-          Text(
-            'Debug: Country="$country", States=${states.length}, Selected="$value"',
-            style: TextStyle(fontSize: 10, color: Colors.grey),
-          ),
-
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade300),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              key: ValueKey(country), // Force rebuild when country changes
-              value:
-                  states.contains(value)
-                      ? value
-                      : null, // Only show value if it's in the current states list
-              hint: Text(
-                states.isEmpty
-                    ? 'Select Country First'
-                    : states.contains('Not Available')
-                    ? 'State Not Available'
-                    : 'Select State',
-                style: TextStyle(color: Colors.grey.shade500),
-              ),
-              isExpanded: true,
-              items:
-                  states.map((String state) {
-                    print('Creating dropdown item for state: $state');
-                    return DropdownMenuItem<String>(
-                      value: state,
-                      child: Text(state),
-                    );
-                  }).toList(),
-              onChanged:
-                  states.isEmpty
-                      ? (String? newValue) {
-                        print(
-                          'State dropdown is disabled - states.isEmpty: ${states.isEmpty}',
-                        );
-                        return null;
-                      }
-                      : (String? newValue) {
-                        print('State selected: $newValue');
-                        // Handle "Not Available" case
-                        if (newValue == 'Not Available') {
-                          setState(() {
-                            _selectedState = null;
-                            _stateController.text = '';
-                          });
-                          print('State set to null for "Not Available"');
-                          return;
-                        }
-                        onChanged(newValue);
-                        setState(() {
-                          _selectedState = newValue;
-                          _stateController.text = newValue ?? '';
-                        });
-                        print(
-                          'After state selection - _selectedState: $_selectedState',
-                        );
-                      },
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   Future<void> _selectDate(BuildContext context, bool isAdmissionDate) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -1713,6 +2395,9 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
         if (isAdmissionDate) {
           _selectedAdmissionDate = picked;
           _admissionDateController.text = _formatDate(picked);
+        } else {
+          _selectedDob = picked;
+          _dobController.text = _formatDate(picked);
         }
       });
     }
@@ -1803,6 +2488,701 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
 
     final resizedImage = img.copyResize(image, width: 400, height: 400);
     return Uint8List.fromList(img.encodeJpg(resizedImage, quality: 85));
+  }
+
+  Widget _buildPersonalInfoTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildImageUploadSection(),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _firstNameController,
+                  label: 'First Name',
+                  isRequired: true,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildTextField(
+                  controller: _middleNameController,
+                  label: 'Middle Name',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildTextField(
+                  controller: _lastNameController,
+                  label: 'Last Name',
+                  isRequired: true,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _dobController,
+                  label: 'Date of Birth',
+                  readOnly: true,
+                  onTap: () => _selectDate(context, false),
+                  suffixIcon: const Icon(Icons.calendar_today, size: 18),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildDropdown(
+                  label: 'Gender',
+                  value: _selectedGender,
+                  items: const ['male', 'female'],
+                  onChanged: (v) => setState(() => _selectedGender = v),
+                  isRequired: true,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _nationalityController,
+                  label: 'Nationality',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildTextField(
+                  controller: _stateOfOriginController,
+                  label: 'State of Origin',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _localGovernmentController,
+                  label: 'Local Government',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildTextField(
+                  controller: _religionController,
+                  label: 'Religion',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _bloodGroupController,
+                  label: 'Blood Group',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildTextField(
+                  controller: _formOfIdentificationController,
+                  label: 'Form of Identification',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(controller: _idNumberController, label: 'ID Number'),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _languagesSpokenController,
+            label: 'Languages Spoken at Home',
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _ethnicBackgroundController,
+            label: 'Ethnic Background',
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _previousSchoolController,
+            label: 'Previous School',
+          ),
+          const SizedBox(height: 16),
+          SwitchListTile(
+            title: const Text('Has Siblings'),
+            value: _hasSiblings,
+            onChanged: (value) => setState(() => _hasSiblings = value),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContactInfoTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Address Information',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _streetNumberController,
+                  label: 'Street Number',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildTextField(
+                  controller: _streetNameController,
+                  label: 'Street Name',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _cityController,
+                  label: 'City',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildTextField(
+                  controller: _stateController,
+                  label: 'State',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildCountryPicker(
+                  label: 'Country',
+                  value: _selectedCountry,
+                  onChanged:
+                      (value) => setState(() => _selectedCountry = value),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildTextField(
+                  controller: _postalCodeController,
+                  label: 'Postal Code',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            'Contact Information',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _phoneController,
+                  label: 'Phone',
+                  keyboardType: TextInputType.phone,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildTextField(
+                  controller: _emailController,
+                  label: 'Email',
+                  keyboardType: TextInputType.emailAddress,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMedicalInfoTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'General Practitioner',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _gpNameController,
+                  label: 'GP Name',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildTextField(
+                  controller: _gpPhoneController,
+                  label: 'GP Phone',
+                  keyboardType: TextInputType.phone,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _gpAddressController,
+            label: 'GP Address',
+            maxLines: 2,
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            'Medical Information',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 12),
+          _buildTextField(
+            controller: _medicalHistoryController,
+            label: 'Medical History',
+            maxLines: 3,
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _allergiesController,
+            label: 'Allergies',
+            maxLines: 2,
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _ongoingConditionsController,
+            label: 'Ongoing Medical Conditions',
+            maxLines: 2,
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _specialNeedsController,
+            label: 'Special Needs',
+            maxLines: 2,
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _currentMedicationController,
+            label: 'Current Medication',
+            maxLines: 2,
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _immunisationController,
+            label: 'Immunisation Record',
+            maxLines: 2,
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _dietaryRequirementsController,
+            label: 'Dietary Requirements',
+            maxLines: 2,
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            'Emergency Contact',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _emergencyContactNameController,
+                  label: 'Emergency Contact Name',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildTextField(
+                  controller: _emergencyContactPhoneController,
+                  label: 'Emergency Contact Phone',
+                  keyboardType: TextInputType.phone,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _emergencyContactRelationshipController,
+                  label: 'Relationship',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildTextField(
+                  controller: _emergencyContactEmailController,
+                  label: 'Emergency Contact Email',
+                  keyboardType: TextInputType.emailAddress,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          SwitchListTile(
+            title: const Text('Authorised to Collect Child'),
+            value: _emergencyAuthorisedToCollect,
+            onChanged:
+                (value) =>
+                    setState(() => _emergencyAuthorisedToCollect = value),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSenPermissionsTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Special Educational Needs',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 12),
+          SwitchListTile(
+            title: const Text('Has Special Needs'),
+            value: _hasSpecialNeeds,
+            onChanged: (value) => setState(() => _hasSpecialNeeds = value),
+          ),
+          SwitchListTile(
+            title: const Text('Receiving Additional Support'),
+            value: _receivingAdditionalSupport,
+            onChanged:
+                (value) => setState(() => _receivingAdditionalSupport = value),
+          ),
+          _buildTextField(
+            controller: _supportDetailsController,
+            label: 'Support Details',
+            maxLines: 3,
+          ),
+          const SizedBox(height: 16),
+          SwitchListTile(
+            title: const Text('Has EHCP'),
+            value: _hasEHCP,
+            onChanged: (value) => setState(() => _hasEHCP = value),
+          ),
+          _buildTextField(
+            controller: _ehcpDetailsController,
+            label: 'EHCP Details',
+            maxLines: 3,
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            'Permissions',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 12),
+          SwitchListTile(
+            title: const Text('Emergency Medical Treatment'),
+            value: _emergencyMedicalTreatment,
+            onChanged:
+                (value) => setState(() => _emergencyMedicalTreatment = value),
+          ),
+          SwitchListTile(
+            title: const Text('Administration of Medication'),
+            value: _administrationOfMedication,
+            onChanged:
+                (value) => setState(() => _administrationOfMedication = value),
+          ),
+          SwitchListTile(
+            title: const Text('First Aid Consent'),
+            value: _firstAidConsent,
+            onChanged: (value) => setState(() => _firstAidConsent = value),
+          ),
+          SwitchListTile(
+            title: const Text('Outings and Trips'),
+            value: _outingsAndTrips,
+            onChanged: (value) => setState(() => _outingsAndTrips = value),
+          ),
+          SwitchListTile(
+            title: const Text('Transport Consent'),
+            value: _transportConsent,
+            onChanged: (value) => setState(() => _transportConsent = value),
+          ),
+          SwitchListTile(
+            title: const Text('Use of Photos/Videos'),
+            value: _useOfPhotosVideos,
+            onChanged: (value) => setState(() => _useOfPhotosVideos = value),
+          ),
+          SwitchListTile(
+            title: const Text('Suncream Application'),
+            value: _suncreamApplication,
+            onChanged: (value) => setState(() => _suncreamApplication = value),
+          ),
+          SwitchListTile(
+            title: const Text('Observation and Assessment'),
+            value: _observationAndAssessment,
+            onChanged:
+                (value) => setState(() => _observationAndAssessment = value),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSessionBackgroundTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Session Information',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 12),
+          _buildTextField(
+            controller: _requestedStartDateController,
+            label: 'Requested Start Date',
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _daysOfAttendanceController,
+                  label: 'Days of Attendance',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildTextField(
+                  controller: _fundedHoursController,
+                  label: 'Funded Hours',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _additionalPaidSessionsController,
+            label: 'Additional Paid Sessions',
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _preferredSettlingController,
+            label: 'Preferred Settling In Sessions',
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            'Background Information',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 12),
+          _buildTextField(
+            controller: _previousChildcareController,
+            label: 'Previous Childcare Provider',
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _interestsController,
+            label: 'Interests',
+            maxLines: 2,
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _toiletTrainingController,
+            label: 'Toilet Training Status',
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _comfortItemsController,
+            label: 'Comfort Items',
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _sleepRoutineController,
+            label: 'Sleep Routine',
+            maxLines: 2,
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _behaviouralConcernsController,
+            label: 'Behavioural Concerns',
+            maxLines: 2,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLegalFundingTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Legal Information',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 12),
+          _buildTextField(
+            controller: _legalResponsibilityController,
+            label: 'Legal Responsibility',
+            maxLines: 2,
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _courtOrdersController,
+            label: 'Court Orders',
+            maxLines: 2,
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _safeguardingController,
+            label: 'Safeguarding Disclosure',
+            maxLines: 2,
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _parentSignatureController,
+                  label: 'Parent Signature',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildTextField(
+                  controller: _signatureDateController,
+                  label: 'Signature Date',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            'Funding Information',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 12),
+          SwitchListTile(
+            title: const Text('Agreement to Pay Fees'),
+            value: _agreementToPayFees,
+            onChanged: (value) => setState(() => _agreementToPayFees = value),
+          ),
+
+          const SizedBox(height: 20),
+          _buildTextField(
+            controller: _additionalInfoController,
+            label: 'Additional Information',
+            maxLines: 4,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildParentInfoTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Parent Information (Legacy)',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _fatherFirstNameController,
+                  label: 'Parent First Name',
+                  isRequired: true,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildTextField(
+                  controller: _fatherMiddleNameController,
+                  label: 'Parent Middle Name',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildTextField(
+                  controller: _fatherLastNameController,
+                  label: 'Parent Last Name',
+                  isRequired: true,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _fatherPhoneController,
+                  label: 'Parent Phone',
+                  isRequired: true,
+                  keyboardType: TextInputType.phone,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildTextField(
+                  controller: _fatherEmailController,
+                  label: 'Parent Email',
+                  keyboardType: TextInputType.emailAddress,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _fatherOccupationController,
+            label: 'Parent Occupation',
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _fatherAddressController,
+            label: 'Parent Address',
+            maxLines: 2,
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildTextField({
@@ -2019,46 +3399,196 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
       return;
     }
 
-    if (_selectedAdmissionDate == null) {
-      showSnackbar(context, 'Please select an admission date');
-      return;
+    // Collect all missing required fields
+    List<String> missingFields = [];
+
+    // Personal Info validation
+    if (_firstNameController.text.trim().isEmpty) {
+      missingFields.add('First Name');
+    }
+    if (_lastNameController.text.trim().isEmpty) {
+      missingFields.add('Last Name');
+    }
+    if (_selectedDob == null) {
+      missingFields.add('Date of Birth');
+    }
+    if (_selectedGender == null) {
+      missingFields.add('Gender');
     }
 
+    // Contact Info validation
+    if (_streetNameController.text.trim().isEmpty) {
+      missingFields.add('Street Name');
+    }
+    if (_cityController.text.trim().isEmpty) {
+      missingFields.add('City');
+    }
+    if (_selectedState == null) {
+      missingFields.add('State');
+    }
+    if (_selectedCountry == null) {
+      missingFields.add('Country');
+    }
+    if (_phoneController.text.trim().isEmpty) {
+      missingFields.add('Phone Number');
+    }
+    if (_emailController.text.trim().isEmpty) {
+      missingFields.add('Email Address');
+    }
+
+    // Academic Info validation
     if (_selectedClassId == null) {
-      showSnackbar(context, 'Please select a class');
+      missingFields.add('Class Assignment');
+    }
+    if (_selectedAdmissionDate == null) {
+      missingFields.add('Admission Date');
+    }
+
+    // Parent Info validation
+    if (_fatherFirstNameController.text.trim().isEmpty) {
+      missingFields.add('Father First Name');
+    }
+    if (_fatherLastNameController.text.trim().isEmpty) {
+      missingFields.add('Father Last Name');
+    }
+    if (_fatherPhoneController.text.trim().isEmpty) {
+      missingFields.add('Father Phone Number');
+    }
+    if (_fatherEmailController.text.trim().isEmpty) {
+      missingFields.add('Father Email Address');
+    }
+    if (_fatherOccupationController.text.trim().isEmpty) {
+      missingFields.add('Father Occupation');
+    }
+
+    // Medical Info validation
+    if (_gpNameController.text.trim().isEmpty) {
+      missingFields.add('General Practitioner Name');
+    }
+    if (_gpPhoneController.text.trim().isEmpty) {
+      missingFields.add('General Practitioner Phone');
+    }
+    if (_emergencyContactNameController.text.trim().isEmpty) {
+      missingFields.add('Emergency Contact Name');
+    }
+    if (_emergencyContactPhoneController.text.trim().isEmpty) {
+      missingFields.add('Emergency Contact Phone');
+    }
+    if (_emergencyContactRelationshipController.text.trim().isEmpty) {
+      missingFields.add('Emergency Contact Relationship');
+    }
+
+    // Show missing fields if any
+    if (missingFields.isNotEmpty) {
+      showDialog(
+        context: context,
+        builder:
+            (context) => AlertDialog(
+              title: const Text('Missing Required Fields'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Please fill in the following required fields:'),
+                  const SizedBox(height: 16),
+                  ...missingFields.map(
+                    (field) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            color: Colors.red,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(child: Text(field)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+      );
       return;
     }
 
-    // Validate required fields for parent creation
-    if (_fatherFirstNameController.text.trim().isEmpty ||
-        _fatherLastNameController.text.trim().isEmpty ||
-        _fatherPhoneController.text.trim().isEmpty ||
-        _fatherEmailController.text.trim().isEmpty ||
-        _fatherOccupationController.text.trim().isEmpty) {
-      showSnackbar(context, 'Please fill in all required parent information');
-      return;
-    }
-
-    // Validate address fields
-    if (_streetController.text.trim().isEmpty ||
-        _cityController.text.trim().isEmpty ||
-        _selectedState == null ||
-        _selectedCountry == null) {
-      showSnackbar(context, 'Please fill in all address fields');
-      return;
-    }
-
-    final additionalData = {
+    final updatedData = {
       'personalInfo': {
+        'firstName': _firstNameController.text.trim(),
+        'middleName':
+            _middleNameController.text.trim().isNotEmpty
+                ? _middleNameController.text.trim()
+                : null,
+        'lastName': _lastNameController.text.trim(),
+        'dateOfBirth':
+            (_selectedDob ?? DateTime.now()).toIso8601String().split('T')[0],
+        'gender': _selectedGender ?? 'male',
+        'nationality':
+            _nationalityController.text.trim().isNotEmpty
+                ? _nationalityController.text.trim()
+                : null,
+        'stateOfOrigin':
+            _stateOfOriginController.text.trim().isNotEmpty
+                ? _stateOfOriginController.text.trim()
+                : null,
+        'localGovernment':
+            _localGovernmentController.text.trim().isNotEmpty
+                ? _localGovernmentController.text.trim()
+                : null,
+        'religion':
+            _religionController.text.trim().isNotEmpty
+                ? _religionController.text.trim()
+                : null,
+        'bloodGroup':
+            _bloodGroupController.text.trim().isNotEmpty
+                ? _bloodGroupController.text.trim()
+                : null,
+        'languagesSpokenAtHome':
+            _languagesSpokenController.text.trim().isNotEmpty
+                ? _languagesSpokenController.text.trim()
+                : null,
+        'ethnicBackground':
+            _ethnicBackgroundController.text.trim().isNotEmpty
+                ? _ethnicBackgroundController.text.trim()
+                : null,
+        'formOfIdentification':
+            _formOfIdentificationController.text.trim().isNotEmpty
+                ? _formOfIdentificationController.text.trim()
+                : null,
+        'idNumber':
+            _idNumberController.text.trim().isNotEmpty
+                ? _idNumberController.text.trim()
+                : null,
+        'hasSiblings': _hasSiblings,
+        'siblingDetails': _siblingDetails,
         'profileImage': _imageUrl,
-        'gender': widget.admission.studentInfo.gender,
+        'previousSchool':
+            _previousSchoolController.text.trim().isNotEmpty
+                ? _previousSchoolController.text.trim()
+                : null,
       },
       'contactInfo': {
         'address': {
-          'street': _streetController.text.trim(),
+          'streetNumber':
+              _streetNumberController.text.trim().isNotEmpty
+                  ? _streetNumberController.text.trim()
+                  : null,
+          'streetName': _streetNameController.text.trim(),
           'city': _cityController.text.trim(),
-          'state': _selectedState ?? '',
-          'country': _selectedCountry ?? '',
+          'state': _stateController.text.trim(),
+          'country': _countryController.text.trim(),
+          'postalCode':
+              _postalCodeController.text.trim().isNotEmpty
+                  ? _postalCodeController.text.trim()
+                  : null,
         },
         'phone':
             _phoneController.text.trim().isNotEmpty
@@ -2069,145 +3599,262 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
                 ? _emailController.text.trim()
                 : null,
       },
+      'academicInfo': {
+        'desiredClass': _selectedClassId,
+        'academicYear': _academicYearController.text.trim(),
+        'admissionDate':
+            _selectedAdmissionDate!.toIso8601String().split('T')[0],
+        'studentType':
+            _studentTypeController.text.trim().isNotEmpty
+                ? _studentTypeController.text.trim()
+                : 'day',
+      },
+      'parentInfo': {
+        'legacy': {
+          'name': [
+            _fatherFirstNameController.text.trim(),
+            _fatherMiddleNameController.text.trim(),
+            _fatherLastNameController.text.trim(),
+          ].where((p) => p.isNotEmpty).join(' '),
+          'phone': _fatherPhoneController.text.trim(),
+          'email': _fatherEmailController.text.trim(),
+          'occupation': _fatherOccupationController.text.trim(),
+          'address':
+              _fatherAddressController.text.trim().isNotEmpty
+                  ? _fatherAddressController.text.trim()
+                  : [
+                    _streetNameController.text.trim(),
+                    _cityController.text.trim(),
+                    (_stateController.text.trim()),
+                    (_countryController.text.trim()),
+                  ].where((p) => p.isNotEmpty).join(', '),
+        },
+      },
       'medicalInfo': {
+        'generalPractitioner': {
+          'name':
+              _gpNameController.text.trim().isNotEmpty
+                  ? _gpNameController.text.trim()
+                  : null,
+          'address':
+              _gpAddressController.text.trim().isNotEmpty
+                  ? _gpAddressController.text.trim()
+                  : null,
+          'telephoneNumber':
+              _gpPhoneController.text.trim().isNotEmpty
+                  ? _gpPhoneController.text.trim()
+                  : null,
+        },
+        'medicalHistory':
+            _medicalHistoryController.text.trim().isNotEmpty
+                ? _medicalHistoryController.text.trim()
+                : null,
         'allergies':
             _allergiesController.text.trim().isNotEmpty
-                ? _allergiesController.text.trim()
+                ? _allergiesController.text
+                    .trim()
+                    .split(',')
+                    .map((e) => e.trim())
+                    .where((e) => e.isNotEmpty)
+                    .toList()
+                : [],
+        'ongoingMedicalConditions':
+            _ongoingConditionsController.text.trim().isNotEmpty
+                ? _ongoingConditionsController.text.trim()
                 : null,
-        'medications':
-            _medicationsController.text.trim().isNotEmpty
-                ? _medicationsController.text.trim()
+        'specialNeeds':
+            _specialNeedsController.text.trim().isNotEmpty
+                ? _specialNeedsController.text.trim()
                 : null,
-        'medicalConditions':
-            _medicalConditionsController.text.trim().isNotEmpty
-                ? _medicalConditionsController.text.trim()
+        'currentMedication':
+            _currentMedicationController.text.trim().isNotEmpty
+                ? _currentMedicationController.text.trim()
+                : null,
+        'immunisationRecord':
+            _immunisationController.text.trim().isNotEmpty
+                ? _immunisationController.text.trim()
+                : null,
+        'dietaryRequirements':
+            _dietaryRequirementsController.text.trim().isNotEmpty
+                ? _dietaryRequirementsController.text.trim()
                 : null,
         'emergencyContact': {
           'name':
               _emergencyContactNameController.text.trim().isNotEmpty
                   ? _emergencyContactNameController.text.trim()
                   : null,
-          'phone':
-              _emergencyContactPhoneController.text.trim().isNotEmpty
-                  ? _emergencyContactPhoneController.text.trim()
-                  : null,
           'relationship':
               _emergencyContactRelationshipController.text.trim().isNotEmpty
                   ? _emergencyContactRelationshipController.text.trim()
                   : null,
-        },
-      },
-      'academicInfo': {
-        'admissionDate':
-            _selectedAdmissionDate!.toIso8601String().split('T')[0],
-        'studentType':
-            _selectedStudentType == 'new' ? 'day' : _selectedStudentType,
-      },
-      // Override parent data completely to fix the address issue
-      'parentData': {
-        'personalInfo': {
-          'firstName': _fatherFirstNameController.text.trim(),
-          'lastName': _fatherLastNameController.text.trim(),
-          'middleName':
-              _fatherMiddleNameController.text.trim().isNotEmpty
-                  ? _fatherMiddleNameController.text.trim()
+          'phone':
+              _emergencyContactPhoneController.text.trim().isNotEmpty
+                  ? _emergencyContactPhoneController.text.trim()
                   : null,
-          'phone': _fatherPhoneController.text.trim(),
-          'email': _fatherEmailController.text.trim(),
-          'occupation': _fatherOccupationController.text.trim(),
-          'gender': 'male',
-          'title':
-              _fatherTitleController.text.trim().isNotEmpty
-                  ? _fatherTitleController.text.trim()
-                  : 'Mr',
+          'email':
+              _emergencyContactEmailController.text.trim().isNotEmpty
+                  ? _emergencyContactEmailController.text.trim()
+                  : null,
           'address': {
-            'street': _streetController.text.trim(),
-            'city': _cityController.text.trim(),
-            'state': _selectedState ?? '',
-            'country': _selectedCountry ?? '',
-          },
-        },
-        'contactInfo': {
-          'primaryPhone': _fatherPhoneController.text.trim(),
-          'secondaryPhone': '',
-          'email': _fatherEmailController.text.trim(),
-          'address': {
-            'street': _streetController.text.trim(),
-            'city': _cityController.text.trim(),
-            'state': _selectedState ?? '',
-            'country': _selectedCountry ?? '',
-          },
-        },
-        'relationship': 'father',
-        'user': ref.read(RiverpodProvider.profileProvider).user?.id ?? '',
-      },
-      'parentInfo': {
-        'father': {
-          'personalInfo': {
-            'firstName': _fatherFirstNameController.text.trim(),
-            'lastName': _fatherLastNameController.text.trim(),
-            'middleName':
-                _fatherMiddleNameController.text.trim().isNotEmpty
-                    ? _fatherMiddleNameController.text.trim()
+            'streetNumber':
+                _emergencyStreetNumberController.text.trim().isNotEmpty
+                    ? _emergencyStreetNumberController.text.trim()
                     : null,
-            'phone': _fatherPhoneController.text.trim(),
-            'email': _fatherEmailController.text.trim(),
-            'occupation': _fatherOccupationController.text.trim(),
-            'address': _fatherAddressController.text.trim(),
-            'gender': 'male',
-            'title':
-                _fatherTitleController.text.trim().isNotEmpty
-                    ? _fatherTitleController.text.trim()
-                    : 'Mr',
-          },
-          'contactInfo': {
-            'primaryPhone': _fatherPhoneController.text.trim(),
-            'secondaryPhone': '',
-            'email': _fatherEmailController.text.trim(),
-            'address': {
-              'street': _streetController.text.trim(),
-              'city': _cityController.text.trim(),
-              'state': _stateController.text.trim(),
-              'country': _countryController.text.trim(),
-            },
-          },
-          'relationship': 'father',
-        },
-        'mother': {
-          'personalInfo': {
-            'firstName': _motherFirstNameController.text.trim(),
-            'lastName': _motherLastNameController.text.trim(),
-            'middleName':
-                _motherMiddleNameController.text.trim().isNotEmpty
-                    ? _motherMiddleNameController.text.trim()
+            'streetName':
+                _emergencyStreetNameController.text.trim().isNotEmpty
+                    ? _emergencyStreetNameController.text.trim()
                     : null,
-            'phone': _motherPhoneController.text.trim(),
-            'email': _motherEmailController.text.trim(),
-            'occupation': _motherOccupationController.text.trim(),
-            'address': _motherAddressController.text.trim(),
-            'gender': 'female',
-            'title':
-                _motherTitleController.text.trim().isNotEmpty
-                    ? _motherTitleController.text.trim()
-                    : 'Mrs',
+            'city':
+                _emergencyCityController.text.trim().isNotEmpty
+                    ? _emergencyCityController.text.trim()
+                    : null,
+            'state':
+                _emergencyStateController.text.trim().isNotEmpty
+                    ? _emergencyStateController.text.trim()
+                    : null,
+            'country':
+                _emergencyCountryController.text.trim().isNotEmpty
+                    ? _emergencyCountryController.text.trim()
+                    : null,
+            'postalCode':
+                _emergencyPostalCodeController.text.trim().isNotEmpty
+                    ? _emergencyPostalCodeController.text.trim()
+                    : null,
           },
-          'contactInfo': {
-            'primaryPhone': _motherPhoneController.text.trim(),
-            'secondaryPhone': '',
-            'email': _motherEmailController.text.trim(),
-            'address': {
-              'street': _streetController.text.trim(),
-              'city': _cityController.text.trim(),
-              'state': _stateController.text.trim(),
-              'country': _countryController.text.trim(),
-            },
-          },
-          'relationship': 'mother',
+          'authorisedToCollectChild': _emergencyAuthorisedToCollect,
         },
       },
+      'senInfo': {
+        'hasSpecialNeeds': _hasSpecialNeeds,
+        'receivingAdditionalSupport': _receivingAdditionalSupport,
+        'supportDetails':
+            _supportDetailsController.text.trim().isNotEmpty
+                ? _supportDetailsController.text.trim()
+                : null,
+        'hasEHCP': _hasEHCP,
+        'ehcpDetails':
+            _ehcpDetailsController.text.trim().isNotEmpty
+                ? _ehcpDetailsController.text.trim()
+                : null,
+      },
+      'permissions': {
+        'emergencyMedicalTreatment': _emergencyMedicalTreatment,
+        'administrationOfMedication': _administrationOfMedication,
+        'firstAidConsent': _firstAidConsent,
+        'outingsAndTrips': _outingsAndTrips,
+        'transportConsent': _transportConsent,
+        'useOfPhotosVideos': _useOfPhotosVideos,
+        'suncreamApplication': _suncreamApplication,
+        'observationAndAssessment': _observationAndAssessment,
+      },
+      'sessionInfo': {
+        'requestedStartDate':
+            _requestedStartDateController.text.trim().isNotEmpty
+                ? _requestedStartDateController.text.trim()
+                : null,
+        'daysOfAttendance':
+            _daysOfAttendanceController.text.trim().isNotEmpty
+                ? _daysOfAttendanceController.text.trim()
+                : null,
+        'fundedHours':
+            _fundedHoursController.text.trim().isNotEmpty
+                ? _fundedHoursController.text.trim()
+                : null,
+        'additionalPaidSessions':
+            _additionalPaidSessionsController.text.trim().isNotEmpty
+                ? _additionalPaidSessionsController.text.trim()
+                : null,
+        'preferredSettlingInSessions':
+            _preferredSettlingController.text.trim().isNotEmpty
+                ? _preferredSettlingController.text.trim()
+                : null,
+      },
+      'backgroundInfo': {
+        'previousChildcareProvider':
+            _previousChildcareController.text.trim().isNotEmpty
+                ? _previousChildcareController.text.trim()
+                : null,
+        'siblings': _siblingDetails,
+        'interests':
+            _interestsController.text.trim().isNotEmpty
+                ? _interestsController.text.trim()
+                : null,
+        'toiletTrainingStatus':
+            _toiletTrainingController.text.trim().isNotEmpty
+                ? _toiletTrainingController.text.trim()
+                : null,
+        'comfortItems':
+            _comfortItemsController.text.trim().isNotEmpty
+                ? _comfortItemsController.text.trim()
+                : null,
+        'sleepRoutine':
+            _sleepRoutineController.text.trim().isNotEmpty
+                ? _sleepRoutineController.text.trim()
+                : null,
+        'behaviouralConcerns':
+            _behaviouralConcernsController.text.trim().isNotEmpty
+                ? _behaviouralConcernsController.text.trim()
+                : null,
+        'languagesSpokenAtHome':
+            _languagesSpokenController.text.trim().isNotEmpty
+                ? _languagesSpokenController.text.trim()
+                : null,
+      },
+      'legalInfo': {
+        'legalResponsibility':
+            _legalResponsibilityController.text.trim().isNotEmpty
+                ? _legalResponsibilityController.text.trim()
+                : null,
+        'courtOrders':
+            _courtOrdersController.text.trim().isNotEmpty
+                ? _courtOrdersController.text.trim()
+                : null,
+        'safeguardingDisclosure':
+            _safeguardingController.text.trim().isNotEmpty
+                ? _safeguardingController.text.trim()
+                : null,
+        'parentSignature':
+            _parentSignatureController.text.trim().isNotEmpty
+                ? _parentSignatureController.text.trim()
+                : null,
+        'signatureDate':
+            _signatureDateController.text.trim().isNotEmpty
+                ? _signatureDateController.text.trim()
+                : null,
+      },
+      'fundingInfo': {
+        'agreementToPayFees': _agreementToPayFees,
+        'fundingAgreement':
+            _fundingAgreementController.text.trim().isNotEmpty
+                ? _fundingAgreementController.text.trim()
+                : null,
+      },
+      'financialInfo': {
+        'feeStatus':
+            _feeStatusController.text.trim().isNotEmpty
+                ? _feeStatusController.text.trim()
+                : 'unpaid',
+        'totalFees':
+            _totalFeesController.text.trim().isNotEmpty
+                ? double.tryParse(_totalFeesController.text.trim()) ?? 0
+                : 0,
+        'paidAmount':
+            _paidAmountController.text.trim().isNotEmpty
+                ? double.tryParse(_paidAmountController.text.trim()) ?? 0
+                : 0,
+        'outstandingBalance':
+            _outstandingBalanceController.text.trim().isNotEmpty
+                ? double.tryParse(_outstandingBalanceController.text.trim()) ??
+                    0
+                : 0,
+      },
+      'additionalInfo':
+          _additionalInfoController.text.trim().isNotEmpty
+              ? _additionalInfoController.text.trim()
+              : null,
     };
 
-    widget.onApprove(additionalData);
+    widget.onApprove(updatedData);
   }
 
   @override
@@ -2249,7 +3896,7 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
                           ),
                         ),
                         Text(
-                          'Student: ${widget.admission.fullName}',
+                          'Student: ${widget.admissionData.personalInfo?.firstName} ${widget.admissionData.personalInfo?.lastName ?? ''}',
                           style: const TextStyle(
                             fontSize: 14,
                             color: Colors.white70,
@@ -2275,12 +3922,16 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
                 unselectedLabelColor: Colors.grey[600],
                 indicatorColor: Colors.blue[800],
                 tabs: const [
+                  Tab(text: 'Personal Info', icon: Icon(Icons.person)),
                   Tab(text: 'Contact Info', icon: Icon(Icons.contact_phone)),
                   Tab(text: 'Medical Info', icon: Icon(Icons.medical_services)),
                   Tab(
-                    text: 'Parent Details',
-                    icon: Icon(Icons.family_restroom),
+                    text: 'SEN & Permissions',
+                    icon: Icon(Icons.accessibility),
                   ),
+                  Tab(text: 'Session & Background', icon: Icon(Icons.schedule)),
+                  Tab(text: 'Legal & Funding', icon: Icon(Icons.gavel)),
+                  Tab(text: 'Parent Info', icon: Icon(Icons.family_restroom)),
                   Tab(text: 'Academic Info', icon: Icon(Icons.school)),
                 ],
               ),
@@ -2293,9 +3944,13 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
                 child: TabBarView(
                   controller: _tabController,
                   children: [
+                    _buildPersonalInfoTab(),
                     _buildContactInfoTab(),
                     _buildMedicalInfoTab(),
-                    _buildParentDetailsTab(),
+                    _buildSenPermissionsTab(),
+                    _buildSessionBackgroundTab(),
+                    _buildLegalFundingTab(),
+                    _buildParentInfoTab(),
                     _buildAcademicInfoTab(),
                   ],
                 ),
@@ -2357,434 +4012,6 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
     );
   }
 
-  Widget _buildContactInfoTab() {
-    print(
-      'Building Contact Info Tab - _selectedCountry: $_selectedCountry, _selectedState: $_selectedState',
-    );
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Contact Information',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          _buildTextField(
-            controller: _streetController,
-            label: 'Street Address',
-            isRequired: true,
-          ),
-          const SizedBox(height: 16),
-
-          Row(
-            children: [
-              Expanded(
-                child: _buildTextField(
-                  controller: _cityController,
-                  label: 'City',
-                  isRequired: true,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildStateDropdown(
-                  label: 'State',
-                  value: _selectedState,
-                  country: _selectedCountry,
-                  onChanged: (value) {
-                    print('State dropdown onChanged called with: $value');
-                    setState(() {
-                      _selectedState = value;
-                      _stateController.text = value ?? '';
-                    });
-                    print('After setState - _selectedState: $_selectedState');
-                  },
-                  isRequired: true,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          Row(
-            children: [
-              Expanded(
-                child: _buildCountryPicker(
-                  label: 'Country',
-                  value: _selectedCountry,
-                  onChanged: (value) {
-                    // This will be handled by the country picker's onSelect callback
-                  },
-                  isRequired: true,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildTextField(
-                  controller: _phoneController,
-                  label: 'Phone Number',
-                  keyboardType: TextInputType.phone,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          _buildTextField(
-            controller: _emailController,
-            label: 'Email Address',
-            keyboardType: TextInputType.emailAddress,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMedicalInfoTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Medical Information',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          _buildTextField(
-            controller: _allergiesController,
-            label: 'Allergies',
-            maxLines: 2,
-          ),
-          const SizedBox(height: 16),
-
-          _buildTextField(
-            controller: _medicationsController,
-            label: 'Current Medications',
-            maxLines: 2,
-          ),
-          const SizedBox(height: 16),
-
-          _buildTextField(
-            controller: _medicalConditionsController,
-            label: 'Medical Conditions',
-            maxLines: 2,
-          ),
-          const SizedBox(height: 20),
-
-          const Text(
-            'Emergency Contact',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          Row(
-            children: [
-              Expanded(
-                child: _buildTextField(
-                  controller: _emergencyContactNameController,
-                  label: 'Emergency Contact Name',
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildTextField(
-                  controller: _emergencyContactPhoneController,
-                  label: 'Emergency Contact Phone',
-                  keyboardType: TextInputType.phone,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          _buildTextField(
-            controller: _emergencyContactRelationshipController,
-            label: 'Relationship to Student',
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildParentDetailsTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Parent Information',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // Father Information
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.blue[50],
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.blue[200]!),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Father Information',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.blue,
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildTextField(
-                        controller: _fatherTitleController,
-                        label: 'Title',
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildTextField(
-                        controller: _fatherFirstNameController,
-                        label: 'First Name',
-                        isRequired: true,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildTextField(
-                        controller: _fatherMiddleNameController,
-                        label: 'Middle Name',
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildTextField(
-                        controller: _fatherLastNameController,
-                        label: 'Last Name',
-                        isRequired: true,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildTextField(
-                        controller: _fatherDobController,
-                        label: 'Date of Birth',
-                        readOnly: true,
-                        onTap: () => _selectDate(context, false),
-                        suffixIcon: const Icon(Icons.calendar_today),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildTextField(
-                        controller: _fatherPhoneController,
-                        label: 'Phone Number',
-                        keyboardType: TextInputType.phone,
-                        isRequired: true,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                _buildTextField(
-                  controller: _fatherEmailController,
-                  label: 'Email Address',
-                  keyboardType: TextInputType.emailAddress,
-                  isRequired: true,
-                ),
-                const SizedBox(height: 16),
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildTextField(
-                        controller: _fatherOccupationController,
-                        label: 'Occupation',
-                        isRequired: true,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildTextField(
-                        controller: _fatherEmployerController,
-                        label: 'Employer',
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                _buildTextField(
-                  controller: _fatherAddressController,
-                  label: 'Address',
-                  isRequired: true,
-                  maxLines: 2,
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          // Mother Information
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.pink[50],
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.pink[200]!),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Mother Information',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.pink,
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildTextField(
-                        controller: _motherTitleController,
-                        label: 'Title',
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildTextField(
-                        controller: _motherFirstNameController,
-                        label: 'First Name',
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildTextField(
-                        controller: _motherMiddleNameController,
-                        label: 'Middle Name',
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildTextField(
-                        controller: _motherLastNameController,
-                        label: 'Last Name',
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildTextField(
-                        controller: _motherDobController,
-                        label: 'Date of Birth',
-                        readOnly: true,
-                        onTap: () => _selectDate(context, false),
-                        suffixIcon: const Icon(Icons.calendar_today),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildTextField(
-                        controller: _motherPhoneController,
-                        label: 'Phone Number',
-                        keyboardType: TextInputType.phone,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                _buildTextField(
-                  controller: _motherEmailController,
-                  label: 'Email Address',
-                  keyboardType: TextInputType.emailAddress,
-                ),
-                const SizedBox(height: 16),
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildTextField(
-                        controller: _motherOccupationController,
-                        label: 'Occupation',
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildTextField(
-                        controller: _motherEmployerController,
-                        label: 'Employer',
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                _buildTextField(
-                  controller: _motherAddressController,
-                  label: 'Address',
-                  maxLines: 2,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildAcademicInfoTab() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -2842,14 +4069,18 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
               value: _getSelectedClassName(),
               items:
                   _classes
-                      .map((c) => '${c?.level} (${c?.name})' ?? 'Unknown')
+                      .map((c) => '${c?.level} (${c?.name})')
                       .cast<String>()
                       .toSet()
                       .toList(),
               onChanged: (value) {
                 setState(() {
                   _selectedClassId =
-                      _classes.firstWhere((c) => '${c?.level} (${c?.name})' == value)?.id;
+                      _classes
+                          .firstWhere(
+                            (c) => '${c?.level} (${c?.name})' == value,
+                          )
+                          ?.id;
                 });
               },
               isRequired: true,

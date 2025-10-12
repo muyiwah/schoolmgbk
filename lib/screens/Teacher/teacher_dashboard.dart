@@ -12,6 +12,10 @@ import 'package:schmgtsystem/widgets/communication_dialog.dart';
 import 'package:schmgtsystem/RoleHome/teacher.dart';
 import 'package:schmgtsystem/screens/teacher/teacher_timetable_screen.dart';
 import 'package:schmgtsystem/screens/Student/create_timetale.dart';
+import 'package:schmgtsystem/models/uniform_model.dart';
+import 'package:schmgtsystem/repository/uniform_repository.dart';
+import 'package:schmgtsystem/utils/academic_year_helper.dart';
+import 'package:schmgtsystem/services/global_academic_year_service.dart';
 
 class TeacherDashboardScreen extends ConsumerStatefulWidget {
   const TeacherDashboardScreen({super.key});
@@ -25,6 +29,12 @@ class _TeacherDashboardScreenState
     extends ConsumerState<TeacherDashboardScreen> {
   String? _selectedAcademicYear;
   String? _selectedTerm;
+  late GlobalAcademicYearService _academicYearService;
+
+  // Uniform data
+  final UniformRepository _uniformRepository = UniformRepository();
+  List<UniformModel> _classUniforms = [];
+  bool _isLoadingUniforms = false;
   bool _isLoading = false;
 
   // Attendance state
@@ -39,24 +49,57 @@ class _TeacherDashboardScreenState
   @override
   void initState() {
     super.initState();
+    _academicYearService = GlobalAcademicYearService();
+    _academicYearService.addListener(_onAcademicYearChanged);
     _loadTeacherData();
+  }
+
+  void _onAcademicYearChanged() {
+    if (mounted) {
+      setState(() {
+        _selectedAcademicYear = _academicYearService.currentAcademicYearString;
+        _selectedTerm = _academicYearService.currentTermString;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _academicYearService.removeListener(_onAcademicYearChanged);
+    super.dispose();
+  }
+
+  Future<void> _loadClassUniforms(String classId) async {
+    setState(() {
+      _isLoadingUniforms = true;
+    });
+
+    try {
+      final response = await _uniformRepository.getUniforms(classId);
+      if (response.success && response.data != null) {
+        setState(() {
+          _classUniforms = response.data!;
+        });
+      }
+    } catch (e) {
+      // Handle error silently for teacher view
+    } finally {
+      setState(() {
+        _isLoadingUniforms = false;
+      });
+    }
   }
 
   Future<void> _loadTeacherData() async {
     try {
-      // Load user profile first
-      await ref
-          .read(RiverpodProvider.profileProvider.notifier)
-          .getUserProfile();
-
       // Load teacher profile and classes
       await ref
           .read(RiverpodProvider.teachersProvider.notifier)
           .getAllTeachers(context);
 
-      // Set default academic year and term
-      _selectedAcademicYear = '2025/2026';
-      _selectedTerm = 'First';
+      // Set default academic year and term from backend
+      _selectedAcademicYear = AcademicYearHelper.getCurrentAcademicYear(ref);
+      _selectedTerm = AcademicYearHelper.getCurrentTerm(ref);
 
       // Auto-detect class teacher assignment
       _detectClassTeacherAssignment();
@@ -272,7 +315,9 @@ class _TeacherDashboardScreenState
       final request = MarkAttendanceRequest(
         date: DateFormat('yyyy-MM-dd').format(_selectedDate),
         term: _selectedTerm ?? 'First',
-        academicYear: _selectedAcademicYear ?? '2025/2026',
+        academicYear:
+            _selectedAcademicYear ??
+            AcademicYearHelper.getCurrentAcademicYear(ref),
         markerId: user.id ?? '',
         records: allStudentRecords,
       );
@@ -338,7 +383,20 @@ class _TeacherDashboardScreenState
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: Text('Class Teacher Dashboard'),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Class Teacher Dashboard'),
+            Text(
+              '${_academicYearService.currentAcademicYearString} • ${_academicYearService.currentTermString} Term',
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: Colors.white70,
+              ),
+            ),
+          ],
+        ),
         backgroundColor: Colors.blue[800],
         foregroundColor: Colors.white,
         actions: [
@@ -367,6 +425,8 @@ class _TeacherDashboardScreenState
                           children: [
                             _buildClassOverview(teacherClasses),
                             const SizedBox(height: 16),
+                            _buildUniformSection(teacherClasses),
+                            const SizedBox(height: 16),
                             _buildAttendanceSection(teacherClasses),
                             const SizedBox(height: 16),
                             _buildCommunicationSection(teacherClasses),
@@ -392,6 +452,8 @@ class _TeacherDashboardScreenState
                   return Column(
                     children: [
                       _buildClassOverview(teacherClasses),
+                      const SizedBox(height: 16),
+                      _buildUniformSection(teacherClasses),
                       const SizedBox(height: 16),
                       _buildAttendanceSection(teacherClasses),
                       const SizedBox(height: 16),
@@ -682,6 +744,270 @@ class _TeacherDashboardScreenState
         ],
       ),
     );
+  }
+
+  Widget _buildUniformSection(List<ClassTeacherClass> classes) {
+    if (classes.isEmpty) return const SizedBox.shrink();
+
+    // Load uniforms for the first class if not already loaded
+    if (_classUniforms.isEmpty && !_isLoadingUniforms && classes.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadClassUniforms(classes.first.id ?? '');
+      });
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 5,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.checkroom, color: Color(0xFF1565C0), size: 24),
+              const SizedBox(width: 8),
+              const Text(
+                'Class Uniforms',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1565C0),
+                ),
+              ),
+              const Spacer(),
+              if (_classUniforms.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.green.withOpacity(0.3)),
+                  ),
+                  child: Text(
+                    '${_classUniforms.length}/7 days',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.green,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          if (_isLoadingUniforms)
+            const Center(child: CircularProgressIndicator())
+          else if (_classUniforms.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey[200]!),
+              ),
+              child: const Center(
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.checkroom_outlined,
+                      size: 48,
+                      color: Colors.grey,
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'No uniforms assigned for this class',
+                      style: TextStyle(color: Colors.grey, fontSize: 14),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 7,
+                childAspectRatio: 1,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+              ),
+              itemCount: 7,
+              itemBuilder: (context, index) {
+                final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                final fullDays = [
+                  'Monday',
+                  'Tuesday',
+                  'Wednesday',
+                  'Thursday',
+                  'Friday',
+                  'Saturday',
+                  'Sunday',
+                ];
+                final day = days[index];
+                final fullDay = fullDays[index];
+                final hasUniform = _classUniforms.any((u) => u.day == fullDay);
+
+                return Container(
+                  decoration: BoxDecoration(
+                    color:
+                        hasUniform
+                            ? _getDayColor(fullDay).withOpacity(0.1)
+                            : Colors.grey[100],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color:
+                          hasUniform
+                              ? _getDayColor(fullDay).withOpacity(0.3)
+                              : Colors.grey[300]!,
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        day,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color:
+                              hasUniform
+                                  ? _getDayColor(fullDay)
+                                  : Colors.grey[600],
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      if (hasUniform)
+                        Icon(
+                          Icons.check,
+                          color: _getDayColor(fullDay),
+                          size: 16,
+                        )
+                      else
+                        Icon(Icons.remove, color: Colors.grey[400], size: 16),
+                    ],
+                  ),
+                );
+              },
+            ),
+
+          if (_classUniforms.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue[200]!),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Uniform Details:',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: Color(0xFF1565C0),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ...() {
+                    final sortedUniforms = List<UniformModel>.from(
+                      _classUniforms,
+                    );
+                    sortedUniforms.sort((a, b) {
+                      const dayOrder = [
+                        'Monday',
+                        'Tuesday',
+                        'Wednesday',
+                        'Thursday',
+                        'Friday',
+                        'Saturday',
+                        'Sunday',
+                      ];
+                      return dayOrder
+                          .indexOf(a.day)
+                          .compareTo(dayOrder.indexOf(b.day));
+                    });
+                    return sortedUniforms
+                        .map(
+                          (uniform) => Padding(
+                            padding: const EdgeInsets.only(bottom: 4),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  width: 8,
+                                  height: 8,
+                                  margin: const EdgeInsets.only(
+                                    top: 6,
+                                    right: 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: _getDayColor(uniform.day),
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    '${uniform.day}: ${uniform.uniform}',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                        .toList();
+                  }(),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Color _getDayColor(String day) {
+    switch (day) {
+      case 'Monday':
+        return const Color(0xFF2196F3);
+      case 'Tuesday':
+        return const Color(0xFF4CAF50);
+      case 'Wednesday':
+        return const Color(0xFFFF9800);
+      case 'Thursday':
+        return const Color(0xFF9C27B0);
+      case 'Friday':
+        return const Color(0xFFF44336);
+      case 'Saturday':
+        return const Color(0xFF607D8B);
+      case 'Sunday':
+        return const Color(0xFF795548);
+      default:
+        return Colors.grey;
+    }
   }
 
   Widget _buildOverviewCard({

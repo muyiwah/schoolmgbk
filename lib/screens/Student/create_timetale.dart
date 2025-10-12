@@ -9,6 +9,7 @@ import 'package:schmgtsystem/models/timetable_model.dart';
 import 'package:schmgtsystem/services/dialog_service.dart';
 import 'package:schmgtsystem/utils/enums.dart';
 import 'package:schmgtsystem/utils/locator.dart';
+import 'package:schmgtsystem/services/global_academic_year_service.dart';
 import 'package:collection/collection.dart';
 
 class CreateTimetale extends ConsumerStatefulWidget {
@@ -31,6 +32,7 @@ class _CreateTimetaleState extends ConsumerState<CreateTimetale> {
   String? _selectedClass;
   String? _selectedTerm;
   String? _selectedType;
+  late GlobalAcademicYearService _academicYearService;
   int _selectedDayIndex = -1;
 
   // Period configuration
@@ -53,7 +55,6 @@ class _CreateTimetaleState extends ConsumerState<CreateTimetale> {
   ];
 
   // Available options
-  final List<String> _terms = ['First', 'Second', 'Third'];
   final List<String> _types = ['regular', 'examination'];
 
   // Time slots - will be generated dynamically based on period duration
@@ -160,7 +161,13 @@ class _CreateTimetaleState extends ConsumerState<CreateTimetale> {
   @override
   void initState() {
     super.initState();
-    _academicYearController.text = '2024/2025';
+    _academicYearService = GlobalAcademicYearService();
+    _academicYearService.addListener(_onAcademicYearChanged);
+
+    _academicYearController.text =
+        _academicYearService.currentAcademicYearString;
+    _selectedTerm = _academicYearService.currentTermString;
+
     _initializeSchedule();
     _loadClasses();
     _loadSubjects();
@@ -214,8 +221,19 @@ class _CreateTimetaleState extends ConsumerState<CreateTimetale> {
     await subjectProvider.getAllSubjects(context);
   }
 
+  void _onAcademicYearChanged() {
+    if (mounted) {
+      setState(() {
+        _academicYearController.text =
+            _academicYearService.currentAcademicYearString;
+        _selectedTerm = _academicYearService.currentTermString;
+      });
+    }
+  }
+
   @override
   void dispose() {
+    _academicYearService.removeListener(_onAcademicYearChanged);
     _academicYearController.dispose();
     _customEntryController.dispose();
     super.dispose();
@@ -485,28 +503,58 @@ class _CreateTimetaleState extends ConsumerState<CreateTimetale> {
                 children: [
                   TextFormField(
                     controller: _academicYearController,
+                    enabled: false,
                     decoration: const InputDecoration(
                       labelText: 'Academic Year',
                       border: OutlineInputBorder(),
                       hintText: '2024/2025',
                       prefixIcon: Icon(Icons.calendar_today),
+                      suffixIcon: Icon(Icons.lock, color: Colors.grey),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter academic year';
-                      }
-                      return null;
-                    },
+                    style: TextStyle(color: Colors.grey[600]),
                   ),
                   const SizedBox(height: 16),
-                  CustomDropdown(
-                    allValues: _terms,
-                    title: 'Select Term',
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedTerm = value;
-                      });
-                    },
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 16,
+                    ),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey[300]!),
+                      borderRadius: BorderRadius.circular(8),
+                      color: Colors.grey[50],
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.school, color: Colors.grey[600]),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Current Term',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                _selectedTerm ?? 'Loading...',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey[700],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(Icons.lock, color: Colors.grey[400], size: 16),
+                      ],
+                    ),
                   ),
                 ],
               );
@@ -517,30 +565,60 @@ class _CreateTimetaleState extends ConsumerState<CreateTimetale> {
                   Expanded(
                     child: TextFormField(
                       controller: _academicYearController,
+                      enabled: false,
                       decoration: const InputDecoration(
                         labelText: 'Academic Year',
                         border: OutlineInputBorder(),
                         hintText: '2024/2025',
                         prefixIcon: Icon(Icons.calendar_today),
+                        suffixIcon: Icon(Icons.lock, color: Colors.grey),
                       ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter academic year';
-                        }
-                        return null;
-                      },
+                      style: TextStyle(color: Colors.grey[600]),
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: CustomDropdown(
-                      allValues: _terms,
-                      title: 'Select Term',
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedTerm = value;
-                        });
-                      },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 16,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey[300]!),
+                        borderRadius: BorderRadius.circular(8),
+                        color: Colors.grey[50],
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.school, color: Colors.grey[600]),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Current Term',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  _selectedTerm ?? 'Loading...',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.grey[700],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(Icons.lock, color: Colors.grey[400], size: 16),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -2043,7 +2121,7 @@ class _CreateTimetaleState extends ConsumerState<CreateTimetale> {
         _selectedTerm == null ||
         _selectedType == null) {
       _dialogService.showSnackBar(
-        'Please select class, term, and type',
+        'Please select class and type',
         appToastType: AppToastType.error,
       );
       return;
@@ -2118,9 +2196,8 @@ class _CreateTimetaleState extends ConsumerState<CreateTimetale> {
       // Clear form
       _clearSchedule();
       _selectedClass = null;
-      _selectedTerm = null;
       _selectedType = null;
-      _academicYearController.clear();
+      // Don't clear academic year and term as they are now read-only
 
       // Navigate back or show success
       Navigator.of(context).pop();

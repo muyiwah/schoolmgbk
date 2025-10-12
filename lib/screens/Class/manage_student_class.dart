@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -18,6 +19,9 @@ class ManageStudentClass extends ConsumerStatefulWidget {
 
 class _ManageStudentClassState extends ConsumerState<ManageStudentClass> {
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  final ScrollController _tableScrollController = ScrollController();
+  Timer? _searchDebounceTimer;
 
   // Filter states
   String _selectedClass = 'All Classes';
@@ -29,12 +33,18 @@ class _ManageStudentClassState extends ConsumerState<ManageStudentClass> {
   // Pagination
   int _currentPage = 1;
   final int _itemsPerPage = 50;
-  bool _hasMoreStudents = true;
   bool _isLoadingMore = false;
+
+  // UI State
+  bool _showStatisticsAndFilters = true;
 
   @override
   void initState() {
     super.initState();
+    _searchController.addListener(_onSearchChanged);
+    _scrollController.addListener(_onScroll);
+    _tableScrollController.addListener(_onTableScroll);
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadStudents();
       _loadClasses();
@@ -44,6 +54,9 @@ class _ManageStudentClassState extends ConsumerState<ManageStudentClass> {
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose();
+    _tableScrollController.dispose();
+    _searchDebounceTimer?.cancel();
     super.dispose();
   }
 
@@ -54,6 +67,8 @@ class _ManageStudentClassState extends ConsumerState<ManageStudentClass> {
   }
 
   Future<void> _loadStudents({bool loadMore = false}) async {
+    print('🔄 _loadStudents: Starting with loadMore: $loadMore');
+
     if (loadMore) {
       setState(() {
         _isLoadingMore = true;
@@ -64,48 +79,131 @@ class _ManageStudentClassState extends ConsumerState<ManageStudentClass> {
     final classIds = _getClassIdsFromLevel(_selectedClass, classState);
     final classId = classIds.isNotEmpty ? classIds.first : null;
 
+    final pageToLoad = loadMore ? _currentPage + 1 : 1;
+    print('📊 _loadStudents: Loading page: $pageToLoad');
+    print('📊 _loadStudents: Class ID: $classId');
+    print('📊 _loadStudents: Selected class: $_selectedClass');
+    print('📊 _loadStudents: Selected gender: $_selectedGender');
+    print('📊 _loadStudents: Selected fee status: $_selectedFeeStatus');
+
+    final genderFilter =
+        _selectedGender == 'All Genders' ? null : _selectedGender;
+    final feeStatusFilter =
+        _selectedFeeStatus == 'All Status' ? null : _selectedFeeStatus;
+    final searchFilter =
+        _searchController.text.trim().isEmpty
+            ? null
+            : _searchController.text.trim();
+
+    print('📊 _loadStudents: Gender filter (to backend): $genderFilter');
+    print('📊 _loadStudents: Fee status filter (to backend): $feeStatusFilter');
+    print('📊 _loadStudents: Search filter (to backend): $searchFilter');
+
     await ref
         .read(studentProvider.notifier)
         .getAllStudents(
           context,
-          page: loadMore ? _currentPage + 1 : 1,
+          page: pageToLoad,
           limit: _itemsPerPage,
           classId: classId,
-          gender: _selectedGender == 'All Genders' ? null : _selectedGender,
-          feeStatus:
-              _selectedFeeStatus == 'All Status' ? null : _selectedFeeStatus,
-          search:
-              _searchController.text.trim().isEmpty
-                  ? null
-                  : _searchController.text.trim(),
+          gender: genderFilter,
+          feeStatus: feeStatusFilter,
+          search: searchFilter,
           sortBy: _selectedSortBy,
           sortOrder: _selectedSortOrder,
+          loadMore: loadMore,
         );
 
     if (loadMore) {
       setState(() {
         _currentPage++;
         _isLoadingMore = false;
-        final studentState = ref.read(studentProvider);
-        final pagination = studentState.pagination;
-        _hasMoreStudents = pagination != null && pagination.hasNext;
       });
+      print('📊 _loadStudents: Updated page to: $_currentPage');
     } else {
       setState(() {
         _currentPage = 1;
-        final studentState = ref.read(studentProvider);
-        final pagination = studentState.pagination;
-        _hasMoreStudents = pagination != null && pagination.hasNext;
       });
+      print('📊 _loadStudents: Reset page to: $_currentPage');
     }
   }
 
   Future<void> _loadMoreStudents() async {
+    print('🔄 _loadMoreStudents: Starting load more...');
+
+    // Store the current number of students before loading more
+    final currentStudentCount = ref.read(studentProvider).students.length;
+    print('📊 _loadMoreStudents: Current student count: $currentStudentCount');
+    print('📊 _loadMoreStudents: Current page: $_currentPage');
+
     await _loadStudents(loadMore: true);
+
+    // After loading more students, scroll to show the newly loaded students
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_tableScrollController.hasClients) {
+        // Calculate the position to scroll to (approximately where new students start)
+        final newStudentCount = ref.read(studentProvider).students.length;
+        print('📊 _loadMoreStudents: New student count: $newStudentCount');
+
+        if (newStudentCount > currentStudentCount) {
+          // Scroll to show the newly loaded students
+          // Each student row is approximately 80 pixels high
+          final scrollPosition = (currentStudentCount * 80).toDouble();
+          print('📊 _loadMoreStudents: Scrolling to position: $scrollPosition');
+          _tableScrollController.animateTo(
+            scrollPosition,
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOut,
+          );
+        }
+      }
+    });
+  }
+
+  void _onScroll() {
+    // Removed automatic load more on scroll
+    // Load more is now only triggered by button click
+  }
+
+  void _onTableScroll() {
+    // When table reaches bottom, continue scrolling the main scroll view down
+    if (_tableScrollController.position.pixels >=
+        _tableScrollController.position.maxScrollExtent - 50) {
+      // If table is at bottom and main scroll can still scroll, continue scrolling
+      if (_scrollController.hasClients &&
+          _scrollController.position.pixels <
+              _scrollController.position.maxScrollExtent) {
+        _scrollController.animateTo(
+          _scrollController.position.pixels + 100,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+        );
+      }
+    }
+
+    // When table reaches top, scroll the main scroll view up to show statistics cards
+    if (_tableScrollController.position.pixels <= 50) {
+      // If table is at top and main scroll can still scroll up, continue scrolling
+      if (_scrollController.hasClients &&
+          _scrollController.position.pixels > 0) {
+        _scrollController.animateTo(
+          _scrollController.position.pixels - 100,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+        );
+      }
+    }
   }
 
   void _onSearchChanged() {
-    _loadStudents();
+    // Cancel previous timer
+    _searchDebounceTimer?.cancel();
+
+    // Set new timer for debounced search
+    _searchDebounceTimer = Timer(const Duration(milliseconds: 500), () {
+      print('🔍 Search triggered after debounce: ${_searchController.text}');
+      _loadStudents();
+    });
   }
 
   void _onFilterChanged() {
@@ -114,6 +212,79 @@ class _ManageStudentClassState extends ConsumerState<ManageStudentClass> {
 
   void _onSortChanged() {
     _loadStudents();
+  }
+
+  // Check if there are more students available for the current filter
+  bool _hasMoreFilteredStudents(
+    List<StudentModel> filteredStudents,
+    ClassProvider classProvider,
+  ) {
+    // Get pagination info from the current state
+    final studentState = ref.read(studentProvider);
+    final pagination = studentState.pagination;
+
+    print(
+      '🔍 _hasMoreFilteredStudents: Checking if more students available...',
+    );
+    print(
+      '📊 _hasMoreFilteredStudents: Filtered students count: ${filteredStudents.length}',
+    );
+    print('📊 _hasMoreFilteredStudents: Pagination: $pagination');
+    print('📊 _hasMoreFilteredStudents: Selected class: $_selectedClass');
+
+    // If no pagination info, return false
+    if (pagination == null) {
+      print('❌ _hasMoreFilteredStudents: No pagination info');
+      return false;
+    }
+
+    // Check if we have reached the total number of students
+    if (filteredStudents.length >= pagination.totalStudents) {
+      print(
+        '❌ _hasMoreFilteredStudents: Reached total students (${pagination.totalStudents})',
+      );
+      return false;
+    }
+
+    // Check if there are more pages available
+    if (!pagination.hasNext) {
+      print('❌ _hasMoreFilteredStudents: No more pages available');
+      return false;
+    }
+
+    // If no class filter is applied, check if we have more students from API
+    if (_selectedClass == 'All Classes') {
+      print(
+        '✅ _hasMoreFilteredStudents: All classes selected, hasNext: ${pagination.hasNext}',
+      );
+      return pagination.hasNext;
+    }
+
+    // For class level filtering, we need to check if there might be more students
+    // with this class level in the remaining data
+    final allStudents = studentState.students;
+    final classIds = _getClassIdsFromLevel(_selectedClass, classProvider);
+
+    // Count how many students with this class level we currently have
+    final currentCount =
+        allStudents.where((student) {
+          return classIds.contains(student.academicInfo.currentClass?.id);
+        }).length;
+
+    print(
+      '📊 _hasMoreFilteredStudents: All students count: ${allStudents.length}',
+    );
+    print('📊 _hasMoreFilteredStudents: Class IDs: $classIds');
+    print(
+      '📊 _hasMoreFilteredStudents: Current count for class: $currentCount',
+    );
+
+    // If we have fewer students than expected, there might be more
+    // This is a simple heuristic - if we have loaded students but fewer than expected
+    // for this class level, there might be more to load
+    final result = pagination.hasNext && currentCount > 0;
+    print('✅ _hasMoreFilteredStudents: Result: $result');
+    return result;
   }
 
   // Get class options from ClassProvider
@@ -458,6 +629,47 @@ class _ManageStudentClassState extends ConsumerState<ManageStudentClass> {
                   ),
                 ),
                 Spacer(),
+                // Toggle Statistics and Filters Button
+                ElevatedButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _showStatisticsAndFilters = !_showStatisticsAndFilters;
+                    });
+                  },
+                  icon: Icon(
+                    _showStatisticsAndFilters
+                        ? Icons.visibility_off
+                        : Icons.visibility,
+                    color:
+                        _showStatisticsAndFilters
+                            ? Colors.white
+                            : Color(0xFF64748B),
+                    size: 18,
+                  ),
+                  label: Text(
+                    _showStatisticsAndFilters ? 'Hide Cards' : 'Show Cards',
+                    style: TextStyle(
+                      color:
+                          _showStatisticsAndFilters
+                              ? Colors.white
+                              : Color(0xFF64748B),
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        _showStatisticsAndFilters
+                            ? Color(0xFF64748B)
+                            : Colors.grey[100],
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    elevation: _showStatisticsAndFilters ? 2 : 0,
+                  ),
+                ),
+                SizedBox(width: 8),
                 ElevatedButton.icon(
                   onPressed: () => context.go('/students'),
                   icon: Icon(Icons.people, color: Colors.white),
@@ -480,60 +692,158 @@ class _ManageStudentClassState extends ConsumerState<ManageStudentClass> {
             ),
             SizedBox(height: 32),
 
-            // Statistics Cards
-            _buildStatisticsCards(students, pagination, classOptions),
-            SizedBox(height: 32),
+            // Scrollable content from statistics cards onwards
+            Expanded(
+              child:
+                  _showStatisticsAndFilters
+                      ? SingleChildScrollView(
+                        controller: _scrollController,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Statistics Cards
+                            _buildStatisticsCards(
+                              students,
+                              pagination,
+                              classOptions,
+                            ),
+                            const SizedBox(height: 32),
 
-            // Search and Filters
-            _buildSearchAndFilters(classOptions),
-            SizedBox(height: 24),
+                            // Search and Filters
+                            _buildSearchAndFilters(classOptions),
+                            const SizedBox(height: 24),
 
-            // Filter Status Indicator
-            _buildFilterStatusIndicator(),
-            SizedBox(height: 24),
+                            // Filter Status Indicator
+                            _buildFilterStatusIndicator(),
+                            const SizedBox(height: 24),
 
-            // Data Table
-            Expanded(child: _buildDataTable(students, isLoading, errorMessage)),
+                            // Data Table
+                            _buildDataTable(
+                              students,
+                              isLoading,
+                              errorMessage,
+                              false,
+                            ),
+                          ],
+                        ),
+                      )
+                      : Column(
+                        children: [
+                          // Data Table (expanded to fill space)
+                          Expanded(
+                            child: _buildDataTable(
+                              students,
+                              isLoading,
+                              errorMessage,
+                              true,
+                            ),
+                          ),
+                        ],
+                      ),
+            ),
 
-            // Load More Button
-            if (!isLoading && students.isNotEmpty && _hasMoreStudents)
+            // Load More Button Section
+            if (!isLoading && students.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: Center(
-                  child: ElevatedButton.icon(
-                    onPressed: _isLoadingMore ? null : _loadMoreStudents,
-                    icon:
-                        _isLoadingMore
-                            ? SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
-                                ),
+                child: Column(
+                  children: [
+                    // Show current count
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        'Showing ${students.length} of ${pagination?.totalStudents ?? 0} students',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Show load more button or all loaded message
+                    if (_hasMoreFilteredStudents(students, classState))
+                      // Load more button
+                      ElevatedButton.icon(
+                        onPressed: _isLoadingMore ? null : _loadMoreStudents,
+                        icon:
+                            _isLoadingMore
+                                ? SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
+                                  ),
+                                )
+                                : Icon(Icons.add, size: 16),
+                        label: Text(
+                          _isLoadingMore
+                              ? 'Loading...'
+                              : 'Load More Students (${pagination?.currentPageStudents ?? 0} more)',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.secondary,
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      )
+                    else
+                      // All students loaded message
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.green[50],
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: Colors.green[200]!,
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.check_circle,
+                              color: Colors.green[600],
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'All students loaded',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.green[700],
+                                fontWeight: FontWeight.w500,
                               ),
-                            )
-                            : Icon(Icons.refresh, size: 16),
-                    label: Text(
-                      _isLoadingMore ? 'Loading...' : 'Load More Students',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.secondary,
-                      foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ),
+                  ],
                 ),
               ),
           ],
@@ -615,7 +925,8 @@ class _ManageStudentClassState extends ConsumerState<ManageStudentClass> {
                       controller: _searchController,
                       onChanged: (value) => _onSearchChanged(),
                       decoration: InputDecoration(
-                        hintText: 'Search students...',
+                        hintText:
+                            'Search by name, admission number, or class...',
                         hintStyle: TextStyle(
                           color: Color(0xFF94A3B8),
                           fontSize: 14,
@@ -625,6 +936,20 @@ class _ManageStudentClassState extends ConsumerState<ManageStudentClass> {
                           color: Color(0xFF94A3B8),
                           size: 20,
                         ),
+                        suffixIcon:
+                            _searchController.text.isNotEmpty
+                                ? IconButton(
+                                  icon: Icon(
+                                    Icons.clear,
+                                    color: Color(0xFF94A3B8),
+                                    size: 20,
+                                  ),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    _onSearchChanged();
+                                  },
+                                )
+                                : null,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: BorderSide(color: Color(0xFFE2E8F0)),
@@ -673,15 +998,14 @@ class _ManageStudentClassState extends ConsumerState<ManageStudentClass> {
                   width: 150,
                   child: _buildFilterDropdown(
                     value: _selectedGender,
-                    items:
-                        ['All Genders', 'male', 'female']
-                            .map(
-                              (option) => DropdownMenuItem(
-                                value: option,
-                                child: Text(option),
-                              ),
-                            )
-                            .toList(),
+                    items: [
+                      DropdownMenuItem(
+                        value: 'All Genders',
+                        child: Text('All Genders'),
+                      ),
+                      DropdownMenuItem(value: 'male', child: Text('Male')),
+                      DropdownMenuItem(value: 'female', child: Text('Female')),
+                    ],
                     onChanged: (value) {
                       setState(() => _selectedGender = value!);
                       _onFilterChanged();
@@ -693,15 +1017,18 @@ class _ManageStudentClassState extends ConsumerState<ManageStudentClass> {
                   width: 150,
                   child: _buildFilterDropdown(
                     value: _selectedFeeStatus,
-                    items:
-                        ['All Status', 'paid', 'partial', 'unpaid']
-                            .map(
-                              (option) => DropdownMenuItem(
-                                value: option,
-                                child: Text(option),
-                              ),
-                            )
-                            .toList(),
+                    items: [
+                      DropdownMenuItem(
+                        value: 'All Status',
+                        child: Text('All Status'),
+                      ),
+                      DropdownMenuItem(value: 'paid', child: Text('Paid')),
+                      DropdownMenuItem(
+                        value: 'partial',
+                        child: Text('Partial'),
+                      ),
+                      DropdownMenuItem(value: 'unpaid', child: Text('Unpaid')),
+                    ],
                     onChanged: (value) {
                       setState(() => _selectedFeeStatus = value!);
                       _onFilterChanged();
@@ -831,10 +1158,17 @@ class _ManageStudentClassState extends ConsumerState<ManageStudentClass> {
       activeFilters.add('Class Level: $_selectedClass');
     }
     if (_selectedGender != 'All Genders') {
-      activeFilters.add('Gender: $_selectedGender');
+      final genderLabel = _selectedGender == 'male' ? 'Male' : 'Female';
+      activeFilters.add('Gender: $genderLabel');
     }
     if (_selectedFeeStatus != 'All Status') {
-      activeFilters.add('Status: $_selectedFeeStatus');
+      final statusLabel =
+          _selectedFeeStatus == 'paid'
+              ? 'Paid'
+              : _selectedFeeStatus == 'partial'
+              ? 'Partial'
+              : 'Unpaid';
+      activeFilters.add('Status: $statusLabel');
     }
     if (_searchController.text.isNotEmpty) {
       activeFilters.add('Search: ${_searchController.text}');
@@ -902,6 +1236,7 @@ class _ManageStudentClassState extends ConsumerState<ManageStudentClass> {
     List<StudentModel> students,
     bool isLoading,
     String? errorMessage,
+    bool shouldExpand,
   ) {
     if (isLoading) {
       return Container(
@@ -975,6 +1310,7 @@ class _ManageStudentClassState extends ConsumerState<ManageStudentClass> {
             ),
             child: Row(
               children: [
+                SizedBox(width: 60, child: _buildHeaderCell('#')),
                 Expanded(flex: 3, child: _buildHeaderCell('STUDENT')),
                 Expanded(flex: 2, child: _buildHeaderCell('ADMISSION NO.')),
                 Expanded(flex: 1, child: _buildHeaderCell('CLASS LEVEL')),
@@ -985,15 +1321,42 @@ class _ManageStudentClassState extends ConsumerState<ManageStudentClass> {
             ),
           ),
           // Student Rows
-          Expanded(
-            child: ListView.builder(
-              itemCount: students.length,
-              itemBuilder: (context, index) {
-                final student = students[index];
-                return _buildStudentRow(student);
-              },
-            ),
-          ),
+          shouldExpand
+              ? Expanded(
+                child: ListView.builder(
+                  controller: _tableScrollController,
+                  itemCount: students.length + (_isLoadingMore ? 1 : 0),
+                  itemBuilder: (context, index) {
+                    // Show loading indicator at the bottom when loading more
+                    if (index == students.length) {
+                      return Container(
+                        padding: const EdgeInsets.all(16),
+                        child: const Center(child: CircularProgressIndicator()),
+                      );
+                    }
+                    final student = students[index];
+                    return _buildStudentRow(student, index + 1);
+                  },
+                ),
+              )
+              : SizedBox(
+                height: 400, // Fixed height for the table
+                child: ListView.builder(
+                  controller: _tableScrollController,
+                  itemCount: students.length + (_isLoadingMore ? 1 : 0),
+                  itemBuilder: (context, index) {
+                    // Show loading indicator at the bottom when loading more
+                    if (index == students.length) {
+                      return Container(
+                        padding: const EdgeInsets.all(16),
+                        child: const Center(child: CircularProgressIndicator()),
+                      );
+                    }
+                    final student = students[index];
+                    return _buildStudentRow(student, index + 1);
+                  },
+                ),
+              ),
         ],
       ),
     );
@@ -1006,7 +1369,7 @@ class _ManageStudentClassState extends ConsumerState<ManageStudentClass> {
     );
   }
 
-  Widget _buildStudentRow(StudentModel student) {
+  Widget _buildStudentRow(StudentModel student, int rowNumber) {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
       decoration: BoxDecoration(
@@ -1014,6 +1377,19 @@ class _ManageStudentClassState extends ConsumerState<ManageStudentClass> {
       ),
       child: Row(
         children: [
+          // Row Number
+          SizedBox(
+            width: 60,
+            child: Text(
+              rowNumber.toString(),
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
           // Student Info
           Expanded(
             flex: 3,

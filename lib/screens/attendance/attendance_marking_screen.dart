@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:schmgtsystem/providers/provider.dart';
 import 'package:schmgtsystem/models/attendance_model.dart';
 import 'package:schmgtsystem/widgets/success_snack.dart';
+import 'package:schmgtsystem/utils/academic_year_helper.dart';
 
 class AttendanceMarkingScreen extends ConsumerStatefulWidget {
   final String classId;
@@ -132,8 +133,8 @@ class _AttendanceMarkingScreenState
 
       final request = MarkAttendanceRequest(
         date: DateFormat('yyyy-MM-dd').format(_selectedDate),
-        term: 'First', // You might want to get this from a provider
-        academicYear: '2025/2026', // You might want to get this from a provider
+        term: AcademicYearHelper.getCurrentTerm(ref),
+        academicYear: AcademicYearHelper.getCurrentAcademicYear(ref),
         markerId: user.id ?? '',
         records: allStudentRecords,
       );

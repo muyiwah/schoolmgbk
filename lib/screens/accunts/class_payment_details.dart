@@ -212,7 +212,7 @@ class _PaymentDetailsScreenState extends ConsumerState<PaymentDetailsScreen> {
                       Expanded(
                         child: _buildStatCard(
                           'Total Expected',
-                          '\$${studentsWithFees.metrics.totalFeesExpected.toStringAsFixed(0)}',
+                          '£${studentsWithFees.metrics.totalFeesExpected.toStringAsFixed(0)}',
                           Color(0xFF3B82F6),
                           Icons.attach_money_outlined,
                         ),
@@ -221,7 +221,7 @@ class _PaymentDetailsScreenState extends ConsumerState<PaymentDetailsScreen> {
                       Expanded(
                         child: _buildStatCard(
                           'Total Collected',
-                          '\$${studentsWithFees.metrics.totalFeesCollected.toStringAsFixed(0)}',
+                          '£${studentsWithFees.metrics.totalFeesCollected.toStringAsFixed(0)}',
                           Color(0xFF10B981),
                           Icons.check_circle_outline,
                         ),
@@ -230,7 +230,7 @@ class _PaymentDetailsScreenState extends ConsumerState<PaymentDetailsScreen> {
                       Expanded(
                         child: _buildStatCard(
                           'Pending Amount',
-                          '\$${studentsWithFees.metrics.totalFeesOutstanding.toStringAsFixed(0)}',
+                          '£${studentsWithFees.metrics.totalFeesOutstanding.toStringAsFixed(0)}',
                           Color(0xFFF59E0B),
                           Icons.schedule_outlined,
                         ),
@@ -824,21 +824,21 @@ class _PaymentDetailsScreenState extends ConsumerState<PaymentDetailsScreen> {
           Expanded(
             flex: 2,
             child: _buildStatusCell(
-              '\$${student.totalFees.toStringAsFixed(0)}',
+              '£${student.totalFees.toStringAsFixed(0)}',
               getStatusColor(student.feeStatus),
             ),
           ),
           Expanded(
             flex: 2,
             child: _buildStatusCell(
-              '\$${student.paidAmount.toStringAsFixed(0)}',
+              '£${student.paidAmount.toStringAsFixed(0)}',
               getStatusColor(student.feeStatus),
             ),
           ),
           Expanded(
             flex: 2,
             child: _buildStatusCell(
-              '\$${student.outstandingBalance.toStringAsFixed(0)}',
+              '£${student.outstandingBalance.toStringAsFixed(0)}',
               getStatusColor(student.feeStatus),
             ),
           ),
@@ -859,14 +859,14 @@ class _PaymentDetailsScreenState extends ConsumerState<PaymentDetailsScreen> {
           Expanded(
             flex: 2,
             child: _buildStatusCell(
-              '\$${student.totalFees.toStringAsFixed(0)}',
+              '£${student.totalFees.toStringAsFixed(0)}',
               Color(0xFF0F172A),
             ),
           ),
           Expanded(
             flex: 2,
             child: _buildStatusCell(
-              '\$${student.outstandingBalance.toStringAsFixed(0)}',
+              '£${student.outstandingBalance.toStringAsFixed(0)}',
               getStatusColor(student.feeStatus),
             ),
           ),

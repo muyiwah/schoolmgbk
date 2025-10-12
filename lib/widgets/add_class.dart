@@ -5,14 +5,17 @@ import 'package:schmgtsystem/models/teacher_model.dart';
 import 'package:schmgtsystem/models/class_level_model.dart';
 import 'package:schmgtsystem/providers/provider.dart';
 import 'package:schmgtsystem/widgets/success_snack.dart';
+import 'package:schmgtsystem/services/global_academic_year_service.dart';
 
 class AddClassDialog extends ConsumerStatefulWidget {
   final String academicYear;
   final TeacherListModel teacherData;
+  final VoidCallback? onClassCreated;
   const AddClassDialog({
     Key? key,
     required this.academicYear,
     required this.teacherData,
+    this.onClassCreated,
   }) : super(key: key);
 
   @override
@@ -34,33 +37,18 @@ class _AddClassDialogState extends ConsumerState<AddClassDialog>
   final _roomNumberController = TextEditingController();
   final _floorController = TextEditingController();
 
-  // Schedule Information Controllers
-  final _startTimeController = TextEditingController();
-  final _endTimeController = TextEditingController();
-
   // Selected values
   String? selectedLevel;
   String? selectedTerm;
   String? selectedClassTeacher = 'No Teacher Assigned'; // Default to no teacher
   String? selectedClassTeacherId;
   Color selectedColor = const Color(0xFF3B82F6); // Default blue color
-  List<String> selectedDays = [];
   bool _isLoading = false;
   bool _isLoadingLevels = false;
+  late GlobalAcademicYearService _academicYearService;
 
   // Dynamic class levels from API
   List<ClassLevelModel> _classLevels = [];
-
-  final List<String> terms = ['First', 'Second', 'Third'];
-  final List<String> daysOfWeek = [
-    'Monday',
-    'Tuesday',
-    'Wednesday',
-    'Thursday',
-    'Friday',
-    'Saturday',
-    'Sunday',
-  ];
 
   final List<Color> predefinedColors = [
     const Color(0xFF3B82F6), // Blue
@@ -78,11 +66,13 @@ class _AddClassDialogState extends ConsumerState<AddClassDialog>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-    // Set default values
-    _startTimeController.text = '08:00 AM';
-    _endTimeController.text = '02:00 PM';
-    selectedDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+    _academicYearService = GlobalAcademicYearService();
+    _academicYearService.addListener(_onAcademicYearChanged);
+
+    _tabController = TabController(length: 2, vsync: this);
+
+    // Set current term from academic year service
+    selectedTerm = _academicYearService.currentTermString;
 
     // Load class levels
     _loadClassLevels();
@@ -117,8 +107,17 @@ class _AddClassDialogState extends ConsumerState<AddClassDialog>
   // Helper method to check if class levels are loaded
   bool get hasClassLevels => _classLevels.isNotEmpty && !_isLoadingLevels;
 
+  void _onAcademicYearChanged() {
+    if (mounted) {
+      setState(() {
+        selectedTerm = _academicYearService.currentTermString;
+      });
+    }
+  }
+
   @override
   void dispose() {
+    _academicYearService.removeListener(_onAcademicYearChanged);
     _tabController.dispose();
     _classNameController.dispose();
     _capacityController.dispose();
@@ -126,8 +125,6 @@ class _AddClassDialogState extends ConsumerState<AddClassDialog>
     _buildingController.dispose();
     _roomNumberController.dispose();
     _floorController.dispose();
-    _startTimeController.dispose();
-    _endTimeController.dispose();
     super.dispose();
   }
 
@@ -161,7 +158,7 @@ class _AddClassDialogState extends ConsumerState<AddClassDialog>
               _sectionController.text.trim().isNotEmpty
                   ? _sectionController.text.trim()
                   : null,
-          "academicYear": widget.academicYear,
+          "academicYear": _academicYearService.currentAcademicYearString,
           "term": selectedTerm,
           "capacity": int.tryParse(_capacityController.text) ?? 30,
           "color": _colorToHex(selectedColor),
@@ -171,11 +168,6 @@ class _AddClassDialogState extends ConsumerState<AddClassDialog>
             "building": _buildingController.text.trim(),
             "roomNumber": _roomNumberController.text.trim(),
             "floor": _floorController.text.trim(),
-          },
-          "schedule": {
-            "startTime": _startTimeController.text.trim(),
-            "endTime": _endTimeController.text.trim(),
-            "days": selectedDays,
           },
         };
 
@@ -194,6 +186,10 @@ class _AddClassDialogState extends ConsumerState<AddClassDialog>
         if (mounted) {
           Navigator.pop(context);
           showSnackbar(context, 'Class created successfully!');
+          // Call the callback to refresh the parent screen
+          if (widget.onClassCreated != null) {
+            widget.onClassCreated!();
+          }
         }
       } catch (e) {
         if (mounted) {
@@ -384,60 +380,6 @@ class _AddClassDialogState extends ConsumerState<AddClassDialog>
     );
   }
 
-  Widget _buildDaysSelector() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Schedule Days',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey.shade800,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children:
-                daysOfWeek.map((day) {
-                  final isSelected = selectedDays.contains(day);
-                  return FilterChip(
-                    label: Text(day),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      setState(() {
-                        if (selected) {
-                          selectedDays.add(day);
-                        } else {
-                          selectedDays.remove(day);
-                        }
-                      });
-                    },
-                    selectedColor: AppColors.primary.withOpacity(0.2),
-                    checkmarkColor: AppColors.primary,
-                    labelStyle: TextStyle(
-                      color:
-                          isSelected ? AppColors.primary : Colors.grey.shade700,
-                      fontWeight:
-                          isSelected ? FontWeight.w600 : FontWeight.normal,
-                    ),
-                  );
-                }).toList(),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -510,7 +452,6 @@ class _AddClassDialogState extends ConsumerState<AddClassDialog>
                 tabs: const [
                   Tab(icon: Icon(Icons.info_outline), text: 'Basic Info'),
                   Tab(icon: Icon(Icons.location_on), text: 'Classroom'),
-                  Tab(icon: Icon(Icons.schedule), text: 'Schedule'),
                 ],
               ),
             ),
@@ -519,11 +460,7 @@ class _AddClassDialogState extends ConsumerState<AddClassDialog>
             Expanded(
               child: TabBarView(
                 controller: _tabController,
-                children: [
-                  _buildBasicInfoTab(),
-                  _buildClassroomTab(),
-                  _buildScheduleTab(),
-                ],
+                children: [_buildBasicInfoTab(), _buildClassroomTab()],
               ),
             ),
 
@@ -602,7 +539,9 @@ class _AddClassDialogState extends ConsumerState<AddClassDialog>
             // Academic Year (read-only)
             _buildStyledInput(
               label: 'Academic Year',
-              controller: TextEditingController(text: widget.academicYear),
+              controller: TextEditingController(
+                text: _academicYearService.currentAcademicYearString,
+              ),
               icon: Icons.calendar_today,
               enabled: false,
             ),
@@ -707,22 +646,47 @@ class _AddClassDialogState extends ConsumerState<AddClassDialog>
             Row(
               children: [
                 Expanded(
-                  child: _buildStyledDropdown(
-                    label: 'Term *',
-                    items: terms,
-                    value: selectedTerm,
-                    onChanged: (value) {
-                      setState(() {
-                        selectedTerm = value;
-                      });
-                    },
-                    icon: Icons.schedule,
-                    validator: (value) {
-                      if (value == null) {
-                        return 'Please select a term';
-                      }
-                      return null;
-                    },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 16,
+                    ),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade300),
+                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.grey.shade50,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.schedule, color: Colors.grey.shade600),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Current Term',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade600,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                selectedTerm ?? 'Loading...',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey.shade700,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(Icons.lock, color: Colors.grey.shade400, size: 16),
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -853,79 +817,6 @@ class _AddClassDialogState extends ConsumerState<AddClassDialog>
                   child: Text(
                     'Classroom information is optional but helps with organization and scheduling.',
                     style: TextStyle(color: Colors.blue.shade800, fontSize: 14),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildScheduleTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Class Schedule',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey.shade800,
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // Start and End Time Row
-          Row(
-            children: [
-              Expanded(
-                child: _buildStyledInput(
-                  label: 'Start Time',
-                  controller: _startTimeController,
-                  hintText: 'e.g., 08:00 AM',
-                  icon: Icons.access_time,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildStyledInput(
-                  label: 'End Time',
-                  controller: _endTimeController,
-                  hintText: 'e.g., 02:00 PM',
-                  icon: Icons.access_time,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-
-          // Days Selector
-          _buildDaysSelector(),
-          const SizedBox(height: 20),
-
-          // Info Card
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.green.shade50,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.green.shade200),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.info_outline, color: Colors.green.shade600),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Schedule information helps with timetable management and class organization.',
-                    style: TextStyle(
-                      color: Colors.green.shade800,
-                      fontSize: 14,
-                    ),
                   ),
                 ),
               ],

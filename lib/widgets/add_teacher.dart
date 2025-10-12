@@ -9,8 +9,13 @@ import 'package:schmgtsystem/widgets/success_snack.dart';
 
 class AssignNewTeacherDialog extends ConsumerStatefulWidget {
   final Class? classData;
+  final VoidCallback? onTeacherAssigned;
 
-  const AssignNewTeacherDialog({super.key, this.classData});
+  const AssignNewTeacherDialog({
+    super.key,
+    this.classData,
+    this.onTeacherAssigned,
+  });
 
   @override
   ConsumerState<AssignNewTeacherDialog> createState() =>
@@ -115,6 +120,11 @@ class _AssignNewTeacherDialogState
           context,
           '${selectedTeacher!.personalInfo?.firstName} ${selectedTeacher!.personalInfo?.lastName} assigned as class teacher successfully!',
         );
+
+        // Call the callback to refresh the parent screen immediately
+        if (widget.onTeacherAssigned != null) {
+          widget.onTeacherAssigned!();
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -307,7 +317,15 @@ class _AssignNewTeacherDialogState
                   const Spacer(),
                   IconButton(
                     onPressed:
-                        _isLoading ? null : () => Navigator.of(context).pop(),
+                        _isLoading
+                            ? null
+                            : () async {
+                              Navigator.of(context).pop();
+                              // Call the callback to refresh the parent screen
+                              if (widget.onTeacherAssigned != null) {
+                                widget.onTeacherAssigned!();
+                              }
+                            },
                     icon: const Icon(Icons.close, color: Colors.white),
                   ),
                 ],

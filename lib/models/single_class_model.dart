@@ -114,10 +114,10 @@ class Class {
   Class({this.id, this.name, this.level, this.section, this.classTeacher});
 
   factory Class.fromJson(Map<String, dynamic> json) => Class(
-    id: json["_id"],
-    name: json["name"],
-    level: json["level"],
-    section: json["section"],
+    id: json["_id"]?.toString(),
+    name: json["name"]?.toString(),
+    level: json["level"]?.toString(),
+    section: json["section"]?.toString(),
     classTeacher:
         json["classTeacher"] == null
             ? null
@@ -140,8 +140,11 @@ class ClassTeacher {
 
   ClassTeacher({this.name, this.staffId, this.id});
 
-  factory ClassTeacher.fromJson(Map<String, dynamic> json) =>
-      ClassTeacher(name: json["name"], staffId: json["staffId"],id: json["id"]);
+  factory ClassTeacher.fromJson(Map<String, dynamic> json) => ClassTeacher(
+    name: json["name"]?.toString(),
+    staffId: json["staffId"]?.toString(),
+    id: json["id"]?.toString(),
+  );
 
   Map<String, dynamic> toJson() => {"name": name, "staffId": staffId, "id": id};
 }
@@ -172,9 +175,18 @@ class Metrics {
   });
 
   factory Metrics.fromJson(Map<String, dynamic> json) => Metrics(
-    totalStudents: json["totalStudents"],
-    maleStudents: json["maleStudents"],
-    femaleStudents: json["femaleStudents"],
+    totalStudents:
+        json["totalStudents"] is int
+            ? json["totalStudents"]
+            : int.tryParse(json["totalStudents"]?.toString() ?? '0'),
+    maleStudents:
+        json["maleStudents"] is int
+            ? json["maleStudents"]
+            : int.tryParse(json["maleStudents"]?.toString() ?? '0'),
+    femaleStudents:
+        json["femaleStudents"] is int
+            ? json["femaleStudents"]
+            : int.tryParse(json["femaleStudents"]?.toString() ?? '0'),
     genderRatio:
         json["genderRatio"] == null
             ? null
@@ -183,13 +195,16 @@ class Metrics {
         json["feeStatus"] == null
             ? null
             : FeeStatus.fromJson(json["feeStatus"]),
-    feeCollectionRate: json["feeCollectionRate"],
+    feeCollectionRate: json["feeCollectionRate"]?.toString(),
     todayAttendance:
         json["todayAttendance"] == null
             ? null
             : TodayAttendance.fromJson(json["todayAttendance"]),
-    enrollmentRate: json["enrollmentRate"],
-    availableSlots: json["availableSlots"],
+    enrollmentRate: json["enrollmentRate"]?.toString(),
+    availableSlots:
+        json["availableSlots"] is int
+            ? json["availableSlots"]
+            : int.tryParse(json["availableSlots"]?.toString() ?? '0'),
     currentFeeStructure:
         json["currentFeeStructure"] == null
             ? null
@@ -225,10 +240,16 @@ class CurrentFeeStructure {
 
   factory CurrentFeeStructure.fromJson(Map<String, dynamic> json) =>
       CurrentFeeStructure(
-        baseFee: json["baseFee"],
-        totalFee: json["totalFee"],
-        term: json["term"],
-        academicYear: json["academicYear"],
+        baseFee:
+            json["baseFee"] is int
+                ? json["baseFee"]
+                : int.tryParse(json["baseFee"]?.toString() ?? '0'),
+        totalFee:
+            json["totalFee"] is int
+                ? json["totalFee"]
+                : int.tryParse(json["totalFee"]?.toString() ?? '0'),
+        term: json["term"]?.toString(),
+        academicYear: json["academicYear"]?.toString(),
       );
 
   Map<String, dynamic> toJson() => {
@@ -247,9 +268,18 @@ class FeeStatus {
   FeeStatus({this.paid, this.partial, this.unpaid});
 
   factory FeeStatus.fromJson(Map<String, dynamic> json) => FeeStatus(
-    paid: json["paid"],
-    partial: json["partial"],
-    unpaid: json["unpaid"],
+    paid:
+        json["paid"] is int
+            ? json["paid"]
+            : int.tryParse(json["paid"]?.toString() ?? '0'),
+    partial:
+        json["partial"] is int
+            ? json["partial"]
+            : int.tryParse(json["partial"]?.toString() ?? '0'),
+    unpaid:
+        json["unpaid"] is int
+            ? json["unpaid"]
+            : int.tryParse(json["unpaid"]?.toString() ?? '0'),
   );
 
   Map<String, dynamic> toJson() => {
@@ -265,8 +295,10 @@ class GenderRatio {
 
   GenderRatio({this.male, this.female});
 
-  factory GenderRatio.fromJson(Map<String, dynamic> json) =>
-      GenderRatio(male: json["male"], female: json["female"]);
+  factory GenderRatio.fromJson(Map<String, dynamic> json) => GenderRatio(
+    male: json["male"]?.toString(),
+    female: json["female"]?.toString(),
+  );
 
   Map<String, dynamic> toJson() => {"male": male, "female": female};
 }
@@ -288,11 +320,26 @@ class TodayAttendance {
 
   factory TodayAttendance.fromJson(Map<String, dynamic> json) =>
       TodayAttendance(
-        present: json["present"],
-        absent: json["absent"],
-        late: json["late"],
-        notMarked: json["notMarked"],
-        attendancePercentage: json["attendancePercentage"],
+        present:
+            json["present"] is int
+                ? json["present"]
+                : int.tryParse(json["present"]?.toString() ?? '0'),
+        absent:
+            json["absent"] is int
+                ? json["absent"]
+                : int.tryParse(json["absent"]?.toString() ?? '0'),
+        late:
+            json["late"] is int
+                ? json["late"]
+                : int.tryParse(json["late"]?.toString() ?? '0'),
+        notMarked:
+            json["notMarked"] is int
+                ? json["notMarked"]
+                : int.tryParse(json["notMarked"]?.toString() ?? '0'),
+        attendancePercentage:
+            json["attendancePercentage"] is int
+                ? json["attendancePercentage"]
+                : int.tryParse(json["attendancePercentage"]?.toString() ?? '0'),
       );
 
   Map<String, dynamic> toJson() => {
@@ -322,12 +369,12 @@ class Student {
   });
 
   factory Student.fromJson(Map<String, dynamic> json) => Student(
-    id: json["_id"],
-    name: json["name"],
-    admissionNumber: json["admissionNumber"],
-    parentName: json["parentName"],
-    feeStatus: json["feeStatus"],
-    todayAttendance: json["todayAttendance"],
+    id: json["_id"]?.toString(),
+    name: json["name"]?.toString(),
+    admissionNumber: json["admissionNumber"]?.toString(),
+    parentName: json["parentName"]?.toString(),
+    feeStatus: json["feeStatus"]?.toString(),
+    todayAttendance: json["todayAttendance"]?.toString(),
   );
 
   Map<String, dynamic> toJson() => {

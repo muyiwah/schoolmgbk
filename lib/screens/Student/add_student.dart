@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:schmgtsystem/providers/provider.dart';
 import 'package:schmgtsystem/providers/student_provider.dart';
+import 'package:schmgtsystem/services/global_academic_year_service.dart';
 import 'package:schmgtsystem/models/class_metrics_model.dart';
 import 'package:schmgtsystem/utils/constants.dart';
 import 'package:schmgtsystem/widgets/success_snack.dart';
@@ -39,6 +40,11 @@ class _StudentRegistrationPageState
   bool _isUploadingImage = false;
   final ImagePicker _imagePicker = ImagePicker();
 
+  // ID Photo upload variables
+  XFile? _selectedIdPhotoFile;
+  String? _idPhotoUrl;
+  bool _isUploadingIdPhoto = false;
+
   // Form controllers - Student Personal Info
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
@@ -57,58 +63,167 @@ class _StudentRegistrationPageState
   final _emergencyContactPhoneController = TextEditingController();
   final _emergencyContactRelationshipController = TextEditingController();
 
-  // Parent controllers - Father (simplified to match schema)
+  // Additional Personal Info Controllers
+  final _profileImageController = TextEditingController();
+  final _passportPhotoController = TextEditingController();
+  final _languagesSpokenController = TextEditingController();
+  final _ethnicBackgroundController = TextEditingController();
+  final _formOfIdentificationController = TextEditingController();
+  final _idNumberController = TextEditingController();
+  final _localGovernmentController = TextEditingController();
+
+  // Contact Info Controllers
+  final _streetNumberController = TextEditingController();
+  final _streetNameController = TextEditingController();
+  final _postalCodeController = TextEditingController();
+
+  // Medical Info Controllers
+  final _generalPractitionerNameController = TextEditingController();
+  final _generalPractitionerAddressController = TextEditingController();
+  final _generalPractitionerPhoneController = TextEditingController();
+  final _medicalHistoryController = TextEditingController();
+  final _ongoingMedicalConditionsController = TextEditingController();
+  final _specialNeedsController = TextEditingController();
+  final _currentMedicationController = TextEditingController();
+  final _immunisationRecordController = TextEditingController();
+  final _dietaryRequirementsController = TextEditingController();
+
+  // Emergency Contact Additional Controllers
+  final _emergencyContactEmailController = TextEditingController();
+  final _emergencyContactStreetNumberController = TextEditingController();
+  final _emergencyContactStreetNameController = TextEditingController();
+  final _emergencyContactCityController = TextEditingController();
+  final _emergencyContactStateController = TextEditingController();
+  final _emergencyContactCountryController = TextEditingController();
+  final _emergencyContactPostalCodeController = TextEditingController();
+
+  // SEN Info Controllers
+  final _supportDetailsController = TextEditingController();
+  final _ehcpDetailsController = TextEditingController();
+
+  // Background Info Controllers
+  final _previousChildcareProviderController = TextEditingController();
+  final _interestsController = TextEditingController();
+  final _toiletTrainingStatusController = TextEditingController();
+  final _comfortItemsController = TextEditingController();
+  final _sleepRoutineController = TextEditingController();
+  final _behaviouralConcernsController = TextEditingController();
+
+  // Legal Info Controllers
+  final _legalResponsibilityController = TextEditingController();
+  final _courtOrdersController = TextEditingController();
+  final _safeguardingDisclosureController = TextEditingController();
+  final _parentSignatureController = TextEditingController();
+
+  // Funding Info Controllers
+  final _fundingAgreementController = TextEditingController();
+
+  // Session Info Controllers
+  final _daysOfAttendanceController = TextEditingController();
+  final _fundedHoursController = TextEditingController();
+  final _additionalPaidSessionsController = TextEditingController();
+  final _preferredSettlingInSessionsController = TextEditingController();
+
+  // Parent controllers - Father (expanded to match new schema)
   final _fatherTitleController = TextEditingController();
   final _fatherFirstNameController = TextEditingController();
   final _fatherLastNameController = TextEditingController();
   final _fatherMiddleNameController = TextEditingController();
-  final _fatherDobController = TextEditingController();
+  final _fatherStreetNumberController = TextEditingController();
+  final _fatherStreetNameController = TextEditingController();
+  final _fatherCityController = TextEditingController();
+  final _fatherStateController = TextEditingController();
+  final _fatherCountryController = TextEditingController();
+  final _fatherPostalCodeController = TextEditingController();
   final _fatherPhoneController = TextEditingController();
   final _fatherEmailController = TextEditingController();
   final _fatherOccupationController = TextEditingController();
   final _fatherEmployerController = TextEditingController();
-  final _fatherWorkPhoneController = TextEditingController();
-  final _fatherWorkStreetController = TextEditingController();
-  final _fatherWorkCityController = TextEditingController();
-  final _fatherWorkStateController = TextEditingController();
-  final _fatherWorkCountryController = TextEditingController();
+  final _fatherFormOfIdentificationController = TextEditingController();
+  final _fatherIdNumberController = TextEditingController();
 
-  // Parent controllers - Mother (simplified to match schema)
+  // Parent controllers - Mother (expanded to match new schema)
   final _motherTitleController = TextEditingController();
   final _motherFirstNameController = TextEditingController();
   final _motherLastNameController = TextEditingController();
   final _motherMiddleNameController = TextEditingController();
-  final _motherDobController = TextEditingController();
+  final _motherStreetNumberController = TextEditingController();
+  final _motherStreetNameController = TextEditingController();
+  final _motherCityController = TextEditingController();
+  final _motherStateController = TextEditingController();
+  final _motherCountryController = TextEditingController();
+  final _motherPostalCodeController = TextEditingController();
   final _motherPhoneController = TextEditingController();
   final _motherEmailController = TextEditingController();
   final _motherOccupationController = TextEditingController();
   final _motherEmployerController = TextEditingController();
+  final _motherFormOfIdentificationController = TextEditingController();
+  final _motherIdNumberController = TextEditingController();
+
+  // Parent controllers - Guardian (expanded to match new schema)
+  final _guardianTitleController = TextEditingController();
+  final _guardianFirstNameController = TextEditingController();
+  final _guardianLastNameController = TextEditingController();
+  final _guardianMiddleNameController = TextEditingController();
+  final _guardianStreetNumberController = TextEditingController();
+  final _guardianStreetNameController = TextEditingController();
+  final _guardianCityController = TextEditingController();
+  final _guardianStateController = TextEditingController();
+  final _guardianCountryController = TextEditingController();
+  final _guardianPostalCodeController = TextEditingController();
+  final _guardianPhoneController = TextEditingController();
+  final _guardianEmailController = TextEditingController();
+  final _guardianOccupationController = TextEditingController();
+  final _guardianEmployerController = TextEditingController();
+  final _guardianFormOfIdentificationController = TextEditingController();
+  final _guardianIdNumberController = TextEditingController();
 
   // Selected values
   String? _selectedGender;
   String? _selectedNationality;
-  String? _selectedAcademicYear = '2025/2026';
+  String? _selectedAcademicYear;
   String? _selectedStudentType = 'day';
+  late GlobalAcademicYearService _academicYearService;
   String? _selectedReligion;
   String? _selectedBloodGroup;
   String? _selectedStateOfOrigin;
-  String? _selectedLocalGovernment;
   String? _selectedCountry;
   String? _selectedState;
   String? _selectedFatherWorkCountry;
   String? _selectedFatherWorkState;
 
+  // Additional selected values
+  String? _selectedFormOfIdentification;
+  bool _hasSiblings = false;
+  bool _hasSpecialNeeds = false;
+  bool _receivingAdditionalSupport = false;
+  bool _hasEHCP = false;
+  bool _emergencyMedicalTreatment = false;
+  bool _administrationOfMedication = false;
+  bool _firstAidConsent = false;
+  bool _outingsAndTrips = false;
+  bool _transportConsent = false;
+  bool _useOfPhotosVideos = false;
+  bool _suncreamApplication = false;
+  bool _observationAndAssessment = false;
+  bool _agreementToPayFees = false;
+  bool _authorisedToCollectChild = false;
+
+  // Parent boolean fields
+  bool _fatherParentalResponsibility = true;
+  bool _fatherLegalGuardianship = true;
+  bool _fatherAuthorisedToCollectChild = true;
+  bool _motherParentalResponsibility = true;
+  bool _motherLegalGuardianship = true;
+  bool _motherAuthorisedToCollectChild = true;
+  bool _guardianParentalResponsibility = true;
+  bool _guardianLegalGuardianship = true;
+  bool _guardianAuthorisedToCollectChild = true;
+
   // Country picker selections for personal info
   String? _selectedPersonalCountry;
-  String? _selectedPersonalState;
-  String? _selectedFatherGender = 'male';
-  String? _selectedMotherGender = 'female';
-  String? _selectedFatherMaritalStatus;
-  String? _selectedMotherMaritalStatus;
   DateTime? _selectedDOB;
   DateTime? _selectedAdmissionDate;
-  DateTime? _selectedFatherDOB;
-  DateTime? _selectedMotherDOB;
 
   final List<String> _genders = ['male', 'female'];
   final List<String> _religions = [
@@ -126,6 +241,14 @@ class _StudentRegistrationPageState
     'AB-',
     'O+',
     'O-',
+  ];
+  final List<String> _formOfIdentificationOptions = [
+    'NHS',
+    'Passport',
+    'Citizen Card',
+    'Driving License',
+    'Birth Certificate',
+    'Other',
   ];
 
   // Comprehensive country and state data
@@ -429,20 +552,9 @@ class _StudentRegistrationPageState
     'Surulere',
     'Other',
   ];
-  final List<String> _academicYears = [
-    '2024/2025',
-    '2025/2026',
-    '2026/2027',
-    '2027/2028',
-  ];
+  // Academic year is now loaded from backend and displayed as read-only
   final List<String> _studentTypes = ['day', 'boarding'];
   final List<String> _titles = ['Mr', 'Mrs', 'Ms', 'Dr', 'Prof'];
-  final List<String> _maritalStatuses = [
-    'single',
-    'married',
-    'divorced',
-    'widowed',
-  ];
   ClassMetricModel _classData = ClassMetricModel();
 
   // Helper method to get states for selected country
@@ -632,12 +744,59 @@ class _StudentRegistrationPageState
   @override
   void initState() {
     super.initState();
+    _academicYearService = GlobalAcademicYearService();
+    _academicYearService.addListener(_onAcademicYearChanged);
     _countryController.text = 'Nigeria';
     _selectedCountry = 'Nigeria';
     _selectedState = 'Lagos';
     _fatherTitleController.text = 'Mr';
     _motherTitleController.text = 'Mrs';
+    _loadAcademicYears();
     _loadClasses();
+  }
+
+  void _onAcademicYearChanged() {
+    if (mounted) {
+      setState(() {
+        _selectedAcademicYear = _academicYearService.currentAcademicYearString;
+      });
+    }
+  }
+
+  Future<void> _loadAcademicYears() async {
+    try {
+      print('🔍 AddStudent: Loading academic years...');
+
+      // Get current academic year from global service
+      final academicYearService = GlobalAcademicYearService();
+
+      print(
+        '📊 AddStudent: Service initialized: ${academicYearService.isInitialized}',
+      );
+      print(
+        '📊 AddStudent: Current academic year: ${academicYearService.currentAcademicYearString}',
+      );
+
+      // If service is not initialized, try to load cached data first
+      if (!academicYearService.isInitialized) {
+        print('🔄 AddStudent: Service not initialized, loading cached data...');
+        await academicYearService.loadCachedData();
+      }
+
+      final currentAcademicYear = academicYearService.currentAcademicYearString;
+
+      print('✅ AddStudent: Setting academic year to: $currentAcademicYear');
+
+      setState(() {
+        _selectedAcademicYear = currentAcademicYear;
+      });
+    } catch (e) {
+      print('❌ AddStudent: Error loading academic year: $e');
+      // Fallback to default academic year if service is not available
+      setState(() {
+        _selectedAcademicYear = '2025/2026';
+      });
+    }
   }
 
   Future<void> _loadClasses() async {
@@ -677,6 +836,8 @@ class _StudentRegistrationPageState
 
   @override
   void dispose() {
+    _academicYearService.removeListener(_onAcademicYearChanged);
+
     // Student controllers
     _firstNameController.dispose();
     _lastNameController.dispose();
@@ -695,32 +856,102 @@ class _StudentRegistrationPageState
     _emergencyContactPhoneController.dispose();
     _emergencyContactRelationshipController.dispose();
 
+    // Additional Personal Info Controllers
+    _profileImageController.dispose();
+    _passportPhotoController.dispose();
+    _languagesSpokenController.dispose();
+    _ethnicBackgroundController.dispose();
+    _formOfIdentificationController.dispose();
+    _idNumberController.dispose();
+    _localGovernmentController.dispose();
+
+    // Contact Info Controllers
+    _streetNumberController.dispose();
+    _streetNameController.dispose();
+    _postalCodeController.dispose();
+
+    // Medical Info Controllers
+    _generalPractitionerNameController.dispose();
+    _generalPractitionerAddressController.dispose();
+    _generalPractitionerPhoneController.dispose();
+    _medicalHistoryController.dispose();
+    _ongoingMedicalConditionsController.dispose();
+    _specialNeedsController.dispose();
+    _currentMedicationController.dispose();
+    _immunisationRecordController.dispose();
+    _dietaryRequirementsController.dispose();
+
+    // Emergency Contact Additional Controllers
+    _emergencyContactEmailController.dispose();
+    _emergencyContactStreetNumberController.dispose();
+    _emergencyContactStreetNameController.dispose();
+    _emergencyContactCityController.dispose();
+    _emergencyContactStateController.dispose();
+    _emergencyContactCountryController.dispose();
+    _emergencyContactPostalCodeController.dispose();
+
+    // SEN Info Controllers
+    _supportDetailsController.dispose();
+    _ehcpDetailsController.dispose();
+
+    // Background Info Controllers
+    _previousChildcareProviderController.dispose();
+    _interestsController.dispose();
+    _toiletTrainingStatusController.dispose();
+    _comfortItemsController.dispose();
+    _sleepRoutineController.dispose();
+    _behaviouralConcernsController.dispose();
+
+    // Legal Info Controllers
+    _legalResponsibilityController.dispose();
+    _courtOrdersController.dispose();
+    _safeguardingDisclosureController.dispose();
+    _parentSignatureController.dispose();
+
+    // Funding Info Controllers
+    _fundingAgreementController.dispose();
+
+    // Session Info Controllers
+    _daysOfAttendanceController.dispose();
+    _fundedHoursController.dispose();
+    _additionalPaidSessionsController.dispose();
+    _preferredSettlingInSessionsController.dispose();
+
     // Father controllers
     _fatherTitleController.dispose();
     _fatherFirstNameController.dispose();
     _fatherLastNameController.dispose();
     _fatherMiddleNameController.dispose();
-    _fatherDobController.dispose();
+    _fatherStreetNumberController.dispose();
+    _fatherStreetNameController.dispose();
+    _fatherCityController.dispose();
+    _fatherStateController.dispose();
+    _fatherCountryController.dispose();
+    _fatherPostalCodeController.dispose();
     _fatherPhoneController.dispose();
     _fatherEmailController.dispose();
     _fatherOccupationController.dispose();
     _fatherEmployerController.dispose();
-    _fatherWorkPhoneController.dispose();
-    _fatherWorkStreetController.dispose();
-    _fatherWorkCityController.dispose();
-    _fatherWorkStateController.dispose();
-    _fatherWorkCountryController.dispose();
+    _fatherFormOfIdentificationController.dispose();
+    _fatherIdNumberController.dispose();
 
     // Mother controllers
     _motherTitleController.dispose();
     _motherFirstNameController.dispose();
     _motherLastNameController.dispose();
     _motherMiddleNameController.dispose();
-    _motherDobController.dispose();
+    _motherStreetNumberController.dispose();
+    _motherStreetNameController.dispose();
+    _motherCityController.dispose();
+    _motherStateController.dispose();
+    _motherCountryController.dispose();
+    _motherPostalCodeController.dispose();
     _motherPhoneController.dispose();
     _motherEmailController.dispose();
     _motherOccupationController.dispose();
     _motherEmployerController.dispose();
+    _motherFormOfIdentificationController.dispose();
+    _motherIdNumberController.dispose();
 
     _pageController.dispose();
     super.dispose();
@@ -746,23 +977,36 @@ class _StudentRegistrationPageState
             // Progress indicator
             Container(
               padding: const EdgeInsets.all(20),
-              child: Row(
+              child: Column(
                 children: [
-                  Expanded(
-                    child: LinearProgressIndicator(
-                      value: (_currentStep + 1) / 5,
-                      backgroundColor: Colors.grey[300],
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                        Color(0xFF6366F1),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: LinearProgressIndicator(
+                          value: (_currentStep + 1) / 9,
+                          backgroundColor: Colors.grey[300],
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            Color(0xFF6366F1),
+                          ),
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 16),
+                      Text(
+                        'Step ${_currentStep + 1} of 8',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF6366F1),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(height: 8),
                   Text(
-                    'Step ${_currentStep + 1} of 5',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF6366F1),
+                    _getStepTitle(_currentStep),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
                     ),
                   ),
                 ],
@@ -773,6 +1017,8 @@ class _StudentRegistrationPageState
             Expanded(
               child: PageView(
                 controller: _pageController,
+                physics:
+                    const NeverScrollableScrollPhysics(), // Disable manual swiping
                 onPageChanged: (index) {
                   setState(() {
                     _currentStep = index;
@@ -782,8 +1028,12 @@ class _StudentRegistrationPageState
                   _buildPersonalInfoStep(),
                   _buildContactInfoStep(),
                   _buildAcademicInfoStep(),
+                  _buildMedicalInfoStep(),
+                  _buildPermissionsStep(),
+                  _buildBackgroundInfoStep(),
                   _buildFatherInfoStep(),
                   _buildMotherInfoStep(),
+                  _buildGuardianInfoStep(),
                 ],
               ),
             ),
@@ -828,7 +1078,7 @@ class _StudentRegistrationPageState
                                 ),
                               )
                               : Text(
-                                _currentStep == 4 ? 'Submit' : 'Next',
+                                _currentStep == 7 ? 'Submit' : 'Next',
                                 style: const TextStyle(color: Colors.white),
                               ),
                     ),
@@ -866,6 +1116,10 @@ class _StudentRegistrationPageState
           // Profile Image Upload Section
           _buildImageUploadSection(),
           const SizedBox(height: 32),
+
+          // // ID Photo Upload Section
+          // _buildIdPhotoUploadSection(),
+          // const SizedBox(height: 32),
 
           // Name fields
           Row(
@@ -924,14 +1178,12 @@ class _StudentRegistrationPageState
               const SizedBox(width: 16),
               Expanded(
                 child: _buildCountryDropdown(
-                  label: 'Nationality',
+                  label: 'Nationality of Origin',
                   value: _selectedNationality,
                   onChanged: (value) {
                     setState(() {
                       _selectedNationality = value;
                       _selectedPersonalCountry = value;
-                      _selectedPersonalState =
-                          null; // Reset state when country changes
                     });
                   },
                   isRequired: true,
@@ -984,9 +1236,6 @@ class _StudentRegistrationPageState
                   onChanged: (value) {
                     setState(() {
                       _selectedStateOfOrigin = value;
-                      _selectedPersonalState = value;
-                      _selectedLocalGovernment =
-                          null; // Reset LGA when state changes
                     });
                   },
                   isRequired: true,
@@ -994,15 +1243,9 @@ class _StudentRegistrationPageState
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: _buildDropdown(
+                child: _buildTextField(
+                  controller: _localGovernmentController,
                   label: 'Local Government',
-                  value: _selectedLocalGovernment,
-                  items: _getLocalGovernmentsForState(_selectedPersonalState),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedLocalGovernment = value;
-                    });
-                  },
                   isRequired: true,
                 ),
               ),
@@ -1044,8 +1287,28 @@ class _StudentRegistrationPageState
           Row(
             children: [
               Expanded(
+                child: _buildTextField(
+                  controller: _streetNumberController,
+                  label: 'Street Number',
+                  isRequired: true,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildTextField(
+                  controller: _postalCodeController,
+                  label: 'Postal Code',
+                  isRequired: true,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
                 child: _buildCountryDropdown(
-                  label: 'Country',
+                  label: 'Country of Residence',
                   value: _selectedCountry,
                   onChanged: (value) {
                     setState(() {
@@ -1129,19 +1392,7 @@ class _StudentRegistrationPageState
           // Academic Year and Class
           Row(
             children: [
-              Expanded(
-                child: _buildDropdown(
-                  label: 'Academic Year',
-                  value: _selectedAcademicYear,
-                  items: _academicYears,
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedAcademicYear = value;
-                    });
-                  },
-                  isRequired: true,
-                ),
-              ),
+              Expanded(child: _buildAcademicYearField()),
               const SizedBox(width: 16),
               Expanded(child: _buildClassDropdown()),
             ],
@@ -1234,35 +1485,398 @@ class _StudentRegistrationPageState
             ],
           ),
           const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
 
-          // Medical Information
+  Widget _buildFatherInfoStep() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Father\'s Information',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Enter the father\'s complete details',
+            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+          ),
+          const SizedBox(height: 16),
+
+          // Fill with N/A button
+          _buildFillNAButton('Father\'s', _fillFatherFieldsWithNA),
+
+          const SizedBox(height: 16),
+
+          // Personal Information Section
+          const Text(
+            'Personal Information',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Title and Name
+          Row(
+            children: [
+              Expanded(
+                child: _buildDropdown(
+                  label: 'Title',
+                  value:
+                      _fatherTitleController.text.isNotEmpty
+                          ? _fatherTitleController.text
+                          : null,
+                  items: _titles,
+                  onChanged: (value) {
+                    setState(() {
+                      _fatherTitleController.text = value!;
+                    });
+                  },
+                  isRequired: true,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildTextField(
+                  controller: _fatherFirstNameController,
+                  label: 'First Name',
+                  isRequired: true,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _fatherMiddleNameController,
+                  label: 'Middle Name',
+                  isRequired: true,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildTextField(
+                  controller: _fatherLastNameController,
+                  label: 'Last Name',
+                  isRequired: true,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 32),
+
+          // Address Information Section
+          const Text(
+            'Address Information',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Street Number and Street Name
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _fatherStreetNumberController,
+                  label: 'Street Number',
+                  keyboardType: TextInputType.number,
+                  isRequired: true,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildTextField(
+                  controller: _fatherStreetNameController,
+                  label: 'Street Name',
+                  isRequired: true,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // City, State, Country
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _fatherCityController,
+                  label: 'City',
+                  isRequired: true,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildTextField(
+                  controller: _fatherStateController,
+                  label: 'State',
+                  isRequired: true,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _fatherCountryController,
+                  label: 'Country',
+                  isRequired: true,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildTextField(
+                  controller: _fatherPostalCodeController,
+                  label: 'Postal Code',
+                  isRequired: true,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 32),
+
+          // Contact Information Section
+          const Text(
+            'Contact Information',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _fatherPhoneController,
+                  label: 'Phone Number',
+                  keyboardType: TextInputType.phone,
+                  isRequired: true,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildTextField(
+                  controller: _fatherEmailController,
+                  label: 'Email Address',
+                  keyboardType: TextInputType.emailAddress,
+                  isRequired: true,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 32),
+
+          // Professional Information Section
+          const Text(
+            'Professional Information',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _fatherOccupationController,
+                  label: 'Occupation',
+                  isRequired: true,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildTextField(
+                  controller: _fatherEmployerController,
+                  label: 'Employer',
+                  isRequired: true,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 32),
+
+          // Legal Information Section
+          const Text(
+            'Legal Information',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Parental Responsibility and Legal Guardianship
+          _buildCheckboxField(
+            'Parental Responsibility',
+            _fatherParentalResponsibility,
+            (value) => setState(() => _fatherParentalResponsibility = value!),
+          ),
+          _buildCheckboxField(
+            'Legal Guardianship',
+            _fatherLegalGuardianship,
+            (value) => setState(() => _fatherLegalGuardianship = value!),
+          ),
+          _buildCheckboxField(
+            'Authorised to Collect the Child',
+            _fatherAuthorisedToCollectChild,
+            (value) => setState(() => _fatherAuthorisedToCollectChild = value!),
+          ),
+          const SizedBox(height: 16),
+
+          // Form of Identification and ID Number
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _fatherFormOfIdentificationController,
+                  label: 'Form of Identification',
+                  isRequired: true,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildTextField(
+                  controller: _fatherIdNumberController,
+                  label: 'ID Number',
+                  isRequired: true,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMedicalInfoStep() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           const Text(
             'Medical Information',
             style: TextStyle(
-              fontSize: 20,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Enter the student\'s medical details',
+            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+          ),
+          const SizedBox(height: 32),
+
+          // General Practitioner
+          const Text(
+            'General Practitioner',
+            style: TextStyle(
+              fontSize: 18,
               fontWeight: FontWeight.bold,
               color: Colors.black87,
             ),
           ),
           const SizedBox(height: 16),
           _buildTextField(
+            controller: _generalPractitionerNameController,
+            label: 'GP Name',
+            isRequired: true,
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _generalPractitionerAddressController,
+            label: 'GP Address',
+            isRequired: true,
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _generalPractitionerPhoneController,
+            label: 'GP Phone',
+            keyboardType: TextInputType.phone,
+            isRequired: true,
+          ),
+          const SizedBox(height: 24),
+
+          // Medical History
+          _buildTextField(
+            controller: _medicalHistoryController,
+            label: 'Medical History',
+            maxLines: 3,
+            isRequired: true,
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
             controller: _allergiesController,
             label: 'Allergies (comma separated)',
             maxLines: 2,
+            isRequired: true,
           ),
           const SizedBox(height: 16),
           _buildTextField(
-            controller: _medicationsController,
-            label: 'Medications (comma separated)',
+            controller: _ongoingMedicalConditionsController,
+            label: 'Ongoing Medical Conditions',
             maxLines: 2,
+            isRequired: true,
           ),
           const SizedBox(height: 16),
           _buildTextField(
-            controller: _medicalConditionsController,
-            label: 'Medical Conditions (comma separated)',
+            controller: _specialNeedsController,
+            label: 'Special Needs',
             maxLines: 2,
+            isRequired: true,
           ),
           const SizedBox(height: 16),
+          _buildTextField(
+            controller: _currentMedicationController,
+            label: 'Current Medication (with dosage)',
+            maxLines: 2,
+            isRequired: true,
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _immunisationRecordController,
+            label: 'Immunisation Record',
+            maxLines: 2,
+            isRequired: true,
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _dietaryRequirementsController,
+            label: 'Dietary Requirements',
+            maxLines: 2,
+            isRequired: true,
+          ),
+          const SizedBox(height: 32),
 
           // Emergency Contact
           const Text(
@@ -1305,14 +1919,14 @@ class _StudentRegistrationPageState
     );
   }
 
-  Widget _buildFatherInfoStep() {
+  Widget _buildPermissionsStep() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Father\'s Information',
+            'Permissions & Consents',
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -1321,221 +1935,143 @@ class _StudentRegistrationPageState
           ),
           const SizedBox(height: 8),
           Text(
-            'Enter the father\'s details',
+            'Please provide consent for various activities',
             style: TextStyle(fontSize: 16, color: Colors.grey[600]),
           ),
           const SizedBox(height: 32),
 
-          // Title and Name
-          Row(
-            children: [
-              Expanded(
-                child: _buildDropdown(
-                  label: 'Title',
-                  value: _fatherTitleController.text,
-                  items: _titles,
-                  onChanged: (value) {
-                    setState(() {
-                      _fatherTitleController.text = value!;
-                    });
-                  },
-                  isRequired: true,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildTextField(
-                  controller: _fatherFirstNameController,
-                  label: 'First Name',
-                  isRequired: true,
-                ),
-              ),
-            ],
+          _buildCheckboxField(
+            'Emergency Medical Treatment',
+            _emergencyMedicalTreatment,
+            (value) => setState(() => _emergencyMedicalTreatment = value!),
           ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildTextField(
-                  controller: _fatherMiddleNameController,
-                  label: 'Middle Name',
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildTextField(
-                  controller: _fatherLastNameController,
-                  label: 'Last Name',
-                  isRequired: true,
-                ),
-              ),
-            ],
+          _buildCheckboxField(
+            'Administration of Medication',
+            _administrationOfMedication,
+            (value) => setState(() => _administrationOfMedication = value!),
           ),
-          const SizedBox(height: 16),
+          _buildCheckboxField(
+            'First Aid Consent',
+            _firstAidConsent,
+            (value) => setState(() => _firstAidConsent = value!),
+          ),
+          _buildCheckboxField(
+            'Outings and Trips',
+            _outingsAndTrips,
+            (value) => setState(() => _outingsAndTrips = value!),
+          ),
+          _buildCheckboxField(
+            'Transport Consent',
+            _transportConsent,
+            (value) => setState(() => _transportConsent = value!),
+          ),
+          _buildCheckboxField(
+            'Use of Photos/Videos',
+            _useOfPhotosVideos,
+            (value) => setState(() => _useOfPhotosVideos = value!),
+          ),
+          _buildCheckboxField(
+            'Suncream Application',
+            _suncreamApplication,
+            (value) => setState(() => _suncreamApplication = value!),
+          ),
+          _buildCheckboxField(
+            'Observation and Assessment',
+            _observationAndAssessment,
+            (value) => setState(() => _observationAndAssessment = value!),
+          ),
+          _buildCheckboxField(
+            'Agreement to Pay Fees',
+            _agreementToPayFees,
+            (value) => setState(() => _agreementToPayFees = value!),
+          ),
+        ],
+      ),
+    );
+  }
 
-          // Date of Birth and Gender
-          Row(
-            children: [
-              Expanded(
-                child: _buildTextField(
-                  controller: _fatherDobController,
-                  label: 'Date of Birth',
-                  readOnly: true,
-                  onTap: () => _selectDate(context, 'father'),
-                  suffixIcon: const Icon(Icons.calendar_today),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildDropdown(
-                  label: 'Gender',
-                  value: _selectedFatherGender,
-                  items: _genders,
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedFatherGender = value;
-                    });
-                  },
-                  isRequired: true,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Marital Status
-          _buildDropdown(
-            label: 'Marital Status',
-            value: _selectedFatherMaritalStatus,
-            items: _maritalStatuses,
-            onChanged: (value) {
-              setState(() {
-                _selectedFatherMaritalStatus = value;
-              });
-            },
-          ),
-          const SizedBox(height: 16),
-
-          // Contact Information
+  Widget _buildBackgroundInfoStep() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           const Text(
-            'Contact Information',
+            'Background & Development Information',
             style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildTextField(
-                  controller: _fatherPhoneController,
-                  label: 'Primary Phone',
-                  keyboardType: TextInputType.phone,
-                  isRequired: true,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildTextField(
-                  controller: _fatherEmailController,
-                  label: 'Email',
-                  keyboardType: TextInputType.emailAddress,
-                  isRequired: true,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Professional Information
-          const Text(
-            'Professional Information',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildTextField(
-                  controller: _fatherOccupationController,
-                  label: 'Occupation',
-                  isRequired: true,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildTextField(
-                  controller: _fatherEmployerController,
-                  label: 'Employer',
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _buildTextField(
-            controller: _fatherWorkPhoneController,
-            label: 'Work Phone',
-            keyboardType: TextInputType.phone,
-          ),
-          const SizedBox(height: 16),
-
-          // Work Address
-          const Text(
-            'Work Address',
-            style: TextStyle(
-              fontSize: 16,
+              fontSize: 24,
               fontWeight: FontWeight.bold,
               color: Colors.black87,
             ),
           ),
           const SizedBox(height: 8),
+          Text(
+            'Enter additional background information',
+            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+          ),
+          const SizedBox(height: 32),
+
           _buildTextField(
-            controller: _fatherWorkStreetController,
-            label: 'Work Street Address',
+            controller: _previousChildcareProviderController,
+            label: 'Previous Childcare Provider',
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildTextField(
-                  controller: _fatherWorkCityController,
-                  label: 'Work City',
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildDropdown(
-                  label: 'Work State',
-                  value: _selectedFatherWorkState,
-                  items: _getStatesForCountry(_selectedFatherWorkCountry),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedFatherWorkState = value;
-                      _fatherWorkStateController.text = value ?? '';
-                    });
-                  },
-                ),
-              ),
-            ],
+          _buildTextField(
+            controller: _interestsController,
+            label: 'Child\'s Interests',
+            maxLines: 2,
           ),
           const SizedBox(height: 16),
-          _buildCountryDropdown(
-            label: 'Work Country',
-            value: _selectedFatherWorkCountry,
+          _buildTextField(
+            controller: _toiletTrainingStatusController,
+            label: 'Toilet Training Status',
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _comfortItemsController,
+            label: 'Comfort Items',
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _sleepRoutineController,
+            label: 'Sleep Routine',
+            maxLines: 2,
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _behaviouralConcernsController,
+            label: 'Behavioural Concerns',
+            maxLines: 2,
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _languagesSpokenController,
+            label: 'Languages Spoken at Home',
+            isRequired: true,
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _ethnicBackgroundController,
+            label: 'Ethnic Background',
+            isRequired: true,
+          ),
+          const SizedBox(height: 16),
+          _buildDropdown(
+            label: 'Form of Identification',
+            value: _selectedFormOfIdentification,
+            items: _formOfIdentificationOptions,
             onChanged: (value) {
               setState(() {
-                _selectedFatherWorkCountry = value;
-                _fatherWorkCountryController.text = value ?? '';
-                _selectedFatherWorkState =
-                    null; // Reset state when country changes
+                _selectedFormOfIdentification = value;
               });
             },
+            isRequired: true,
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _idNumberController,
+            label: 'ID Number',
+            isRequired: true,
           ),
         ],
       ),
@@ -1558,10 +2094,26 @@ class _StudentRegistrationPageState
           ),
           const SizedBox(height: 8),
           Text(
-            'Enter the mother\'s details',
+            'Enter the mother\'s complete details',
             style: TextStyle(fontSize: 16, color: Colors.grey[600]),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 16),
+
+          // Fill with N/A button
+          _buildFillNAButton('Mother\'s', _fillMotherFieldsWithNA),
+
+          const SizedBox(height: 16),
+
+          // Personal Information Section
+          const Text(
+            'Personal Information',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 16),
 
           // Title and Name
           Row(
@@ -1569,7 +2121,10 @@ class _StudentRegistrationPageState
               Expanded(
                 child: _buildDropdown(
                   label: 'Title',
-                  value: _motherTitleController.text,
+                  value:
+                      _motherTitleController.text.isNotEmpty
+                          ? _motherTitleController.text
+                          : null,
                   items: _titles,
                   onChanged: (value) {
                     setState(() {
@@ -1590,12 +2145,14 @@ class _StudentRegistrationPageState
             ],
           ),
           const SizedBox(height: 16),
+
           Row(
             children: [
               Expanded(
                 child: _buildTextField(
                   controller: _motherMiddleNameController,
                   label: 'Middle Name',
+                  isRequired: true,
                 ),
               ),
               const SizedBox(width: 16),
@@ -1608,31 +2165,35 @@ class _StudentRegistrationPageState
               ),
             ],
           ),
+          const SizedBox(height: 32),
+
+          // Address Information Section
+          const Text(
+            'Address Information',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
           const SizedBox(height: 16),
 
-          // Date of Birth and Gender
+          // Street Number and Street Name
           Row(
             children: [
               Expanded(
                 child: _buildTextField(
-                  controller: _motherDobController,
-                  label: 'Date of Birth',
-                  readOnly: true,
-                  onTap: () => _selectDate(context, 'mother'),
-                  suffixIcon: const Icon(Icons.calendar_today),
+                  controller: _motherStreetNumberController,
+                  label: 'Street Number',
+                  keyboardType: TextInputType.number,
+                  isRequired: true,
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: _buildDropdown(
-                  label: 'Gender',
-                  value: _selectedMotherGender,
-                  items: _genders,
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedMotherGender = value;
-                    });
-                  },
+                child: _buildTextField(
+                  controller: _motherStreetNameController,
+                  label: 'Street Name',
                   isRequired: true,
                 ),
               ),
@@ -1640,20 +2201,50 @@ class _StudentRegistrationPageState
           ),
           const SizedBox(height: 16),
 
-          // Marital Status
-          _buildDropdown(
-            label: 'Marital Status',
-            value: _selectedMotherMaritalStatus,
-            items: _maritalStatuses,
-            onChanged: (value) {
-              setState(() {
-                _selectedMotherMaritalStatus = value;
-              });
-            },
+          // City, State, Country
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _motherCityController,
+                  label: 'City',
+                  isRequired: true,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildTextField(
+                  controller: _motherStateController,
+                  label: 'State',
+                  isRequired: true,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
 
-          // Contact Information
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _motherCountryController,
+                  label: 'Country',
+                  isRequired: true,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildTextField(
+                  controller: _motherPostalCodeController,
+                  label: 'Postal Code',
+                  isRequired: true,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 32),
+
+          // Contact Information Section
           const Text(
             'Contact Information',
             style: TextStyle(
@@ -1663,12 +2254,13 @@ class _StudentRegistrationPageState
             ),
           ),
           const SizedBox(height: 16),
+
           Row(
             children: [
               Expanded(
                 child: _buildTextField(
                   controller: _motherPhoneController,
-                  label: 'Primary Phone',
+                  label: 'Phone Number',
                   keyboardType: TextInputType.phone,
                   isRequired: true,
                 ),
@@ -1677,16 +2269,16 @@ class _StudentRegistrationPageState
               Expanded(
                 child: _buildTextField(
                   controller: _motherEmailController,
-                  label: 'Email',
+                  label: 'Email Address',
                   keyboardType: TextInputType.emailAddress,
                   isRequired: true,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 32),
 
-          // Professional Information
+          // Professional Information Section
           const Text(
             'Professional Information',
             style: TextStyle(
@@ -1696,6 +2288,7 @@ class _StudentRegistrationPageState
             ),
           ),
           const SizedBox(height: 16),
+
           Row(
             children: [
               Expanded(
@@ -1710,12 +2303,392 @@ class _StudentRegistrationPageState
                 child: _buildTextField(
                   controller: _motherEmployerController,
                   label: 'Employer',
+                  isRequired: true,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 32),
+
+          // Legal Information Section
+          const Text(
+            'Legal Information',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Parental Responsibility and Legal Guardianship
+          _buildCheckboxField(
+            'Parental Responsibility',
+            _motherParentalResponsibility,
+            (value) => setState(() => _motherParentalResponsibility = value!),
+          ),
+          _buildCheckboxField(
+            'Legal Guardianship',
+            _motherLegalGuardianship,
+            (value) => setState(() => _motherLegalGuardianship = value!),
+          ),
+          _buildCheckboxField(
+            'Authorised to Collect the Child',
+            _motherAuthorisedToCollectChild,
+            (value) => setState(() => _motherAuthorisedToCollectChild = value!),
+          ),
+          const SizedBox(height: 16),
+
+          // Form of Identification and ID Number
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _motherFormOfIdentificationController,
+                  label: 'Form of Identification',
+                  isRequired: true,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildTextField(
+                  controller: _motherIdNumberController,
+                  label: 'ID Number',
+                  isRequired: true,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGuardianInfoStep() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Guardian\'s Information',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Enter the guardian\'s complete details',
+            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+          ),
+          const SizedBox(height: 16),
+
+          // Fill with N/A button
+          _buildFillNAButton('Guardian\'s', _fillGuardianFieldsWithNA),
+
+          const SizedBox(height: 16),
+
+          // Personal Information Section
+          const Text(
+            'Personal Information',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Title and Name
+          Row(
+            children: [
+              Expanded(
+                child: _buildDropdown(
+                  label: 'Title',
+                  value:
+                      _guardianTitleController.text.isNotEmpty
+                          ? _guardianTitleController.text
+                          : null,
+                  items: _titles,
+                  onChanged: (value) {
+                    setState(() {
+                      _guardianTitleController.text = value!;
+                    });
+                  },
+                  isRequired: true,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildTextField(
+                  controller: _guardianFirstNameController,
+                  label: 'First Name',
+                  isRequired: true,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 16),
+
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _guardianMiddleNameController,
+                  label: 'Middle Name',
+                  isRequired: true,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildTextField(
+                  controller: _guardianLastNameController,
+                  label: 'Last Name',
+                  isRequired: true,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 32),
+
+          // Address Information Section
+          const Text(
+            'Address Information',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Street Number and Street Name
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _guardianStreetNumberController,
+                  label: 'Street Number',
+                  keyboardType: TextInputType.number,
+                  isRequired: true,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildTextField(
+                  controller: _guardianStreetNameController,
+                  label: 'Street Name',
+                  isRequired: true,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // City, State, Country
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _guardianCityController,
+                  label: 'City',
+                  isRequired: true,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildTextField(
+                  controller: _guardianStateController,
+                  label: 'State',
+                  isRequired: true,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _guardianCountryController,
+                  label: 'Country',
+                  isRequired: true,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildTextField(
+                  controller: _guardianPostalCodeController,
+                  label: 'Postal Code',
+                  isRequired: true,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 32),
+
+          // Contact Information Section
+          const Text(
+            'Contact Information',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _guardianPhoneController,
+                  label: 'Phone Number',
+                  keyboardType: TextInputType.phone,
+                  isRequired: true,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildTextField(
+                  controller: _guardianEmailController,
+                  label: 'Email Address',
+                  keyboardType: TextInputType.emailAddress,
+                  isRequired: true,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 32),
+
+          // Professional Information Section
+          const Text(
+            'Professional Information',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _guardianOccupationController,
+                  label: 'Occupation',
+                  isRequired: true,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildTextField(
+                  controller: _guardianEmployerController,
+                  label: 'Employer',
+                  isRequired: true,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 32),
+
+          // Legal Information Section
+          const Text(
+            'Legal Information',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Parental Responsibility and Legal Guardianship
+          _buildCheckboxField(
+            'Parental Responsibility',
+            _guardianParentalResponsibility,
+            (value) => setState(() => _guardianParentalResponsibility = value!),
+          ),
+          _buildCheckboxField(
+            'Legal Guardianship',
+            _guardianLegalGuardianship,
+            (value) => setState(() => _guardianLegalGuardianship = value!),
+          ),
+          _buildCheckboxField(
+            'Authorised to Collect the Child',
+            _guardianAuthorisedToCollectChild,
+            (value) =>
+                setState(() => _guardianAuthorisedToCollectChild = value!),
+          ),
+          const SizedBox(height: 16),
+
+          // Form of Identification and ID Number
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _guardianFormOfIdentificationController,
+                  label: 'Form of Identification',
+                  isRequired: true,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildTextField(
+                  controller: _guardianIdNumberController,
+                  label: 'ID Number',
+                  isRequired: true,
+                ),
+              ),
+            ],
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCheckboxField(
+    String label,
+    bool value,
+    Function(bool?) onChanged,
+  ) {
+    return CheckboxListTile(
+      title: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+          color: Colors.black87,
+        ),
+      ),
+      value: value,
+      onChanged: onChanged,
+      activeColor: const Color(0xFF6366F1),
+      contentPadding: EdgeInsets.zero,
+    );
+  }
+
+  Widget _buildFillNAButton(String sectionName, VoidCallback onPressed) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 16),
+      child: ElevatedButton.icon(
+        onPressed: onPressed,
+        icon: const Icon(Icons.auto_fix_high, size: 18),
+        label: Text('Fill all $sectionName fields with N/A'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.orange[100],
+          foregroundColor: Colors.orange[800],
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: BorderSide(color: Colors.orange[300]!),
+          ),
+        ),
       ),
     );
   }
@@ -1776,6 +2749,45 @@ class _StudentRegistrationPageState
                     return null;
                   }
                   : null,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAcademicYearField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Academic Year *',
+          style: TextStyle(fontWeight: FontWeight.w500, color: Colors.black87),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey[300]!),
+            borderRadius: BorderRadius.circular(8),
+            color: Colors.grey[100], // Make it look disabled
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  _selectedAcademicYear ?? 'Loading...',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color:
+                        _selectedAcademicYear != null
+                            ? Colors.black87
+                            : Colors.grey[500],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              Icon(Icons.lock, color: Colors.grey[500], size: 20),
+            ],
+          ),
         ),
       ],
     );
@@ -1925,7 +2937,7 @@ class _StudentRegistrationPageState
   }
 
   void _nextStep() {
-    if (_currentStep < 4) {
+    if (_currentStep < 8) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.ease,
@@ -1960,23 +2972,17 @@ class _StudentRegistrationPageState
         } else if (type == 'admission') {
           // Admission date
           _selectedAdmissionDate = picked;
-        } else if (type == 'father') {
-          // Father DOB
-          _selectedFatherDOB = picked;
-          _fatherDobController.text =
-              '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
-        } else if (type == 'mother') {
-          // Mother DOB
-          _selectedMotherDOB = picked;
-          _motherDobController.text =
-              '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
         }
       });
     }
   }
 
   void _handleNextOrSubmit() {
-    if (_currentStep < 4) {
+    if (_currentStep < 8) {
+      // Validate current step before proceeding
+      if (!_validateCurrentStep()) {
+        return;
+      }
       _nextStep();
     } else {
       // Validate required fields before submission
@@ -1988,8 +2994,661 @@ class _StudentRegistrationPageState
     }
   }
 
+  String _getStepTitle(int step) {
+    switch (step) {
+      case 0:
+        return 'Personal Information';
+      case 1:
+        return 'Contact Information';
+      case 2:
+        return 'Academic Information';
+      case 3:
+        return 'Medical Information';
+      case 4:
+        return 'Permissions & Consents';
+      case 5:
+        return 'Background Information';
+      case 6:
+        return 'Father\'s Information';
+      case 7:
+        return 'Mother\'s Information';
+      case 8:
+        return 'Guardian\'s Information';
+      default:
+        return 'Student Registration';
+    }
+  }
+
+  void _showValidationError(String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.warning, color: Colors.orange),
+              SizedBox(width: 8),
+              Text('Required Fields Missing'),
+            ],
+          ),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  bool _validateCurrentStep() {
+    switch (_currentStep) {
+      case 0: // Personal Information
+        return _validatePersonalInfoStep();
+      case 1: // Contact Information
+        return _validateContactInfoStep();
+      case 2: // Academic Information
+        return _validateAcademicInfoStep();
+      case 3: // Medical Information
+        return _validateMedicalInfoStep();
+      case 4: // Permissions
+        return _validatePermissionsStep();
+      case 5: // Background Information
+        return _validateBackgroundInfoStep();
+      case 6: // Father's Information
+        return _validateFatherInfoStep();
+      case 7: // Mother's Information
+        return _validateMotherInfoStep();
+      case 8: // Guardian's Information
+        return _validateGuardianInfoStep();
+      default:
+        return true;
+    }
+  }
+
+  bool _validatePersonalInfoStep() {
+    final errors = <String>[];
+
+    if (_firstNameController.text.trim().isEmpty) {
+      errors.add('First Name is required');
+    }
+    if (_lastNameController.text.trim().isEmpty) {
+      errors.add('Last Name is required');
+    }
+    if (_selectedDOB == null) {
+      errors.add('Date of Birth is required');
+    }
+    if (_selectedGender == null) {
+      errors.add('Gender is required');
+    }
+    if (_selectedNationality == null) {
+      errors.add('Nationality of Origin is required');
+    }
+    if (_selectedStateOfOrigin == null) {
+      errors.add('State of Origin is required');
+    }
+    if (_localGovernmentController.text.trim().isEmpty) {
+      errors.add('Local Government is required');
+    }
+    // if (_idPhotoUrl == null || _idPhotoUrl!.isEmpty) {
+    //   errors.add('ID Photo is required');
+    // }
+
+    if (errors.isNotEmpty) {
+      _showValidationError(
+        'Please fill in all required fields:\n${errors.join('\n')}',
+      );
+      return false;
+    }
+    return true;
+  }
+
+  bool _validateContactInfoStep() {
+    final errors = <String>[];
+
+    if (_streetController.text.trim().isEmpty) {
+      errors.add('Street Address is required');
+    }
+    if (_streetNumberController.text.trim().isEmpty) {
+      errors.add('Street Number is required');
+    }
+    if (_postalCodeController.text.trim().isEmpty) {
+      errors.add('Postal Code is required');
+    }
+    if (_cityController.text.trim().isEmpty) {
+      errors.add('City is required');
+    }
+    if (_selectedCountry == null) {
+      errors.add('Country of Residence is required');
+    }
+    if (_selectedState == null) {
+      errors.add('State is required');
+    }
+
+    if (errors.isNotEmpty) {
+      _showValidationError(
+        'Please fill in all required fields:\n${errors.join('\n')}',
+      );
+      return false;
+    }
+    return true;
+  }
+
+  bool _validateAcademicInfoStep() {
+    final errors = <String>[];
+
+    if (_selectedAcademicYear == null) {
+      errors.add('Academic Year is required');
+    }
+    if (_selectedClassId == null) {
+      errors.add('Class assignment is required');
+    }
+    if (_selectedStudentType == null) {
+      errors.add('Student Type is required');
+    }
+    if (_selectedAdmissionDate == null) {
+      errors.add('Admission Date is required');
+    }
+
+    if (errors.isNotEmpty) {
+      _showValidationError(
+        'Please fill in all required fields:\n${errors.join('\n')}',
+      );
+      return false;
+    }
+    return true;
+  }
+
+  bool _validateMedicalInfoStep() {
+    final errors = <String>[];
+
+    // General Practitioner fields
+    if (_generalPractitionerNameController.text.trim().isEmpty) {
+      errors.add('GP Name is required');
+    }
+    if (_generalPractitionerAddressController.text.trim().isEmpty) {
+      errors.add('GP Address is required');
+    }
+    if (_generalPractitionerPhoneController.text.trim().isEmpty) {
+      errors.add('GP Phone is required');
+    }
+
+    // Medical History fields
+    if (_medicalHistoryController.text.trim().isEmpty) {
+      errors.add('Medical History is required');
+    }
+    if (_allergiesController.text.trim().isEmpty) {
+      errors.add('Allergies is required');
+    }
+    if (_ongoingMedicalConditionsController.text.trim().isEmpty) {
+      errors.add('Ongoing Medical Conditions is required');
+    }
+    if (_specialNeedsController.text.trim().isEmpty) {
+      errors.add('Special Needs is required');
+    }
+    if (_currentMedicationController.text.trim().isEmpty) {
+      errors.add('Current Medication is required');
+    }
+    if (_immunisationRecordController.text.trim().isEmpty) {
+      errors.add('Immunisation Record is required');
+    }
+    if (_dietaryRequirementsController.text.trim().isEmpty) {
+      errors.add('Dietary Requirements is required');
+    }
+
+    // Emergency Contact fields
+    if (_emergencyContactNameController.text.trim().isEmpty) {
+      errors.add('Emergency Contact Name is required');
+    }
+    if (_emergencyContactRelationshipController.text.trim().isEmpty) {
+      errors.add('Emergency Contact Relationship is required');
+    }
+    if (_emergencyContactPhoneController.text.trim().isEmpty) {
+      errors.add('Emergency Contact Phone is required');
+    }
+
+    if (errors.isNotEmpty) {
+      _showValidationError(
+        'Please fill in all required fields:\n${errors.join('\n')}',
+      );
+      return false;
+    }
+    return true;
+  }
+
+  bool _validatePermissionsStep() {
+    final errors = <String>[];
+
+    if (!_agreementToPayFees) {
+      errors.add('Agreement to Pay Fees is required');
+    }
+
+    if (errors.isNotEmpty) {
+      _showValidationError(
+        'Please fill in all required fields:\n${errors.join('\n')}',
+      );
+      return false;
+    }
+    return true;
+  }
+
+  bool _validateBackgroundInfoStep() {
+    final errors = <String>[];
+
+    if (_languagesSpokenController.text.trim().isEmpty) {
+      errors.add('Languages Spoken at Home is required');
+    }
+    if (_ethnicBackgroundController.text.trim().isEmpty) {
+      errors.add('Ethnic Background is required');
+    }
+    if (_selectedFormOfIdentification == null) {
+      errors.add('Form of Identification is required');
+    }
+    if (_idNumberController.text.trim().isEmpty) {
+      errors.add('ID Number is required');
+    }
+
+    if (errors.isNotEmpty) {
+      _showValidationError(
+        'Please fill in all required fields:\n${errors.join('\n')}',
+      );
+      return false;
+    }
+    return true;
+  }
+
+  bool _validateFatherInfoStep() {
+    final errors = <String>[];
+
+    // Personal Information
+    if (_fatherTitleController.text.trim().isEmpty) {
+      errors.add('Father\'s Title is required');
+    }
+    if (_fatherFirstNameController.text.trim().isEmpty) {
+      errors.add('Father\'s First Name is required');
+    }
+    if (_fatherMiddleNameController.text.trim().isEmpty) {
+      errors.add('Father\'s Middle Name is required');
+    }
+    if (_fatherLastNameController.text.trim().isEmpty) {
+      errors.add('Father\'s Last Name is required');
+    }
+
+    // Address Information
+    if (_fatherStreetNumberController.text.trim().isEmpty) {
+      errors.add('Father\'s Street Number is required');
+    }
+    if (_fatherStreetNameController.text.trim().isEmpty) {
+      errors.add('Father\'s Street Name is required');
+    }
+    if (_fatherCityController.text.trim().isEmpty) {
+      errors.add('Father\'s City is required');
+    }
+    if (_fatherStateController.text.trim().isEmpty) {
+      errors.add('Father\'s State is required');
+    }
+    if (_fatherCountryController.text.trim().isEmpty) {
+      errors.add('Father\'s Country is required');
+    }
+    if (_fatherPostalCodeController.text.trim().isEmpty) {
+      errors.add('Father\'s Postal Code is required');
+    }
+
+    // Contact Information
+    if (_fatherPhoneController.text.trim().isEmpty) {
+      errors.add('Father\'s Phone Number is required');
+    }
+    if (_fatherEmailController.text.trim().isEmpty) {
+      errors.add('Father\'s Email Address is required');
+    }
+
+    // Professional Information
+    if (_fatherOccupationController.text.trim().isEmpty) {
+      errors.add('Father\'s Occupation is required');
+    }
+    if (_fatherEmployerController.text.trim().isEmpty) {
+      errors.add('Father\'s Employer is required');
+    }
+
+    // Legal Information
+    if (_fatherFormOfIdentificationController.text.trim().isEmpty) {
+      errors.add('Father\'s Form of Identification is required');
+    }
+    if (_fatherIdNumberController.text.trim().isEmpty) {
+      errors.add('Father\'s ID Number is required');
+    }
+
+    if (errors.isNotEmpty) {
+      _showValidationError(
+        'Please fill in all required fields:\n${errors.join('\n')}',
+      );
+      return false;
+    }
+    return true;
+  }
+
+  bool _validateMotherInfoStep() {
+    final errors = <String>[];
+
+    // Personal Information
+    if (_motherTitleController.text.trim().isEmpty) {
+      errors.add('Mother\'s Title is required');
+    }
+    if (_motherFirstNameController.text.trim().isEmpty) {
+      errors.add('Mother\'s First Name is required');
+    }
+    if (_motherMiddleNameController.text.trim().isEmpty) {
+      errors.add('Mother\'s Middle Name is required');
+    }
+    if (_motherLastNameController.text.trim().isEmpty) {
+      errors.add('Mother\'s Last Name is required');
+    }
+
+    // Address Information
+    if (_motherStreetNumberController.text.trim().isEmpty) {
+      errors.add('Mother\'s Street Number is required');
+    }
+    if (_motherStreetNameController.text.trim().isEmpty) {
+      errors.add('Mother\'s Street Name is required');
+    }
+    if (_motherCityController.text.trim().isEmpty) {
+      errors.add('Mother\'s City is required');
+    }
+    if (_motherStateController.text.trim().isEmpty) {
+      errors.add('Mother\'s State is required');
+    }
+    if (_motherCountryController.text.trim().isEmpty) {
+      errors.add('Mother\'s Country is required');
+    }
+    if (_motherPostalCodeController.text.trim().isEmpty) {
+      errors.add('Mother\'s Postal Code is required');
+    }
+
+    // Contact Information
+    if (_motherPhoneController.text.trim().isEmpty) {
+      errors.add('Mother\'s Phone Number is required');
+    }
+    if (_motherEmailController.text.trim().isEmpty) {
+      errors.add('Mother\'s Email Address is required');
+    }
+
+    // Professional Information
+    if (_motherOccupationController.text.trim().isEmpty) {
+      errors.add('Mother\'s Occupation is required');
+    }
+    if (_motherEmployerController.text.trim().isEmpty) {
+      errors.add('Mother\'s Employer is required');
+    }
+
+    // Legal Information
+    if (_motherFormOfIdentificationController.text.trim().isEmpty) {
+      errors.add('Mother\'s Form of Identification is required');
+    }
+    if (_motherIdNumberController.text.trim().isEmpty) {
+      errors.add('Mother\'s ID Number is required');
+    }
+
+    if (errors.isNotEmpty) {
+      _showValidationError(
+        'Please fill in all required fields:\n${errors.join('\n')}',
+      );
+      return false;
+    }
+    return true;
+  }
+
+  bool _validateGuardianInfoStep() {
+    final errors = <String>[];
+
+    // Personal Information
+    if (_guardianTitleController.text.trim().isEmpty) {
+      errors.add('Guardian\'s Title is required');
+    }
+    if (_guardianFirstNameController.text.trim().isEmpty) {
+      errors.add('Guardian\'s First Name is required');
+    }
+    if (_guardianMiddleNameController.text.trim().isEmpty) {
+      errors.add('Guardian\'s Middle Name is required');
+    }
+    if (_guardianLastNameController.text.trim().isEmpty) {
+      errors.add('Guardian\'s Last Name is required');
+    }
+
+    // Address Information
+    if (_guardianStreetNumberController.text.trim().isEmpty) {
+      errors.add('Guardian\'s Street Number is required');
+    }
+    if (_guardianStreetNameController.text.trim().isEmpty) {
+      errors.add('Guardian\'s Street Name is required');
+    }
+    if (_guardianCityController.text.trim().isEmpty) {
+      errors.add('Guardian\'s City is required');
+    }
+    if (_guardianStateController.text.trim().isEmpty) {
+      errors.add('Guardian\'s State is required');
+    }
+    if (_guardianCountryController.text.trim().isEmpty) {
+      errors.add('Guardian\'s Country is required');
+    }
+    if (_guardianPostalCodeController.text.trim().isEmpty) {
+      errors.add('Guardian\'s Postal Code is required');
+    }
+
+    // Contact Information
+    if (_guardianPhoneController.text.trim().isEmpty) {
+      errors.add('Guardian\'s Phone Number is required');
+    }
+    if (_guardianEmailController.text.trim().isEmpty) {
+      errors.add('Guardian\'s Email Address is required');
+    }
+
+    // Professional Information
+    if (_guardianOccupationController.text.trim().isEmpty) {
+      errors.add('Guardian\'s Occupation is required');
+    }
+    if (_guardianEmployerController.text.trim().isEmpty) {
+      errors.add('Guardian\'s Employer is required');
+    }
+
+    // Legal Information
+    if (_guardianFormOfIdentificationController.text.trim().isEmpty) {
+      errors.add('Guardian\'s Form of Identification is required');
+    }
+    if (_guardianIdNumberController.text.trim().isEmpty) {
+      errors.add('Guardian\'s ID Number is required');
+    }
+
+    if (errors.isNotEmpty) {
+      _showValidationError(
+        'Please fill in all required fields:\n${errors.join('\n')}',
+      );
+      return false;
+    }
+    return true;
+  }
+
+  void _fillFatherFieldsWithNA() {
+    setState(() {
+      _fatherTitleController.text = 'Mr'; // Use valid dropdown value
+      _fatherFirstNameController.text = 'N/A';
+      _fatherMiddleNameController.text = 'N/A';
+      _fatherLastNameController.text = 'N/A';
+      _fatherStreetNumberController.text = 'N/A';
+      _fatherStreetNameController.text = 'N/A';
+      _fatherCityController.text = 'N/A';
+      _fatherStateController.text = 'N/A';
+      _fatherCountryController.text = 'N/A';
+      _fatherPostalCodeController.text = 'N/A';
+      _fatherPhoneController.text = 'N/A';
+      _fatherEmailController.text = 'N/A';
+      _fatherOccupationController.text = 'N/A';
+      _fatherEmployerController.text = 'N/A';
+      _fatherFormOfIdentificationController.text = 'N/A';
+      _fatherIdNumberController.text = 'N/A';
+    });
+  }
+
+  void _fillMotherFieldsWithNA() {
+    setState(() {
+      _motherTitleController.text = 'Mrs'; // Use valid dropdown value
+      _motherFirstNameController.text = 'N/A';
+      _motherMiddleNameController.text = 'N/A';
+      _motherLastNameController.text = 'N/A';
+      _motherStreetNumberController.text = 'N/A';
+      _motherStreetNameController.text = 'N/A';
+      _motherCityController.text = 'N/A';
+      _motherStateController.text = 'N/A';
+      _motherCountryController.text = 'N/A';
+      _motherPostalCodeController.text = 'N/A';
+      _motherPhoneController.text = 'N/A';
+      _motherEmailController.text = 'N/A';
+      _motherOccupationController.text = 'N/A';
+      _motherEmployerController.text = 'N/A';
+      _motherFormOfIdentificationController.text = 'N/A';
+      _motherIdNumberController.text = 'N/A';
+    });
+  }
+
+  void _fillGuardianFieldsWithNA() {
+    setState(() {
+      _guardianTitleController.text = 'Mr'; // Use valid dropdown value
+      _guardianFirstNameController.text = 'N/A';
+      _guardianMiddleNameController.text = 'N/A';
+      _guardianLastNameController.text = 'N/A';
+      _guardianStreetNumberController.text = 'N/A';
+      _guardianStreetNameController.text = 'N/A';
+      _guardianCityController.text = 'N/A';
+      _guardianStateController.text = 'N/A';
+      _guardianCountryController.text = 'N/A';
+      _guardianPostalCodeController.text = 'N/A';
+      _guardianPhoneController.text = 'N/A';
+      _guardianEmailController.text = 'N/A';
+      _guardianOccupationController.text = 'N/A';
+      _guardianEmployerController.text = 'N/A';
+      _guardianFormOfIdentificationController.text = 'N/A';
+      _guardianIdNumberController.text = 'N/A';
+    });
+  }
+
+  bool _isSectionFilledWithNA(
+    String title,
+    String firstName,
+    String middleName,
+    String lastName,
+    String streetNumber,
+    String streetName,
+    String city,
+    String state,
+    String country,
+    String postalCode,
+    String phone,
+    String email,
+    String occupation,
+    String employer,
+    String formOfId,
+    String idNumber,
+  ) {
+    return title.isNotEmpty &&
+        firstName == 'N/A' &&
+        middleName == 'N/A' &&
+        lastName == 'N/A' &&
+        streetNumber == 'N/A' &&
+        streetName == 'N/A' &&
+        city == 'N/A' &&
+        state == 'N/A' &&
+        country == 'N/A' &&
+        postalCode == 'N/A' &&
+        phone == 'N/A' &&
+        email == 'N/A' &&
+        occupation == 'N/A' &&
+        employer == 'N/A' &&
+        formOfId == 'N/A' &&
+        idNumber == 'N/A';
+  }
+
+  bool _validateAtLeastOneParentInfo() {
+    // Check if Father's info is filled with N/A
+    bool fatherIsNA = _isSectionFilledWithNA(
+      _fatherTitleController.text,
+      _fatherFirstNameController.text,
+      _fatherMiddleNameController.text,
+      _fatherLastNameController.text,
+      _fatherStreetNumberController.text,
+      _fatherStreetNameController.text,
+      _fatherCityController.text,
+      _fatherStateController.text,
+      _fatherCountryController.text,
+      _fatherPostalCodeController.text,
+      _fatherPhoneController.text,
+      _fatherEmailController.text,
+      _fatherOccupationController.text,
+      _fatherEmployerController.text,
+      _fatherFormOfIdentificationController.text,
+      _fatherIdNumberController.text,
+    );
+
+    // Check if Mother's info is filled with N/A
+    bool motherIsNA = _isSectionFilledWithNA(
+      _motherTitleController.text,
+      _motherFirstNameController.text,
+      _motherMiddleNameController.text,
+      _motherLastNameController.text,
+      _motherStreetNumberController.text,
+      _motherStreetNameController.text,
+      _motherCityController.text,
+      _motherStateController.text,
+      _motherCountryController.text,
+      _motherPostalCodeController.text,
+      _motherPhoneController.text,
+      _motherEmailController.text,
+      _motherOccupationController.text,
+      _motherEmployerController.text,
+      _motherFormOfIdentificationController.text,
+      _motherIdNumberController.text,
+    );
+
+    // Check if Guardian's info is filled with N/A
+    bool guardianIsNA = _isSectionFilledWithNA(
+      _guardianTitleController.text,
+      _guardianFirstNameController.text,
+      _guardianMiddleNameController.text,
+      _guardianLastNameController.text,
+      _guardianStreetNumberController.text,
+      _guardianStreetNameController.text,
+      _guardianCityController.text,
+      _guardianStateController.text,
+      _guardianCountryController.text,
+      _guardianPostalCodeController.text,
+      _guardianPhoneController.text,
+      _guardianEmailController.text,
+      _guardianOccupationController.text,
+      _guardianEmployerController.text,
+      _guardianFormOfIdentificationController.text,
+      _guardianIdNumberController.text,
+    );
+
+    // At least one section must not be filled with N/A
+    if (fatherIsNA && motherIsNA && guardianIsNA) {
+      _showValidationError(
+        'At least one parent or guardian information must be properly filled.\n\n'
+        'You cannot submit the form if all three sections (Father, Mother, and Guardian) are filled with "N/A".\n\n'
+        'Please provide real information for at least one parent or guardian.',
+      );
+      return false;
+    }
+
+    return true;
+  }
+
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    // Validate that at least one parent/guardian info is properly filled
+    if (!_validateAtLeastOneParentInfo()) {
       return;
     }
 
@@ -1998,176 +3657,313 @@ class _StudentRegistrationPageState
     });
 
     try {
-      // Prepare the data according to your API structure
+      // Prepare the data according to the refactored API structure
       final studentData = {
         'personalInfo': {
           'firstName': _firstNameController.text.trim(),
+          'middleName': _middleNameController.text.trim(),
           'lastName': _lastNameController.text.trim(),
-          'middleName':
-              _middleNameController.text.trim().isNotEmpty
-                  ? _middleNameController.text.trim()
-                  : null,
           'dateOfBirth': _selectedDOB?.toIso8601String().split('T')[0],
           'gender': _selectedGender,
           'nationality': _selectedNationality,
           'stateOfOrigin': _selectedStateOfOrigin,
-          'localGovernment': _selectedLocalGovernment,
+          'localGovernment': _localGovernmentController.text.trim(),
           'religion': _selectedReligion,
           'bloodGroup': _selectedBloodGroup,
+          'languagesSpokenAtHome': _languagesSpokenController.text.trim(),
+          'ethnicBackground': _ethnicBackgroundController.text.trim(),
+          'formOfIdentification': _selectedFormOfIdentification,
+          'idNumber': _idNumberController.text.trim(),
+          'idPhoto': _idPhotoUrl,
+          'hasSiblings': _hasSiblings,
+          'siblingDetails': [], // TODO: Add sibling details collection
           'profileImage': _imageUrl,
+          'passportPhoto': _idPhotoUrl,
+          'previousSchool': '', // TODO: Add previous school field
         },
         'contactInfo': {
           'address': {
-            'street': _streetController.text.trim(),
+            'streetNumber': _streetNumberController.text.trim(),
+            'streetName': _streetController.text.trim(),
             'city': _cityController.text.trim(),
             'state': _stateController.text.trim(),
             'country': _countryController.text.trim(),
+            'postalCode': _postalCodeController.text.trim(),
           },
-          'phone':
-              _phoneController.text.trim().isNotEmpty
-                  ? _phoneController.text.trim()
-                  : null,
-          'email':
-              _emailController.text.trim().isNotEmpty
-                  ? _emailController.text.trim()
-                  : null,
+          'phone': _phoneController.text.trim(),
+          'email': _emailController.text.trim(),
         },
         'academicInfo': {
+          'currentClass': _selectedClassId,
           'academicYear': _selectedAcademicYear,
           'admissionDate':
               _selectedAdmissionDate?.toIso8601String().split('T')[0],
-          'studentType': _selectedStudentType,
-          'currentClass': _selectedClassId,
+          'studentType': 'day',
         },
-        'assignToClass': _selectedClassId,
         'parentInfo': {
           'fatherData': {
             'personalInfo': {
               'title': _fatherTitleController.text.trim(),
               'firstName': _fatherFirstNameController.text.trim(),
+              'middleName': _fatherMiddleNameController.text.trim(),
               'lastName': _fatherLastNameController.text.trim(),
-              'middleName':
-                  _fatherMiddleNameController.text.trim().isNotEmpty
-                      ? _fatherMiddleNameController.text.trim()
-                      : null,
-              'dateOfBirth':
-                  _selectedFatherDOB?.toIso8601String().split('T')[0],
-              'gender': _selectedFatherGender,
-              'maritalStatus': _selectedFatherMaritalStatus,
+              'dateOfBirth': null, // TODO: Add father DOB field
+              'gender': 'male', // TODO: Add father gender field
+              'maritalStatus':
+                  'married', // TODO: Add father marital status field
             },
             'contactInfo': {
               'primaryPhone': _fatherPhoneController.text.trim(),
+              'secondaryPhone': '', // TODO: Add father secondary phone field
               'email': _fatherEmailController.text.trim(),
               'address': {
-                'street': _streetController.text.trim(),
-                'city': _cityController.text.trim(),
-                'state': _stateController.text.trim(),
-                'country': _countryController.text.trim(),
+                'streetNumber': _fatherStreetNumberController.text.trim(),
+                'streetName': _fatherStreetNameController.text.trim(),
+                'city': _fatherCityController.text.trim(),
+                'state': _fatherStateController.text.trim(),
+                'country': _fatherCountryController.text.trim(),
+                'postalCode': _fatherPostalCodeController.text.trim(),
               },
             },
             'professionalInfo': {
-              'occupation':
-                  _fatherOccupationController.text.trim().isNotEmpty
-                      ? _fatherOccupationController.text.trim()
-                      : null,
-              'employer':
-                  _fatherEmployerController.text.trim().isNotEmpty
-                      ? _fatherEmployerController.text.trim()
-                      : null,
-              'workPhone':
-                  _fatherWorkPhoneController.text.trim().isNotEmpty
-                      ? _fatherWorkPhoneController.text.trim()
-                      : null,
+              'occupation': _fatherOccupationController.text.trim(),
+              'employer': _fatherEmployerController.text.trim(),
               'workAddress': {
-                'street':
-                    _fatherWorkStreetController.text.trim().isNotEmpty
-                        ? _fatherWorkStreetController.text.trim()
-                        : null,
-                'city':
-                    _fatherWorkCityController.text.trim().isNotEmpty
-                        ? _fatherWorkCityController.text.trim()
-                        : null,
-                'state':
-                    _fatherWorkStateController.text.trim().isNotEmpty
-                        ? _fatherWorkStateController.text.trim()
-                        : null,
-                'country':
-                    _fatherWorkCountryController.text.trim().isNotEmpty
-                        ? _fatherWorkCountryController.text.trim()
-                        : null,
+                'streetNumber': '',
+                'streetName': '',
+                'city': '',
+                'state': '',
+                'country': '',
+                'postalCode': '',
               },
+              'workPhone': '',
+              'annualIncome': 0,
+            },
+            'identification': {
+              'idType': _fatherFormOfIdentificationController.text.trim(),
+              'idNumber': _fatherIdNumberController.text.trim(),
+              'idPhotoUrl': '',
+            },
+            'legalInfo': {
+              'parentalResponsibility': true,
+              'legalGuardianship': true,
+              'authorisedToCollectChild': true,
+              'relationshipToChild': 'Father',
+            },
+            'emergencyContacts': [],
+            'preferences': {
+              'preferredContactMethod': 'email',
+              'receiveNewsletters': true,
+              'receiveEventNotifications': true,
             },
           },
           'motherData': {
             'personalInfo': {
               'title': _motherTitleController.text.trim(),
               'firstName': _motherFirstNameController.text.trim(),
+              'middleName': _motherMiddleNameController.text.trim(),
               'lastName': _motherLastNameController.text.trim(),
-              'middleName':
-                  _motherMiddleNameController.text.trim().isNotEmpty
-                      ? _motherMiddleNameController.text.trim()
-                      : null,
-              'dateOfBirth':
-                  _selectedMotherDOB?.toIso8601String().split('T')[0],
-              'gender': _selectedMotherGender,
-              'maritalStatus': _selectedMotherMaritalStatus,
+              'dateOfBirth': null, // TODO: Add mother DOB field
+              'gender': 'female', // TODO: Add mother gender field
+              'maritalStatus':
+                  'married', // TODO: Add mother marital status field
             },
             'contactInfo': {
               'primaryPhone': _motherPhoneController.text.trim(),
+              'secondaryPhone': '', // TODO: Add mother secondary phone field
               'email': _motherEmailController.text.trim(),
               'address': {
-                'street': _streetController.text.trim(),
-                'city': _cityController.text.trim(),
-                'state': _stateController.text.trim(),
-                'country': _countryController.text.trim(),
+                'streetNumber': _motherStreetNumberController.text.trim(),
+                'streetName': _motherStreetNameController.text.trim(),
+                'city': _motherCityController.text.trim(),
+                'state': _motherStateController.text.trim(),
+                'country': _motherCountryController.text.trim(),
+                'postalCode': _motherPostalCodeController.text.trim(),
               },
             },
             'professionalInfo': {
-              'occupation':
-                  _motherOccupationController.text.trim().isNotEmpty
-                      ? _motherOccupationController.text.trim()
-                      : null,
-              'employer':
-                  _motherEmployerController.text.trim().isNotEmpty
-                      ? _motherEmployerController.text.trim()
-                      : null,
+              'occupation': _motherOccupationController.text.trim(),
+              'employer': _motherEmployerController.text.trim(),
+              'workAddress': {
+                'streetNumber': '',
+                'streetName': '',
+                'city': '',
+                'state': '',
+                'country': '',
+                'postalCode': '',
+              },
+              'workPhone': '',
+              'annualIncome': 0,
+            },
+            'identification': {
+              'idType': _motherFormOfIdentificationController.text.trim(),
+              'idNumber': _motherIdNumberController.text.trim(),
+              'idPhotoUrl': '',
+            },
+            'legalInfo': {
+              'parentalResponsibility': true,
+              'legalGuardianship': true,
+              'authorisedToCollectChild': true,
+              'relationshipToChild': 'Mother',
+            },
+            'emergencyContacts': [],
+            'preferences': {
+              'preferredContactMethod': 'email',
+              'receiveNewsletters': true,
+              'receiveEventNotifications': true,
+            },
+          },
+          'guardianData': {
+            'personalInfo': {
+              'title': _guardianTitleController.text.trim(),
+              'firstName': _guardianFirstNameController.text.trim(),
+              'middleName': _guardianMiddleNameController.text.trim(),
+              'lastName': _guardianLastNameController.text.trim(),
+              'dateOfBirth': null, // TODO: Add guardian DOB field
+              'gender': 'other', // TODO: Add guardian gender field
+              'maritalStatus':
+                  'single', // TODO: Add guardian marital status field
+            },
+            'contactInfo': {
+              'primaryPhone': _guardianPhoneController.text.trim(),
+              'secondaryPhone': '', // TODO: Add guardian secondary phone field
+              'email': _guardianEmailController.text.trim(),
+              'address': {
+                'streetNumber': _guardianStreetNumberController.text.trim(),
+                'streetName': _guardianStreetNameController.text.trim(),
+                'city': _guardianCityController.text.trim(),
+                'state': _guardianStateController.text.trim(),
+                'country': _guardianCountryController.text.trim(),
+                'postalCode': _guardianPostalCodeController.text.trim(),
+              },
+            },
+            'professionalInfo': {
+              'occupation': _guardianOccupationController.text.trim(),
+              'employer': _guardianEmployerController.text.trim(),
+              'workAddress': {
+                'streetNumber': '',
+                'streetName': '',
+                'city': '',
+                'state': '',
+                'country': '',
+                'postalCode': '',
+              },
+              'workPhone': '',
+              'annualIncome': 0,
+            },
+            'identification': {
+              'idType': _guardianFormOfIdentificationController.text.trim(),
+              'idNumber': _guardianIdNumberController.text.trim(),
+              'idPhotoUrl': '',
+            },
+            'legalInfo': {
+              'parentalResponsibility': _guardianParentalResponsibility,
+              'legalGuardianship': _guardianLegalGuardianship,
+              'authorisedToCollectChild': _guardianAuthorisedToCollectChild,
+              'relationshipToChild': 'Guardian',
+            },
+            'emergencyContacts': [],
+            'preferences': {
+              'preferredContactMethod': 'email',
+              'receiveNewsletters': true,
+              'receiveEventNotifications': true,
             },
           },
         },
         'medicalInfo': {
+          'generalPractitioner': {
+            'name': _generalPractitionerNameController.text.trim(),
+            'address': _generalPractitionerAddressController.text.trim(),
+            'telephoneNumber': _generalPractitionerPhoneController.text.trim(),
+          },
+          'medicalHistory': _medicalHistoryController.text.trim(),
           'allergies':
-              _allergiesController.text.trim().isNotEmpty
-                  ? _allergiesController.text
-                      .trim()
-                      .split(',')
-                      .map((e) => e.trim())
-                      .where((e) => e.isNotEmpty)
-                      .toList()
-                  : [],
-          'medications':
-              _medicationsController.text.trim().isNotEmpty
-                  ? _medicationsController.text
-                      .trim()
-                      .split(',')
-                      .map((e) => e.trim())
-                      .where((e) => e.isNotEmpty)
-                      .toList()
-                  : [],
-          'medicalConditions':
-              _medicalConditionsController.text.trim().isNotEmpty
-                  ? _medicalConditionsController.text
-                      .trim()
-                      .split(',')
-                      .map((e) => e.trim())
-                      .where((e) => e.isNotEmpty)
-                      .toList()
-                  : [],
+              _allergiesController.text
+                  .trim()
+                  .split(',')
+                  .map((e) => e.trim())
+                  .where((e) => e.isNotEmpty)
+                  .toList(),
+          'ongoingMedicalConditions':
+              _ongoingMedicalConditionsController.text.trim(),
+          'specialNeeds': _specialNeedsController.text.trim(),
+          'currentMedication': _currentMedicationController.text.trim(),
+          'immunisationRecord': _immunisationRecordController.text.trim(),
+          'dietaryRequirements': _dietaryRequirementsController.text.trim(),
           'emergencyContact': {
             'name': _emergencyContactNameController.text.trim(),
             'relationship': _emergencyContactRelationshipController.text.trim(),
             'phone': _emergencyContactPhoneController.text.trim(),
+            'email': _emergencyContactEmailController.text.trim(),
+            'address': {
+              'streetNumber':
+                  _emergencyContactStreetNumberController.text.trim(),
+              'streetName': _emergencyContactStreetNameController.text.trim(),
+              'city': _emergencyContactCityController.text.trim(),
+              'state': _emergencyContactStateController.text.trim(),
+              'country': _emergencyContactCountryController.text.trim(),
+              'postalCode': _emergencyContactPostalCodeController.text.trim(),
+            },
+            'authorisedToCollectChild': true, // TODO: Add field for this
           },
         },
+        'senInfo': {
+          'hasSpecialNeeds': _hasSpecialNeeds,
+          'receivingAdditionalSupport': _receivingAdditionalSupport,
+          'supportDetails': _supportDetailsController.text.trim(),
+          'hasEHCP': _hasEHCP,
+          'ehcpDetails': _ehcpDetailsController.text.trim(),
+        },
+        'permissions': {
+          'emergencyMedicalTreatment': _emergencyMedicalTreatment,
+          'administrationOfMedication': _administrationOfMedication,
+          'firstAidConsent': _firstAidConsent,
+          'outingsAndTrips': _outingsAndTrips,
+          'transportConsent': _transportConsent,
+          'useOfPhotosVideos': _useOfPhotosVideos,
+          'suncreamApplication': _suncreamApplication,
+          'observationAndAssessment': _observationAndAssessment,
+        },
+        'sessionInfo': {
+          'requestedStartDate':
+              _selectedAdmissionDate?.toIso8601String().split('T')[0],
+          'daysOfAttendance': _daysOfAttendanceController.text.trim(),
+          'fundedHours': _fundedHoursController.text.trim(),
+          'additionalPaidSessions':
+              _additionalPaidSessionsController.text.trim(),
+          'preferredSettlingInSessions':
+              _preferredSettlingInSessionsController.text.trim(),
+        },
+        'backgroundInfo': {
+          'previousChildcareProvider':
+              _previousChildcareProviderController.text.trim(),
+          'siblings': [], // TODO: Add sibling details collection
+          'interests': _interestsController.text.trim(),
+          'toiletTrainingStatus': _toiletTrainingStatusController.text.trim(),
+          'comfortItems': _comfortItemsController.text.trim(),
+          'sleepRoutine': _sleepRoutineController.text.trim(),
+          'behaviouralConcerns': _behaviouralConcernsController.text.trim(),
+          'languagesSpokenAtHome': _languagesSpokenController.text.trim(),
+        },
+        'legalInfo': {
+          'legalResponsibility': _legalResponsibilityController.text.trim(),
+          'courtOrders': _courtOrdersController.text.trim(),
+          'safeguardingDisclosure':
+              _safeguardingDisclosureController.text.trim(),
+          'parentSignature': _parentSignatureController.text.trim(),
+          'signatureDate': DateTime.now().toIso8601String().split('T')[0],
+        },
+        'fundingInfo': {
+          'agreementToPayFees': _agreementToPayFees,
+          'fundingAgreement': _fundingAgreementController.text.trim(),
+        },
+        'financialInfo': {
+          'feeStatus': 'unpaid',
+          'totalFees': 0,
+          'paidAmount': 0,
+          'outstandingBalance': 0,
+        },
+        'additionalInfo': '', // TODO: Add additional info field
       };
 
       // Debug logging
@@ -2175,9 +3971,9 @@ class _StudentRegistrationPageState
       print('Personal Info: ${studentData['personalInfo']}');
       print('Contact Info: ${studentData['contactInfo']}');
       print('Academic Info: ${studentData['academicInfo']}');
-      print('Assign to Class: ${studentData['assignToClass']}');
       print('Parent Info: ${studentData['parentInfo']}');
       print('Medical Info: ${studentData['medicalInfo']}');
+      print('Funding Info: ${studentData['fundingInfo']}');
 
       final response = await ref
           .read(studentProvider.notifier)
@@ -2192,9 +3988,9 @@ class _StudentRegistrationPageState
         if (!mounted) return;
 
         // Show credentials dialog if they exist
-        if (response['StudentLoginCredentials'] != null ||
-            (response['parentCredentials'] != null &&
-                response['parentCredentials'].isNotEmpty)) {
+        if (response['data']?['loginCredentials'] != null ||
+            (response['data']?['parentCredentials'] != null &&
+                (response['data']['parentCredentials'] as List).isNotEmpty)) {
           _showCredentialsDialog(context, response);
         } else {
           // Navigate back to students list
@@ -2521,6 +4317,177 @@ class _StudentRegistrationPageState
     );
   }
 
+  void _showIdPhotoPickerDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Select ID Photo'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Choose from Gallery'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _pickIdPhoto();
+                },
+              ),
+              if (!kIsWeb) // Only show camera option on mobile platforms
+                ListTile(
+                  leading: const Icon(Icons.camera_alt),
+                  title: const Text('Take Photo'),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _takeIdPhoto();
+                  },
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickIdPhoto() async {
+    final XFile? image = await _imagePicker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+    );
+
+    if (image != null) {
+      setState(() {
+        _selectedIdPhotoFile = image;
+      });
+
+      // Automatically upload the ID photo
+      await _uploadIdPhotoToCloudinary();
+    }
+  }
+
+  Future<void> _takeIdPhoto() async {
+    final XFile? image = await _imagePicker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 85,
+    );
+
+    if (image != null) {
+      setState(() {
+        _selectedIdPhotoFile = image;
+      });
+
+      // Automatically upload the ID photo
+      await _uploadIdPhotoToCloudinary();
+    }
+  }
+
+  Future<void> _uploadIdPhotoToCloudinary() async {
+    if (_selectedIdPhotoFile == null) return;
+
+    setState(() {
+      _isUploadingIdPhoto = true;
+    });
+
+    try {
+      // Compress the image
+      final compressedImageBytes = await _compressImage(_selectedIdPhotoFile!);
+      debugPrint(
+        '📸 Compressed ID photo size: ${compressedImageBytes.length} bytes',
+      );
+
+      // Use the new robust upload method
+      final uploadedUrl = await _robustCloudinaryUpload(compressedImageBytes);
+
+      if (uploadedUrl != null) {
+        setState(() {
+          _idPhotoUrl = uploadedUrl;
+          debugPrint('✅ ID Photo URL set: $_idPhotoUrl');
+        });
+
+        if (mounted) {
+          showSnackbar(context, 'ID Photo uploaded successfully!');
+        }
+      } else {
+        throw Exception(
+          'All upload strategies failed. Please check your Cloudinary configuration.',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        String errorMessage = 'Error uploading ID photo';
+        if (e.toString().contains('Upload failed')) {
+          errorMessage = e.toString();
+        } else if (e.toString().contains('SocketException')) {
+          errorMessage =
+              'Network error. Please check your internet connection.';
+        } else if (e.toString().contains('TimeoutException')) {
+          errorMessage = 'Upload timeout. Please try again.';
+        } else if (e.toString().contains('All upload presets failed')) {
+          errorMessage = 'Upload configuration error. Please contact support.';
+        } else {
+          errorMessage = 'Error uploading ID photo: ${e.toString()}';
+        }
+
+        showSnackbar(context, errorMessage);
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploadingIdPhoto = false;
+        });
+      }
+    }
+  }
+
+  Widget _buildIdPhotoPreview() {
+    if (_idPhotoUrl != null) {
+      // Show uploaded image from Cloudinary
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Image.network(
+          _idPhotoUrl!,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return const Icon(Icons.badge, size: 40, color: Colors.grey);
+          },
+        ),
+      );
+    } else if (_selectedIdPhotoFile != null) {
+      // Show selected image (web-compatible)
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child:
+            kIsWeb
+                ? Image.network(
+                  _selectedIdPhotoFile!.path,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Icon(
+                      Icons.badge,
+                      size: 40,
+                      color: Colors.grey,
+                    );
+                  },
+                )
+                : Image.file(
+                  File(_selectedIdPhotoFile!.path),
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Icon(
+                      Icons.badge,
+                      size: 40,
+                      color: Colors.grey,
+                    );
+                  },
+                ),
+      );
+    } else {
+      // Show placeholder
+      return const Icon(Icons.badge, size: 40, color: Colors.grey);
+    }
+  }
+
   Widget _buildImagePreview() {
     if (_imageUrl != null) {
       // Show uploaded image from Cloudinary
@@ -2684,12 +4651,142 @@ class _StudentRegistrationPageState
     );
   }
 
+  Widget _buildIdPhotoUploadSection() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'ID Photo',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Upload a clear photo of the student\'s ID document',
+            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+          ),
+          const SizedBox(height: 16),
+
+          // Image display and upload button
+          Row(
+            children: [
+              // Image preview
+              Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey[300]!),
+                  color: Colors.grey[100],
+                ),
+                child: _buildIdPhotoPreview(),
+              ),
+              const SizedBox(width: 16),
+
+              // Upload button and status
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Column(
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed:
+                              _isUploadingIdPhoto
+                                  ? null
+                                  : _showIdPhotoPickerDialog,
+                          icon:
+                              _isUploadingIdPhoto
+                                  ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                  : const Icon(Icons.upload),
+                          label: Text(
+                            _isUploadingIdPhoto
+                                ? 'Uploading...'
+                                : 'Upload ID Photo',
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    if (_idPhotoUrl != null)
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.green[50],
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: Colors.green[200]!),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.check_circle,
+                              color: Colors.green[600],
+                              size: 16,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'ID Photo uploaded successfully',
+                                style: TextStyle(
+                                  color: Colors.green[700],
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showCredentialsDialog(
     BuildContext context,
     Map<String, dynamic> response,
   ) {
-    final studentCredentials = response['StudentLoginCredentials'];
-    final parentCredentials = response['parentCredentials'] as List<dynamic>?;
+    final data = response['data'];
+    final student = data?['student'];
+    final loginCredentials = data?['loginCredentials'];
+    final parentCredentials = data?['parentCredentials'] as List<dynamic>?;
+    // Normalize parents credentials (support both Map { parents: [...] } and List [...])
+    final dynamic loginCredentialsRaw = data?['loginCredentials'];
+    final List<dynamic> parentsFromLogin =
+        loginCredentialsRaw is List
+            ? loginCredentialsRaw
+            : (loginCredentialsRaw is Map &&
+                    loginCredentialsRaw['parents'] is List
+                ? (loginCredentialsRaw['parents'] as List)
+                : <dynamic>[]);
 
     showDialog(
       context: context,
@@ -2701,7 +4798,7 @@ class _StudentRegistrationPageState
               Icon(Icons.security, color: Color(0xFF6366F1)),
               SizedBox(width: 8),
               Text(
-                'Login Credentials',
+                'Student Created Successfully!',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
@@ -2715,41 +4812,115 @@ class _StudentRegistrationPageState
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Please save these credentials securely. They will be needed for login.',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF64748B),
-                    fontStyle: FontStyle.italic,
+                // Success Message
+                Container(
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.green[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.green[200]!),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.check_circle,
+                        color: Colors.green[600],
+                        size: 20,
+                      ),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Student ${student?['personalInfo']?['firstName'] ?? ''} ${student?['personalInfo']?['lastName'] ?? ''} has been successfully created!',
+                          style: TextStyle(
+                            color: Colors.green[700],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 SizedBox(height: 20),
 
-                // Student Credentials
-                if (studentCredentials != null) ...[
+                // Student Details (new response shape)
+                if (student != null) ...[
                   _buildCredentialSection(
-                    'Student Login Credentials',
+                    'Student Information',
                     Icons.person,
                     Color(0xFF10B981),
                     [
                       _buildCredentialItem(
-                        'Email',
-                        studentCredentials['email'],
+                        'Full Name',
+                        student['name'] ?? 'N/A',
                       ),
                       _buildCredentialItem(
-                        'Temporary Password',
-                        studentCredentials['temporaryPassword'],
+                        'Admission Number',
+                        student['admissionNumber'] ?? 'N/A',
+                      ),
+                      _buildCredentialItem('Class', student['class'] ?? 'N/A'),
+                    ],
+                  ),
+                  SizedBox(height: 16),
+                ],
+
+                // Student Login Credentials (not in new response, keep guarded-off)
+                if (student?['user'] != null) ...[
+                  _buildCredentialSection(
+                    'Student Login Credentials',
+                    Icons.school,
+                    Color(0xFF3B82F6),
+                    [
+                      _buildCredentialItem(
+                        'Email',
+                        student['user']['email'] ?? 'N/A',
                       ),
                       _buildCredentialItem(
                         'Student ID',
-                        studentCredentials['studentId'],
+                        student['user']['_id'] ?? 'N/A',
                       ),
                     ],
                   ),
                   SizedBox(height: 16),
                 ],
 
-                // Parent Credentials
+                // Parent Login Credentials (from loginCredentials.parents or direct list)
+                if (parentsFromLogin.isNotEmpty) ...[
+                  _buildCredentialSection(
+                    'Parent Login Credentials',
+                    Icons.family_restroom,
+                    Color(0xFF8B5CF6),
+                    parentsFromLogin
+                        .map<Widget>(
+                          (parent) => Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${parent['parentType']?.toString().toUpperCase()} - ${parent['fullName']}',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF374151),
+                                  fontSize: 14,
+                                ),
+                              ),
+                              SizedBox(height: 8),
+                              _buildCredentialItem('Email', parent['email']),
+                              _buildCredentialItem(
+                                'Temporary Password',
+                                parent['temporaryPassword'],
+                              ),
+                              _buildCredentialItem(
+                                'Parent ID',
+                                parent['parentId'],
+                              ),
+                              SizedBox(height: 12),
+                            ],
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ],
+
+                // Alternative parent credentials format
                 if (parentCredentials != null &&
                     parentCredentials.isNotEmpty) ...[
                   _buildCredentialSection(
@@ -2757,23 +4928,55 @@ class _StudentRegistrationPageState
                     Icons.family_restroom,
                     Color(0xFF8B5CF6),
                     parentCredentials
-                        .map(
-                          (credential) => [
-                            _buildCredentialItem('Email', credential['email']),
-                            _buildCredentialItem(
-                              'Temporary Password',
-                              credential['temporaryPassword'],
-                            ),
-                            _buildCredentialItem(
-                              'Parent ID',
-                              credential['parentId'],
-                            ),
-                          ],
+                        .map<Widget>(
+                          (credential) => Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildCredentialItem(
+                                'Email',
+                                credential['email'],
+                              ),
+                              _buildCredentialItem(
+                                'Temporary Password',
+                                credential['temporaryPassword'],
+                              ),
+                              _buildCredentialItem(
+                                'Parent ID',
+                                credential['parentId'],
+                              ),
+                              SizedBox(height: 12),
+                            ],
+                          ),
                         )
-                        .expand((item) => item)
                         .toList(),
                   ),
                 ],
+
+                SizedBox(height: 16),
+                Container(
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.amber[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.amber[200]!),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.warning, color: Colors.amber[600], size: 20),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Please save these credentials securely. Parents will need them to log in.',
+                          style: TextStyle(
+                            color: Colors.amber[700],
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),

@@ -17,10 +17,21 @@ class ParentRepo {
     );
   }
 
-  Future<HTTPResponseModel> getSignleParentDashboard(String parentId) async {
+  Future<HTTPResponseModel> getParentDashboard(String parentId) async {
     return await _httpService.runApi(
       type: ApiRequestType.get,
-      url: "/parents/$parentId/dashboard",
+      url: "/parents/$parentId",
+    );
+  }
+
+  Future<HTTPResponseModel> updateParent(
+    String parentId,
+    Map<String, dynamic> updateData,
+  ) async {
+    return await _httpService.runApi(
+      type: ApiRequestType.put,
+      url: "/parents/$parentId",
+      body: updateData,
     );
   }
 }

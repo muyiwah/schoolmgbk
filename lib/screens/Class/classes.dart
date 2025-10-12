@@ -11,6 +11,11 @@ import 'package:schmgtsystem/widgets/remove_teacher_dialog.dart';
 import 'package:schmgtsystem/widgets/success_snack.dart';
 import 'package:schmgtsystem/widgets/prompt.dart';
 import 'package:schmgtsystem/widgets/edit_class_dialog.dart';
+import 'package:schmgtsystem/services/global_academic_year_service.dart';
+import 'package:schmgtsystem/repository/class_repo.dart';
+import 'package:schmgtsystem/repository/teacher_repo.dart';
+import 'package:schmgtsystem/utils/locator.dart';
+import 'package:schmgtsystem/utils/response_model.dart';
 // import '../../models/class_metrics_model.dart'
 //     show Class, Teacher, Student, Attendance; // Import only what you need
 
@@ -33,25 +38,60 @@ class _SchoolClassesState extends ConsumerState<SchoolClasses> {
   @override
   initState() {
     super.initState();
+    // Initialize with empty data, will be loaded in loadClassesData
     WidgetsBinding.instance.addPostFrameCallback((_) {
       loadClassesData();
     });
   }
 
   TeacherListModel teacherData = TeacherListModel();
+  bool _isRefreshing = false;
+  ClassMetricModel _localClassData =
+      ClassMetricModel(); // Local state for classes
+
   loadClassesData() async {
-    await ref
-        .read(RiverpodProvider.classProvider)
-        .getAllClassesWithMetric(context);
-    teacherData = await ref
-        .read(RiverpodProvider.teachersProvider)
-        .getAllTeachers(context);
-    setState(() {});
+    if (_isRefreshing) return; // Prevent multiple simultaneous refreshes
+
+    print('🔄 Loading classes data directly from API...');
+    setState(() {
+      _isRefreshing = true;
+    });
+
+    try {
+      // Call the API directly instead of going through provider
+      final classRepository = locator<ClassRepo>();
+      final response = await classRepository.getAllClasses();
+
+      if (HTTPResponseModel.isApiCallSuccess(response)) {
+        _localClassData = ClassMetricModel.fromJson(response.data['data']);
+        print('✅ Classes data loaded directly from API');
+        print('✅ Found ${_localClassData.classes?.length ?? 0} classes');
+      } else {
+        print('❌ Failed to load classes: ${response.message}');
+      }
+
+      // Also refresh teacher data
+      final teacherRepository = locator<TeacherRepo>();
+      final teacherResponse = await teacherRepository.getAllTeachers({});
+
+      if (HTTPResponseModel.isApiCallSuccess(teacherResponse)) {
+        teacherData = TeacherListModel.fromJson(teacherResponse.data['data']);
+        print('✅ Teacher data refreshed');
+      }
+    } catch (e) {
+      print('❌ Error loading classes data: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isRefreshing = false;
+          print('✅ UI state updated with fresh data');
+        });
+      }
+    }
   }
 
   void _showClassSelectionDialog() {
-    final classData = ref.watch(RiverpodProvider.classProvider).classData;
-    final classes = classData.classes ?? [];
+    final classes = _localClassData.classes ?? [];
 
     if (classes.isEmpty) {
       showSnackbar(context, 'No classes available');
@@ -98,7 +138,11 @@ class _SchoolClassesState extends ConsumerState<SchoolClasses> {
                         ),
                       ),
                       IconButton(
-                        onPressed: () => Navigator.of(context).pop(),
+                        onPressed: () async {
+                          Navigator.of(context).pop();
+                          // Directly reload all classes data
+                          await loadClassesData();
+                        },
                         icon: const Icon(Icons.close),
                       ),
                     ],
@@ -207,7 +251,11 @@ class _SchoolClassesState extends ConsumerState<SchoolClasses> {
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton(
-                      onPressed: () => Navigator.of(context).pop(),
+                      onPressed: () async {
+                        Navigator.of(context).pop();
+                        // Directly reload all classes data
+                        await loadClassesData();
+                      },
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
@@ -579,8 +627,13 @@ class _SchoolClassesState extends ConsumerState<SchoolClasses> {
               barrierColor: Colors.black.withOpacity(0.5),
               builder:
                   (context) => AddClassDialog(
-                    academicYear: '2025/2026',
+                    academicYear:
+                        GlobalAcademicYearService().currentAcademicYearString,
                     teacherData: teacherData,
+                    onClassCreated: () async {
+                      // Directly reload all classes data
+                      await loadClassesData();
+                    },
                   ),
             );
           },
@@ -866,8 +919,30 @@ class _SchoolClassesState extends ConsumerState<SchoolClasses> {
   }
 
   Widget _buildClassesList() {
-    // Get class data from provider instead of local variable
-    final classData = ref.watch(RiverpodProvider.classProvider).classData;
+    // Use local state instead of provider for more reliable updates
+    final classData = _localClassData;
+
+    // Show loading indicator when refreshing
+    if (_isRefreshing) {
+      return Container(
+        height: 200,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Refreshing classes...',
+                style: TextStyle(color: Colors.grey[600], fontSize: 14),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return GridView.builder(
       shrinkWrap: true,
@@ -1060,8 +1135,13 @@ class _SchoolClassesState extends ConsumerState<SchoolClasses> {
                           barrierDismissible: true,
                           barrierColor: Colors.black.withOpacity(0.5),
                           builder:
-                              (context) =>
-                                  AssignNewTeacherDialog(classData: classData),
+                              (context) => AssignNewTeacherDialog(
+                                classData: classData,
+                                onTeacherAssigned: () async {
+                                  // Directly reload all classes data
+                                  await loadClassesData();
+                                },
+                              ),
                         );
                       },
                       icon: const Icon(Icons.person_add, size: 18),
@@ -1082,8 +1162,13 @@ class _SchoolClassesState extends ConsumerState<SchoolClasses> {
                           barrierDismissible: true,
                           barrierColor: Colors.black.withOpacity(0.5),
                           builder:
-                              (context) =>
-                                  RemoveTeacherDialog(classData: classData),
+                              (context) => RemoveTeacherDialog(
+                                classData: classData,
+                                onTeacherRemoved: () async {
+                                  // Directly reload all classes data
+                                  await loadClassesData();
+                                },
+                              ),
                         );
                       },
                       icon: const Icon(Icons.person_remove, size: 18),

@@ -364,6 +364,7 @@ class PaginationInfo {
   final int currentPage;
   final int totalPages;
   final int totalStudents;
+  final int currentPageStudents;
   final bool hasNext;
   final bool hasPrev;
 
@@ -371,6 +372,7 @@ class PaginationInfo {
     required this.currentPage,
     required this.totalPages,
     required this.totalStudents,
+    required this.currentPageStudents,
     required this.hasNext,
     required this.hasPrev,
   });
@@ -380,6 +382,7 @@ class PaginationInfo {
       currentPage: json['currentPage'] ?? 1,
       totalPages: json['totalPages'] ?? 1,
       totalStudents: json['totalStudents'] ?? 0,
+      currentPageStudents: json['currentPageStudents'] ?? 0,
       hasNext: json['hasNext'] ?? false,
       hasPrev: json['hasPrev'] ?? false,
     );

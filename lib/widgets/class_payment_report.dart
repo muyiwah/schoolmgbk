@@ -54,14 +54,15 @@ class ClassPaymentReportPopup extends StatelessWidget {
                         color: Colors.white,
                         size: 28,
                       ),
-                  Text(
+                      Text(
                         'Payment Report',
                         style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                         ),
-                      ),    IconButton(
+                      ),
+                      IconButton(
                         onPressed: () => Navigator.of(context).pop(),
                         icon: const Icon(
                           Icons.close,
@@ -71,8 +72,7 @@ class ClassPaymentReportPopup extends StatelessWidget {
                       ),
                     ],
                   ),
-              
-                  
+
                   const SizedBox(height: 5),
                   Text(
                     academicSession,
@@ -110,7 +110,9 @@ class ClassPaymentReportPopup extends StatelessWidget {
                       icon: Icons.payments,
                       title: 'Payment Statistics',
                       children: [
-                        Wrap(spacing: 19,runSpacing: 10,
+                        Wrap(
+                          spacing: 19,
+                          runSpacing: 10,
                           children: [
                             _buildStatCard(
                               'Paid in Full',
@@ -124,7 +126,7 @@ class ClassPaymentReportPopup extends StatelessWidget {
                               Colors.orange,
                               Icons.access_time,
                             ),
-                           _buildStatCard(
+                            _buildStatCard(
                               'Outstanding',
                               owing.toString(),
                               Colors.red,
@@ -136,11 +138,10 @@ class ClassPaymentReportPopup extends StatelessWidget {
                             //   Colors.blue,
                             //   Icons.trending_up,
                             // ),
-                             ],
+                          ],
                         ),
                         const SizedBox(height: 10),
-                        Row(
-                          children: [
+                        Row(children: [
                           
                           ],
                         ),
@@ -305,14 +306,16 @@ class ClassPaymentReportPopup extends StatelessWidget {
     Color color,
     IconData icon,
   ) {
-    return Container(width: 180,
+    return Container(
+      width: 180,
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: color.withOpacity(0.3)),
       ),
-      child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           Icon(icon, color: color, size: 24),
           Text(
@@ -344,7 +347,7 @@ class ClassPaymentReportPopup extends StatelessWidget {
             style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
           ),
           Text(
-            '₦${amount.toStringAsFixed(2)}',
+            '£${amount.toStringAsFixed(2)}',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,

@@ -43,6 +43,81 @@ class AuthRepo {
     );
   }
 
+  // New password reset methods matching the Express.js routes
+  Future<HTTPResponseModel> requestPasswordReset(
+    Map<String, dynamic> body,
+  ) async {
+    return await _httpService.runApi(
+      type: ApiRequestType.post,
+      url: "/auth/forgot-password",
+      body: body,
+    );
+  }
+
+  Future<HTTPResponseModel> resetPasswordWithOTP(
+    Map<String, dynamic> body,
+  ) async {
+    return await _httpService.runApi(
+      type: ApiRequestType.post,
+      url: "/auth/reset-password",
+      body: body,
+    );
+  }
+
+  Future<HTTPResponseModel> verifyOTP(Map<String, dynamic> body) async {
+    return await _httpService.runApi(
+      type: ApiRequestType.post,
+      url: "/auth/verify-otp",
+      body: body,
+    );
+  }
+
+  Future<HTTPResponseModel> getOTPStatus(String email) async {
+    return await _httpService.runApi(
+      type: ApiRequestType.get,
+      url: "/auth/otp-status/$email",
+    );
+  }
+
+  Future<HTTPResponseModel> adminChangePassword(
+    Map<String, dynamic> body,
+  ) async {
+    return await _httpService.runApi(
+      type: ApiRequestType.put,
+      url: "/auth/admin/change-password",
+      body: body,
+    );
+  }
+
+  Future<HTTPResponseModel> getAllUsersWithStatus({
+    int page = 1,
+    int limit = 10,
+    String? status,
+    String? role,
+    String? search,
+  }) async {
+    final Map<String, dynamic> queryParams = {'page': page, 'limit': limit};
+
+    // Add optional parameters only if they are provided
+    if (status != null && status.isNotEmpty) queryParams['status'] = status;
+    if (role != null && role.isNotEmpty) queryParams['role'] = role;
+    if (search != null && search.isNotEmpty) queryParams['search'] = search;
+
+    return await _httpService.runApi(
+      type: ApiRequestType.get,
+      url: "/auth/admin/users",
+      params: queryParams,
+    );
+  }
+
+  Future<HTTPResponseModel> adminUpdateStatus(Map<String, dynamic> body) async {
+    return await _httpService.runApi(
+      type: ApiRequestType.put,
+      url: "/auth/admin/update-status",
+      body: body,
+    );
+  }
+
   Future<HTTPResponseModel> updatePushNotificationId(
     Map<String, dynamic> body,
   ) async {
@@ -118,8 +193,6 @@ class AuthRepo {
       body: body,
     );
   }
-
- 
 
   Future<HTTPResponseModel> userProfile(Map<String, dynamic> body) async {
     return await _httpService.runApi(

@@ -7,8 +7,13 @@ import 'package:schmgtsystem/widgets/success_snack.dart';
 
 class RemoveTeacherDialog extends ConsumerStatefulWidget {
   final Class classData;
+  final VoidCallback? onTeacherRemoved;
 
-  const RemoveTeacherDialog({super.key, required this.classData});
+  const RemoveTeacherDialog({
+    super.key,
+    required this.classData,
+    this.onTeacherRemoved,
+  });
 
   @override
   ConsumerState<RemoveTeacherDialog> createState() =>
@@ -639,6 +644,11 @@ class _RemoveTeacherDialogState extends ConsumerState<RemoveTeacherDialog>
       await ref
           .read(RiverpodProvider.classProvider)
           .getAllClassesWithMetric(context);
+
+      // Call the callback to refresh the parent screen immediately
+      if (widget.onTeacherRemoved != null) {
+        widget.onTeacherRemoved!();
+      }
     } catch (e) {
       if (mounted) {
         showSnackbar(context, 'Error removing teacher: $e');

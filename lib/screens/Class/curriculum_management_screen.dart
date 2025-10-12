@@ -5,10 +5,14 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:schmgtsystem/constants/appcolor.dart';
 import 'package:schmgtsystem/models/class_metrics_model.dart';
+import 'package:schmgtsystem/models/imagekit_model.dart';
 import 'package:schmgtsystem/providers/provider.dart';
 import 'package:schmgtsystem/widgets/custom_toast_notification.dart';
 import 'package:schmgtsystem/widgets/pdf_viewer_dialog.dart';
 import 'package:schmgtsystem/utils/constants.dart';
+import 'package:schmgtsystem/repository/class_repo.dart';
+import 'package:schmgtsystem/utils/locator.dart';
+import 'package:schmgtsystem/utils/response_model.dart';
 
 class CurriculumManagementScreen extends ConsumerStatefulWidget {
   const CurriculumManagementScreen({super.key});
@@ -18,8 +22,13 @@ class CurriculumManagementScreen extends ConsumerStatefulWidget {
       _CurriculumManagementScreenState();
 }
 
+enum StorageType { cloudinary, imagekit }
+
 class _CurriculumManagementScreenState
     extends ConsumerState<CurriculumManagementScreen> {
+  StorageType _selectedStorage = StorageType.cloudinary;
+  final ClassRepo _classRepo = locator<ClassRepo>();
+
   @override
   void initState() {
     super.initState();
@@ -101,6 +110,77 @@ class _CurriculumManagementScreenState
     }
   }
 
+  Future<String> _uploadToImageKit(PlatformFile file, String fileName) async {
+    try {
+      debugPrint('🚀 Starting authenticated ImageKit upload...');
+      debugPrint('📁 File: ${file.name}, Size: ${file.size} bytes');
+      debugPrint('🆔 File Name: $fileName');
+
+      // Get authentication parameters from backend
+      final authResponse = await _classRepo.getImageKitAuth();
+
+      if (!HTTPResponseModel.isApiCallSuccess(authResponse)) {
+        throw Exception('Failed to get ImageKit auth: ${authResponse.message}');
+      }
+
+      final authData = ImageKitAuthModel.fromJson(authResponse.data!);
+
+      if (!authData.success || authData.data == null) {
+        throw Exception('Invalid auth response: ${authData.message}');
+      }
+
+      // ImageKit API endpoint
+      final uploadUrl = 'https://upload.imagekit.io/api/v1/files/upload';
+
+      // Create form data
+      final request = http.MultipartRequest('POST', Uri.parse(uploadUrl));
+
+      // Add file
+      if (file.bytes != null) {
+        request.files.add(
+          http.MultipartFile.fromBytes('file', file.bytes!, filename: fileName),
+        );
+      } else {
+        throw Exception('File bytes are null');
+      }
+
+      // Add authenticated ImageKit parameters
+      request.fields['fileName'] = fileName;
+      request.fields['folder'] = '/curriculum';
+      request.fields['publicKey'] = AppConstants.imagekitpublic;
+      request.fields['token'] = authData.data!.token;
+      request.fields['expire'] = authData.data!.expire.toString();
+      request.fields['signature'] = authData.data!.signature;
+
+      debugPrint('📤 Uploading to: $uploadUrl');
+      debugPrint('🔑 Using authenticated token: ${authData.data!.token}');
+
+      // Send request
+      final response = await request.send().timeout(
+        const Duration(seconds: 30),
+      );
+      final responseBody = await response.stream.bytesToString();
+
+      debugPrint('📊 Upload response status: ${response.statusCode}');
+      debugPrint('📊 Upload response body: $responseBody');
+
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(responseBody);
+        final fileUrl = jsonResponse['url'] as String;
+
+        debugPrint('✅ ImageKit upload successful! URL: $fileUrl');
+        return fileUrl;
+      } else {
+        throw Exception(
+          'ImageKit upload failed: ${response.statusCode} - $responseBody',
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ ImageKit upload error: $e');
+      throw Exception('ImageKit upload error: $e');
+    }
+  }
+
   Future<void> _uploadCurriculum(Class classData) async {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
@@ -122,12 +202,18 @@ class _CurriculumManagementScreenState
           return;
         }
 
-        // Upload to Cloudinary with raw resource type for PDF
-        final publicId =
-            'curriculum/${classData.name?.toLowerCase().replaceAll(' ', '_')}_${DateTime.now().millisecondsSinceEpoch}';
+        String curriculumUrl;
 
-        // Upload to Cloudinary
-        final curriculumUrl = await _uploadToCloudinary(file, publicId);
+        // Upload based on selected storage type
+        if (_selectedStorage == StorageType.cloudinary) {
+          final publicId =
+              'curriculum/${classData.name?.toLowerCase().replaceAll(' ', '_')}_${DateTime.now().millisecondsSinceEpoch}';
+          curriculumUrl = await _uploadToCloudinary(file, publicId);
+        } else {
+          final fileName =
+              'curriculum_${classData.name?.toLowerCase().replaceAll(' ', '_')}_${DateTime.now().millisecondsSinceEpoch}.pdf';
+          curriculumUrl = await _uploadToImageKit(file, fileName);
+        }
 
         final success = await ref
             .read(RiverpodProvider.classProvider)
@@ -269,6 +355,152 @@ class _CurriculumManagementScreenState
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.white.withOpacity(0.9),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 32),
+
+            // Storage Selection
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.cloud_upload, color: Colors.blue, size: 24),
+                      SizedBox(width: 12),
+                      Text(
+                        'Storage Preference',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1F2937),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Choose your preferred storage service for curriculum uploads:',
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: RadioListTile<StorageType>(
+                          title: const Text(
+                            'Cloudinary',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          subtitle: const Text(
+                            'Fast uploads with global CDN',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                          value: StorageType.cloudinary,
+                          groupValue: _selectedStorage,
+                          onChanged: (StorageType? value) {
+                            if (value != null) {
+                              setState(() {
+                                _selectedStorage = value;
+                              });
+                            }
+                          },
+                          contentPadding: EdgeInsets.zero,
+                          activeColor: Colors.blue,
+                        ),
+                      ),
+                      const SizedBox(width: 20),
+                      Expanded(
+                        child: RadioListTile<StorageType>(
+                          title: const Text(
+                            'ImageKit',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          subtitle: const Text(
+                            'Optimized media delivery',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                          value: StorageType.imagekit,
+                          groupValue: _selectedStorage,
+                          onChanged: (StorageType? value) {
+                            if (value != null) {
+                              setState(() {
+                                _selectedStorage = value;
+                              });
+                            }
+                          },
+                          contentPadding: EdgeInsets.zero,
+                          activeColor: Colors.green,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color:
+                          _selectedStorage == StorageType.cloudinary
+                              ? Colors.blue.withOpacity(0.1)
+                              : Colors.green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color:
+                            _selectedStorage == StorageType.cloudinary
+                                ? Colors.blue.withOpacity(0.3)
+                                : Colors.green.withOpacity(0.3),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          _selectedStorage == StorageType.cloudinary
+                              ? Icons.cloud_upload
+                              : Icons.image,
+                          color:
+                              _selectedStorage == StorageType.cloudinary
+                                  ? Colors.blue
+                                  : Colors.green,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _selectedStorage == StorageType.cloudinary
+                                ? 'Files will be uploaded to Cloudinary with automatic optimization and CDN delivery.'
+                                : 'Files will be uploaded to ImageKit with automatic optimization and global delivery.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color:
+                                  _selectedStorage == StorageType.cloudinary
+                                      ? Colors.blue[700]
+                                      : Colors.green[700],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -454,10 +686,22 @@ class _CurriculumManagementScreenState
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: () => _uploadCurriculum(classData),
-                  icon: const Icon(Icons.upload, size: 18),
-                  label: const Text('Upload Curriculum'),
+                  icon: Icon(
+                    _selectedStorage == StorageType.cloudinary
+                        ? Icons.cloud_upload
+                        : Icons.image,
+                    size: 18,
+                  ),
+                  label: Text(
+                    _selectedStorage == StorageType.cloudinary
+                        ? 'Upload to Cloudinary'
+                        : 'Upload to ImageKit',
+                  ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.secondary,
+                    backgroundColor:
+                        _selectedStorage == StorageType.cloudinary
+                            ? Colors.blue
+                            : Colors.green,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(

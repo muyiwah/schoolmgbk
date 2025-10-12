@@ -9,6 +9,10 @@ import 'package:schmgtsystem/models/communication_model.dart';
 import 'package:schmgtsystem/providers/provider.dart';
 import 'package:schmgtsystem/widgets/message_popup.dart';
 import 'package:schmgtsystem/widgets/success_snack.dart';
+import 'package:schmgtsystem/utils/academic_year_helper.dart';
+import 'package:schmgtsystem/repository/class_repo.dart';
+import 'package:schmgtsystem/utils/locator.dart';
+import 'package:schmgtsystem/utils/response_model.dart';
 
 class ClassDetailsScreen extends ConsumerStatefulWidget {
   final String classId;
@@ -23,6 +27,7 @@ class _ClassDetailsScreenState extends ConsumerState<ClassDetailsScreen> {
   int selectedTabIndex = 0;
   bool _isLoading = true;
   String? _errorMessage;
+  SingleClass _localClassData = SingleClass(); // Local state for class data
 
   // Attendance state
   DateTime _selectedDate = DateTime.now();
@@ -34,6 +39,13 @@ class _ClassDetailsScreenState extends ConsumerState<ClassDetailsScreen> {
   @override
   void initState() {
     super.initState();
+    _loadClassData();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh data when screen becomes active (e.g., when navigating back)
     _loadClassData();
   }
 
@@ -52,11 +64,31 @@ class _ClassDetailsScreenState extends ConsumerState<ClassDetailsScreen> {
         _errorMessage = null;
       });
 
-      print('Loading class data for classId: ${widget.classId}');
+      print(
+        'Loading class data directly from API for classId: ${widget.classId}',
+      );
 
-      await ref
-          .read(RiverpodProvider.classProvider)
-          .getSingleClass(context, widget.classId);
+      // Call the API directly instead of going through provider
+      final classRepository = locator<ClassRepo>();
+      final response = await classRepository.getSingleClass(widget.classId);
+
+      if (HTTPResponseModel.isApiCallSuccess(response)) {
+        print('Raw API response: ${response.data}');
+        try {
+          _localClassData = SingleClass.fromJson(response.data);
+          print('✅ Class data loaded directly from API');
+          print(
+            '✅ Class teacher: ${_localClassData.data?.dataClass?.classTeacher?.name ?? 'None'}',
+          );
+        } catch (e) {
+          print('❌ Error parsing class data: $e');
+          print('❌ Error type: ${e.runtimeType}');
+          _errorMessage = 'Failed to parse class data: $e';
+        }
+      } else {
+        print('❌ Failed to load class: ${response.message}');
+        _errorMessage = 'Failed to load class data: ${response.message}';
+      }
 
       if (mounted) {
         setState(() {
@@ -102,8 +134,7 @@ class _ClassDetailsScreenState extends ConsumerState<ClassDetailsScreen> {
   }
 
   void _initializeAllStudentsWithDefaultStatus() {
-    final classProvider = ref.read(RiverpodProvider.classProvider);
-    final students = classProvider.singlgeClassData.data?.students ?? [];
+    final students = _localClassData.data?.students ?? [];
 
     // Initialize all students with default absent status
     for (var student in students) {
@@ -179,8 +210,8 @@ class _ClassDetailsScreenState extends ConsumerState<ClassDetailsScreen> {
 
       final request = MarkAttendanceRequest(
         date: DateFormat('yyyy-MM-dd').format(_selectedDate),
-        term: 'First', // You might want to get this from a provider
-        academicYear: '2025/2026', // You might want to get this from a provider
+        term: AcademicYearHelper.getCurrentTerm(ref),
+        academicYear: AcademicYearHelper.getCurrentAcademicYear(ref),
         markerId: user.id ?? '',
         records: allStudentRecords,
       );
@@ -256,12 +287,14 @@ class _ClassDetailsScreenState extends ConsumerState<ClassDetailsScreen> {
       );
     }
 
-    final classData =
-        ref.watch(RiverpodProvider.classProvider).singlgeClassData;
+    final classData = _localClassData;
 
     print('ClassData received: ${classData.toJson()}');
     print('ClassData.data: ${classData.data}');
     print('ClassData.data?.dataClass: ${classData.data?.dataClass}');
+    print(
+      'Class teacher name: ${classData.data?.dataClass?.classTeacher?.name}',
+    );
 
     if (classData.data == null) {
       return Scaffold(

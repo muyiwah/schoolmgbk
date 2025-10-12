@@ -4,6 +4,8 @@ import 'package:schmgtsystem/widgets/piechart.dart';
 import 'package:schmgtsystem/providers/student_provider.dart';
 import 'package:schmgtsystem/models/student_full_model.dart';
 import 'package:schmgtsystem/widgets/success_snack.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:schmgtsystem/screens/admin/admin_change_password_screen.dart';
 
 class SingleStudent extends ConsumerStatefulWidget {
   final String studentId;
@@ -133,12 +135,9 @@ class _SingleStudentState extends ConsumerState<SingleStudent> {
                       _buildQuickStatsRow(student),
                       const SizedBox(height: 20),
 
-                      // Academic Performance Section
-                      _buildAcademicPerformanceSection(student),
+                      // Student Details Section
+                      _buildStudentDetailsSection(student),
                       const SizedBox(height: 20),
-
-                      // Assignments & Assessments
-                      _buildAssignmentsSection(student),
                     ],
                   ),
                 ),
@@ -153,8 +152,8 @@ class _SingleStudentState extends ConsumerState<SingleStudent> {
                       _buildAttendanceCard(student),
                       const SizedBox(height: 20),
                       _buildPaymentCard(student),
-                      const SizedBox(height: 20),
-                      _buildRecentActivitiesCard(),
+                      // const SizedBox(height: 20),
+                      // _buildRecentActivitiesCard(),
                     ],
                   ),
                 ),
@@ -432,7 +431,7 @@ class _SingleStudentState extends ConsumerState<SingleStudent> {
                                                     .personalInfo!
                                                     .profileImage!
                                                     .isNotEmpty
-                                            ? NetworkImage(
+                                            ? CachedNetworkImageProvider(
                                               student
                                                   .personalInfo!
                                                   .profileImage!,
@@ -656,7 +655,7 @@ class _SingleStudentState extends ConsumerState<SingleStudent> {
                     const SizedBox(width: 12),
                     ElevatedButton.icon(
                       onPressed: () {
-                        // Edit profile functionality
+                        _showEditStudentDialog(context, student);
                         Navigator.of(context).pop();
                       },
                       icon: const Icon(Icons.edit),
@@ -734,7 +733,7 @@ class _SingleStudentState extends ConsumerState<SingleStudent> {
                                               .personalInfo!
                                               .profileImage!
                                               .isNotEmpty
-                                      ? NetworkImage(
+                                      ? CachedNetworkImageProvider(
                                         student.personalInfo!.profileImage!,
                                       )
                                       : null,
@@ -1198,7 +1197,9 @@ class _SingleStudentState extends ConsumerState<SingleStudent> {
               backgroundImage:
                   student?.personalInfo?.profileImage != null &&
                           student!.personalInfo!.profileImage!.isNotEmpty
-                      ? NetworkImage(student.personalInfo!.profileImage!)
+                      ? CachedNetworkImageProvider(
+                        student.personalInfo!.profileImage!,
+                      )
                       : null,
               child:
                   student?.personalInfo?.profileImage == null ||
@@ -1290,6 +1291,13 @@ class _SingleStudentState extends ConsumerState<SingleStudent> {
                 context,
                 student,
               ),
+              const SizedBox(height: 8),
+              _buildActionButton(
+                'Change Password',
+                Icons.lock_outline,
+                context,
+                student,
+              ),
             ],
           ),
         ],
@@ -1343,6 +1351,33 @@ class _SingleStudentState extends ConsumerState<SingleStudent> {
       case 'Contact Parent':
         _showContactParentModal(context, student);
         break;
+      case 'Change Password':
+        _navigateToChangePassword(context, student);
+        break;
+    }
+  }
+
+  void _navigateToChangePassword(BuildContext context, Student? student) async {
+    if (student == null) return;
+
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder:
+            (context) => AdminChangePasswordFormScreen(
+              userId: student.id ?? '', // Using student.id as userId for now
+              userEmail: student.user?.email ?? '',
+              userRole: 'student',
+              userName:
+                  '${student.personalInfo?.firstName ?? ''} ${student.personalInfo?.lastName ?? ''}',
+            ),
+      ),
+    );
+
+    // Refresh student data if password was changed
+    if (result == true) {
+      // Refresh the student data
+      final studentNotifier = ref.read(studentProvider.notifier);
+      await studentNotifier.getStudentById(context, student.id ?? '');
     }
   }
 
@@ -1377,7 +1412,7 @@ class _SingleStudentState extends ConsumerState<SingleStudent> {
           child: _buildStatCard(
             'Fee Status',
             student?.financialInfo?.feeStatus ?? 'N/A',
-            '₦${student?.financialInfo?.outstandingBalance ?? 0}',
+            '£${student?.financialInfo?.outstandingBalance ?? 0}',
             Icons.payment,
             Colors.orange,
           ),
@@ -1452,6 +1487,284 @@ class _SingleStudentState extends ConsumerState<SingleStudent> {
           Text(
             subtitle,
             style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStudentDetailsSection(Student? student) {
+    if (student == null) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: const Center(
+          child: Text(
+            'No student data available',
+            style: TextStyle(color: Colors.grey, fontSize: 16),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Student Details',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 20),
+
+          // Personal Information
+          _buildDetailSection('Personal Information', Icons.person, [
+            // _buildDetailRow('Full Name', student.personalInfo.fullName),
+            _buildDetailRow(
+              'First Name',
+              student.personalInfo?.firstName ?? "",
+            ),
+            _buildDetailRow('Last Name', student.personalInfo?.lastName ?? ""),
+            _buildDetailRow(
+              'Middle Name',
+              student.personalInfo?.middleName ?? "",
+            ),
+            _buildDetailRow(
+              'Date of Birth',
+              student.personalInfo?.dateOfBirth?.toString() ?? "",
+            ),
+            _buildDetailRow('Age', student.age.toString()),
+            _buildDetailRow('Gender', student.personalInfo?.gender ?? ""),
+            _buildDetailRow(
+              'Blood Group',
+              student.personalInfo?.bloodGroup ?? "",
+            ),
+            _buildDetailRow('Religion', student.personalInfo?.religion ?? ""),
+            _buildDetailRow(
+              'Nationality',
+              student.personalInfo?.nationality ?? "",
+            ),
+            _buildDetailRow(
+              'State of Origin',
+              student.personalInfo?.stateOfOrigin,
+            ),
+            _buildDetailRow(
+              'Local Government',
+              student.personalInfo?.localGovernment ?? "",
+            ),
+            _buildDetailRow('Phone Number', student.contactInfo?.phone ?? ""),
+            _buildDetailRow('Email', student.contactInfo?.email ?? ""),
+            _buildDetailRow(
+              'Address',
+              '${student.contactInfo?.address?.street}, ${student.contactInfo?.address?.city}, ${student.contactInfo?.address?.state}',
+            ),
+          ]),
+
+          const SizedBox(height: 20),
+
+          // Academic Information
+          _buildDetailSection('Academic Information', Icons.school, [
+            _buildDetailRow('Admission Number', student.admissionNumber),
+            _buildDetailRow(
+              'Class Level',
+              student.academicInfo?.currentClass?.level ?? '',
+            ),
+            _buildDetailRow(
+              'Current Class',
+              student.academicInfo?.currentClass?.name ?? '',
+            ),
+            _buildDetailRow(
+              'Class ID',
+              student.academicInfo?.currentClass?.id ?? '',
+            ),
+            _buildDetailRow(
+              'Academic Year',
+              student.academicInfo?.academicYear ?? '',
+            ),
+            _buildDetailRow(
+              'Admission Date',
+              student.academicInfo?.admissionDate?.toString() ?? '',
+            ),
+            _buildDetailRow(
+              'Student Type',
+              student.academicInfo?.studentType ?? '',
+            ),
+            _buildDetailRow('Student Status', student.status),
+          ]),
+
+          const SizedBox(height: 20),
+
+          // Financial Information
+          _buildDetailSection(
+            'Financial Information',
+            Icons.account_balance_wallet,
+            [
+              _buildDetailRow(
+                'Fee Status',
+                student.financialInfo?.feeStatus ?? '',
+              ),
+              _buildDetailRow(
+                'Total Fees',
+                student.financialInfo?.totalFees?.toString() ?? '',
+              ),
+              _buildDetailRow(
+                'Paid Amount',
+                student.financialInfo?.paidAmount?.toString() ?? '',
+              ),
+              _buildDetailRow(
+                'Outstanding Balance',
+                student.financialInfo?.outstandingBalance?.toString() ?? '',
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 20),
+
+          // Parent/Guardian Information
+          _buildDetailSection(
+            'Parent/Guardian Information',
+            Icons.family_restroom,
+            [
+              if (student.parentInfo?.father != null) ...[
+                _buildDetailRow(
+                  'Father Name',
+                  student.parentInfo?.father!.personalInfo!.firstName ?? '',
+                ),
+                _buildDetailRow(
+                  'Father Phone',
+                  student.parentInfo?.father?.contactInfo?.primaryPhone ?? '',
+                ),
+                _buildDetailRow(
+                  'Father Email',
+                  student.parentInfo?.father?.contactInfo?.email ?? '',
+                ),
+              ],
+              // if (student.parentInfo!.mother?.personalInfo != null) ...[
+              //   _buildDetailRow(
+              //     'Mother Name',
+              //     student.parentInfo.mother?.personalInfo.fullName,
+              //   ),
+              //   _buildDetailRow(
+              //     'Mother Phone',
+              //     student.parentInfo.mother?.contactInfo.phone,
+              //   ),
+              //   _buildDetailRow(
+              //     'Mother Email',
+              //     student.parentInfo.mother?.contactInfo.email,
+              //   ),
+              // ],
+              // if (student.parentInfo.guardian != null) ...[
+              //   _buildDetailRow(
+              //     'Guardian Name',
+              //     student.parentInfo.guardian?.personalInfo.fullName,
+              //   ),
+              //   _buildDetailRow(
+              //     'Guardian Phone',
+              //     student.parentInfo.guardian?.contactInfo.phone,
+              //   ),
+              //   _buildDetailRow(
+              //     'Guardian Email',
+              //     student.parentInfo.guardian?.contactInfo.email,
+              //   ),
+              // ],
+            ],
+          ),
+
+          const SizedBox(height: 20),
+
+          // System Information
+          _buildDetailSection('System Information', Icons.info, [
+            _buildDetailRow('Student ID', student.id),
+            _buildDetailRow(
+              'Profile Image',
+              student.personalInfo?.profileImage,
+            ),
+          ]),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailSection(
+    String title,
+    IconData icon,
+    List<Widget> children,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 20, color: Colors.blue[600]),
+            const SizedBox(width: 8),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.blue[600],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.grey[50],
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey[200]!),
+          ),
+          child: Column(children: children),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDetailRow(String label, String? value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 140,
+            child: Text(
+              '$label:',
+              style: const TextStyle(
+                fontWeight: FontWeight.w500,
+                color: Colors.grey,
+                fontSize: 14,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value ?? 'Not specified',
+              style: const TextStyle(fontWeight: FontWeight.w400, fontSize: 14),
+            ),
           ),
         ],
       ),
@@ -1933,19 +2246,19 @@ class _SingleStudentState extends ConsumerState<SingleStudent> {
           // Payment Items
           _buildPaymentItem(
             'Total Fees',
-            '₦${student?.financialInfo?.totalFees ?? 0}',
+            '£${student?.financialInfo?.totalFees ?? 0}',
             'Total',
             Colors.blue,
           ),
           _buildPaymentItem(
             'Paid Amount',
-            '₦${student?.financialInfo?.paidAmount ?? 0}',
+            '£${student?.financialInfo?.paidAmount ?? 0}',
             'Paid',
             Colors.green,
           ),
           _buildPaymentItem(
             'Outstanding',
-            '₦${student?.financialInfo?.outstandingBalance ?? 0}',
+            '£${student?.financialInfo?.outstandingBalance ?? 0}',
             student?.financialInfo?.feeStatus ?? 'Pending',
             student?.financialInfo?.feeStatus == 'paid'
                 ? Colors.green
@@ -2032,84 +2345,378 @@ class _SingleStudentState extends ConsumerState<SingleStudent> {
     );
   }
 
-  Widget _buildRecentActivitiesCard() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Recent Activities',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
+  void _showEditStudentDialog(BuildContext context, Student? student) {
+    if (student == null) return;
 
-          _buildActivityItem(
-            'Submitted Math Assignment',
-            '2 hours ago',
-            Icons.assignment_turned_in,
+    final TextEditingController firstNameController = TextEditingController(
+      text: student.personalInfo?.firstName ?? '',
+    );
+    final TextEditingController lastNameController = TextEditingController(
+      text: student.personalInfo?.lastName ?? '',
+    );
+    final TextEditingController middleNameController = TextEditingController(
+      text: student.personalInfo?.middleName ?? '',
+    );
+    final TextEditingController dateOfBirthController = TextEditingController(
+      text:
+          student.personalInfo?.dateOfBirth?.toIso8601String().split('T')[0] ??
+          '',
+    );
+    final TextEditingController genderController = TextEditingController(
+      text: student.personalInfo?.gender ?? '',
+    );
+    final TextEditingController nationalityController = TextEditingController(
+      text: student.personalInfo?.nationality ?? '',
+    );
+    final TextEditingController stateOfOriginController = TextEditingController(
+      text: student.personalInfo?.stateOfOrigin ?? '',
+    );
+    final TextEditingController localGovernmentController =
+        TextEditingController(
+          text: student.personalInfo?.localGovernment ?? '',
+        );
+    final TextEditingController religionController = TextEditingController(
+      text: student.personalInfo?.religion ?? '',
+    );
+    final TextEditingController bloodGroupController = TextEditingController(
+      text: student.personalInfo?.bloodGroup ?? '',
+    );
+    final TextEditingController admissionNumberController =
+        TextEditingController(text: student.admissionNumber ?? '');
+    final TextEditingController profileImageController = TextEditingController(
+      text: student.personalInfo?.profileImage ?? '',
+    );
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Dialog(
+              child: Container(
+                width: MediaQuery.of(context).size.width * 0.8,
+                height: MediaQuery.of(context).size.height * 0.8,
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    // Header
+                    Row(
+                      children: [
+                        const Icon(Icons.edit, color: Colors.blue),
+                        const SizedBox(width: 10),
+                        const Text(
+                          'Edit Student Profile',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue,
+                          ),
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
+                    ),
+                    const Divider(),
+
+                    // Form fields
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            // Personal Information Section
+                            _buildSectionHeader('Personal Information'),
+                            const SizedBox(height: 10),
+
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildTextField(
+                                    controller: firstNameController,
+                                    label: 'First Name',
+                                    icon: Icons.person,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: _buildTextField(
+                                    controller: lastNameController,
+                                    label: 'Last Name',
+                                    icon: Icons.person,
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            _buildTextField(
+                              controller: middleNameController,
+                              label: 'Middle Name',
+                              icon: Icons.person_outline,
+                            ),
+
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildTextField(
+                                    controller: dateOfBirthController,
+                                    label: 'Date of Birth (YYYY-MM-DD)',
+                                    icon: Icons.calendar_today,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: _buildTextField(
+                                    controller: genderController,
+                                    label: 'Gender',
+                                    icon: Icons.person_outline,
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildTextField(
+                                    controller: nationalityController,
+                                    label: 'Nationality',
+                                    icon: Icons.flag,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: _buildTextField(
+                                    controller: bloodGroupController,
+                                    label: 'Blood Group',
+                                    icon: Icons.bloodtype,
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildTextField(
+                                    controller: stateOfOriginController,
+                                    label: 'State of Origin',
+                                    icon: Icons.location_on,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: _buildTextField(
+                                    controller: localGovernmentController,
+                                    label: 'Local Government',
+                                    icon: Icons.location_city,
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            _buildTextField(
+                              controller: religionController,
+                              label: 'Religion',
+                              icon: Icons.church,
+                            ),
+
+                            const SizedBox(height: 20),
+
+                            // Academic Information Section
+                            _buildSectionHeader('Academic Information'),
+                            const SizedBox(height: 10),
+
+                            _buildTextField(
+                              controller: admissionNumberController,
+                              label: 'Admission Number',
+                              icon: Icons.badge,
+                              readOnly: true,
+                            ),
+
+                            const SizedBox(height: 20),
+
+                            // Profile Image Section
+                            _buildSectionHeader('Profile Image'),
+                            const SizedBox(height: 10),
+
+                            _buildTextField(
+                              controller: profileImageController,
+                              label: 'Profile Image URL',
+                              icon: Icons.image,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    // Action buttons
+                    const Divider(),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text('Cancel'),
+                        ),
+                        const SizedBox(width: 10),
+                        ElevatedButton(
+                          onPressed:
+                              () => _saveStudentUpdates(
+                                context,
+                                student,
+                                firstNameController.text,
+                                lastNameController.text,
+                                middleNameController.text,
+                                dateOfBirthController.text,
+                                genderController.text,
+                                nationalityController.text,
+                                stateOfOriginController.text,
+                                localGovernmentController.text,
+                                religionController.text,
+                                bloodGroupController.text,
+                                profileImageController.text,
+                              ),
+                          child: const Text('Save Changes'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Row(
+      children: [
+        Container(
+          width: 4,
+          height: 20,
+          decoration: BoxDecoration(
+            color: Colors.blue,
+            borderRadius: BorderRadius.circular(2),
           ),
-          _buildActivityItem(
-            'Attended Physics Lab',
-            '1 day ago',
-            Icons.science,
+        ),
+        const SizedBox(width: 10),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.blue,
           ),
-          _buildActivityItem(
-            'Parent Meeting Scheduled',
-            '2 days ago',
-            Icons.event,
-          ),
-          _buildActivityItem('Library Book Borrowed', '3 days ago', Icons.book),
-        ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    TextInputType? keyboardType,
+    int maxLines = 1,
+    bool readOnly = false,
+  }) {
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      maxLines: maxLines,
+      readOnly: readOnly,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        filled: readOnly,
+        fillColor: readOnly ? Colors.grey[100] : null,
       ),
     );
   }
 
-  Widget _buildActivityItem(String activity, String time, IconData icon) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: Colors.purple.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Icon(icon, size: 14, color: Colors.purple),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  activity,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                Text(
-                  time,
-                  style: TextStyle(fontSize: 10, color: Colors.grey[600]),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+  Future<void> _saveStudentUpdates(
+    BuildContext context,
+    Student student,
+    String firstName,
+    String lastName,
+    String middleName,
+    String dateOfBirth,
+    String gender,
+    String nationality,
+    String stateOfOrigin,
+    String localGovernment,
+    String religion,
+    String bloodGroup,
+    String profileImage,
+  ) async {
+    final updates = <String, dynamic>{};
+
+    // Only include fields that have been changed
+    if (firstName != (student.personalInfo?.firstName ?? '')) {
+      updates['personalInfo.firstName'] = firstName;
+    }
+    if (lastName != (student.personalInfo?.lastName ?? '')) {
+      updates['personalInfo.lastName'] = lastName;
+    }
+    if (middleName != (student.personalInfo?.middleName ?? '')) {
+      updates['personalInfo.middleName'] = middleName;
+    }
+
+    // Parse date of birth
+    if (dateOfBirth.isNotEmpty &&
+        dateOfBirth !=
+            (student.personalInfo?.dateOfBirth?.toIso8601String().split(
+                  'T',
+                )[0] ??
+                '')) {
+      try {
+        updates['personalInfo.dateOfBirth'] =
+            DateTime.parse(dateOfBirth).toIso8601String();
+      } catch (e) {
+        // Invalid date format
+      }
+    }
+
+    if (gender != (student.personalInfo?.gender ?? '')) {
+      updates['personalInfo.gender'] = gender;
+    }
+    if (nationality != (student.personalInfo?.nationality ?? '')) {
+      updates['personalInfo.nationality'] = nationality;
+    }
+    if (stateOfOrigin != (student.personalInfo?.stateOfOrigin ?? '')) {
+      updates['personalInfo.stateOfOrigin'] = stateOfOrigin;
+    }
+    if (localGovernment != (student.personalInfo?.localGovernment ?? '')) {
+      updates['personalInfo.localGovernment'] = localGovernment;
+    }
+    if (religion != (student.personalInfo?.religion ?? '')) {
+      updates['personalInfo.religion'] = religion;
+    }
+    if (bloodGroup != (student.personalInfo?.bloodGroup ?? '')) {
+      updates['personalInfo.bloodGroup'] = bloodGroup;
+    }
+    if (profileImage != (student.personalInfo?.profileImage ?? '')) {
+      updates['personalInfo.profileImage'] = profileImage;
+    }
+
+    if (updates.isEmpty) {
+      Navigator.of(context).pop();
+      return;
+    }
+
+    final success = await ref
+        .read(studentProvider.notifier)
+        .updateStudent(context, widget.studentId, updates);
+
+    if (success) {
+      Navigator.of(context).pop();
+    }
   }
 }

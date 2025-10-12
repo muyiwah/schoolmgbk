@@ -7,19 +7,19 @@ import 'package:schmgtsystem/utils/enums.dart';
 class ProfileRepo {
   final _httpService = locator<HttpService>();
 
-  Future<HTTPResponseModel> getUserProfile() async {
-    return await _httpService.runApi(
-      type: ApiRequestType.get,
-      url: "user/profile",
-    );
-  }
+  // Future<HTTPResponseModel> getUserProfile() async {
+  //   return await _httpService.runApi(
+  //     type: ApiRequestType.get,
+  //     url: "user/profile",
+  //   );
+  // }
 
-  Future<HTTPResponseModel> toggleOnlineStatus() async {
-    return await _httpService.runApi(
-      type: ApiRequestType.post,
-      url: "toggle/online",
-    );
-  }
+  // Future<HTTPResponseModel> toggleOnlineStatus() async {
+  //   return await _httpService.runApi(
+  //     type: ApiRequestType.post,
+  //     url: "toggle/online",
+  //   );
+  // }
 
   // Future<HTTPResponseModel> setPin(Map<String, dynamic> body) async {
   //   return await _httpService.runApi(

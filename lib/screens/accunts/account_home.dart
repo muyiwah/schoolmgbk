@@ -47,7 +47,7 @@ class AccountHome extends StatelessWidget {
         Expanded(
           child: _buildStatCard(
             'Total Income',
-            '\$124,580',
+            '£124,580',
             'This Term',
             Colors.green.shade100,
             Icons.trending_up,
@@ -59,7 +59,7 @@ class AccountHome extends StatelessWidget {
         Expanded(
           child: _buildStatCard(
             'Total Expenses',
-            '\$69,240',
+            '£69,240',
             'This Term',
             Colors.red.shade100,
             Icons.trending_down,
@@ -71,7 +71,7 @@ class AccountHome extends StatelessWidget {
         Expanded(
           child: _buildStatCard(
             'Salaries Due',
-            '\$45,600',
+            '£45,600',
             'This Month',
             Colors.orange.shade100,
             Icons.group,
@@ -83,7 +83,7 @@ class AccountHome extends StatelessWidget {
         Expanded(
           child: _buildStatCard(
             'Pending Fees',
-            '\$23,890',
+            '£23,890',
             'Unpaid',
             Colors.red.shade100,
             Icons.schedule,
@@ -95,7 +95,7 @@ class AccountHome extends StatelessWidget {
         Expanded(
           child: _buildStatCard(
             'Other Transactions',
-            '\$12,450',
+            '£12,450',
             'This Month',
             Colors.blue.shade100,
             Icons.receipt,
@@ -250,7 +250,7 @@ class AccountHome extends StatelessWidget {
                       reservedSize: 60,
                       getTitlesWidget: (value, meta) {
                         return Text(
-                          '\$${(value / 1000).toInt()}k',
+                          '£${(value / 1000).toInt()}k',
                           style: const TextStyle(fontSize: 10),
                         );
                       },
@@ -435,35 +435,35 @@ class AccountHome extends StatelessWidget {
         'Jun 12, 2025',
         'School Fees',
         'Grade 10 Term Fee Payment',
-        '+\$2,450',
+        '+£2,450',
         'Paid',
       ),
       TransactionData(
         'Jun 11, 2025',
         'Salaries',
         'Teacher Salary - Mathematics Dept',
-        '-\$3,200',
+        '-£3,200',
         'Pending',
       ),
       TransactionData(
         'Jun 10, 2025',
         'Supplies',
         'Laboratory Equipment Purchase',
-        '-\$1,850',
+        '-£1,850',
         'Paid',
       ),
       TransactionData(
         'Jun 09, 2025',
         'Services',
         'Internet & WiFi Monthly Bill',
-        '-\$450',
+        '-£450',
         'Overdue',
       ),
       TransactionData(
         'Jun 08, 2025',
         'School Fees',
         'Grade 12 Registration Fee',
-        '+\$1,200',
+        '+£1,200',
         'Paid',
       ),
     ];

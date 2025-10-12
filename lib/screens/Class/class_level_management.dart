@@ -610,7 +610,7 @@ class _ClassLevelManagementScreenState
           ),
           Expanded(
             flex: 2,
-            child: Container(
+            child: Container(margin: EdgeInsets.only(right: 60),
               padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: _getCategoryColor(level.category).withOpacity(0.1),
@@ -639,6 +639,7 @@ class _ClassLevelManagementScreenState
           Expanded(
             flex: 1,
             child: Container(
+              margin: EdgeInsets.only(right: 60),
               padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color:

@@ -11,9 +11,9 @@ import 'package:schmgtsystem/screens/accunts/class_payment_details.dart';
 import 'package:schmgtsystem/screens/accunts/fee_breakdown.dart';
 import 'package:schmgtsystem/screens/accunts/fee_verification.dart';
 import 'package:schmgtsystem/screens/exams/records.dart';
-import 'package:schmgtsystem/screens/Student/create_timetale.dart';
 import 'package:schmgtsystem/widgets/success_snack.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:schmgtsystem/providers/auth_state_provider.dart';
 
 // Screen imports - Class
 import 'package:schmgtsystem/screens/Class/all_table.dart';
@@ -21,6 +21,10 @@ import 'package:schmgtsystem/screens/Class/classes.dart';
 import 'package:schmgtsystem/screens/Class/single_class.dart';
 import 'package:schmgtsystem/screens/Class/class_level_management.dart';
 import 'package:schmgtsystem/screens/Class/curriculum_management_screen.dart';
+import 'package:schmgtsystem/screens/Class/uniform_management.dart';
+
+// Screen imports - Academic
+import 'package:schmgtsystem/screens/Academic/academic_settings_screen.dart';
 
 // Screen imports - Student
 import 'package:schmgtsystem/screens/Student/add_student.dart';
@@ -73,6 +77,11 @@ import 'package:schmgtsystem/screens/staff/add_staff.dart';
 import 'package:schmgtsystem/screens/staff/all_staff.dart';
 import 'package:schmgtsystem/screens/staff/teachers.dart';
 
+// Screen imports - Admin
+import 'package:schmgtsystem/screens/admin/admin_change_password_user_selection_screen.dart';
+import 'package:schmgtsystem/screens/admin/admin_update_status_user_selection_screen.dart';
+import 'package:schmgtsystem/screens/admin/payment_processing_screen.dart';
+
 // Screen imports - Inventory
 
 // Other imports
@@ -98,7 +107,6 @@ class MenuItem {
 }
 
 // Providers
-final currentUserRoleProvider = StateProvider<String>((ref) => 'admin');
 final sidebarExpandedProvider = StateProvider<bool>((ref) => true);
 final selectedMenuIndexProvider = StateProvider<int>((ref) => 0);
 
@@ -127,11 +135,10 @@ final menuItemsProvider = Provider<List<MenuItem>>((ref) {
       subItems: [
         MenuItem(title: 'All Students', icon: Icons.list, route: '/students'),
         MenuItem(title: 'Add Student', icon: Icons.add, route: '/students/add'),
-
         MenuItem(
-          title: 'Parents',
-          icon: Icons.family_restroom,
-          route: '/students/parents',
+          title: 'Assign Students',
+          icon: Icons.assignment,
+          route: '/students/assign',
         ),
         // MenuItem(
         //   title: 'Parent Transactions',
@@ -153,6 +160,24 @@ final menuItemsProvider = Provider<List<MenuItem>>((ref) {
         //   icon: Icons.check_circle,
         //   route: '/students/attendance',
         // ),
+      ],
+    ),
+    MenuItem(
+      title: 'User Management',
+      icon: Icons.admin_panel_settings,
+      route: '/user-management',
+      allowedRoles: ['admin'],
+      subItems: [
+        MenuItem(
+          title: 'Change User Password',
+          icon: Icons.lock_outline,
+          route: '/admin/change-password',
+        ),
+        MenuItem(
+          title: 'Update User Status',
+          icon: Icons.person_off_outlined,
+          route: '/admin/update-status',
+        ),
       ],
     ),
     MenuItem(
@@ -182,21 +207,44 @@ final menuItemsProvider = Provider<List<MenuItem>>((ref) {
           icon: Icons.table_chart,
           route: '/classes/curriculum-management',
         ),
-        MenuItem(
-          title: 'Assign Students',
-          icon: Icons.assignment,
-          route: '/classes/assign',
-        ),
         // MenuItem(
         //   title: 'Time Table',
         //   icon: Icons.schedule,
         //   route: '/classes/timetable',
         // ),
+        // MenuItem(
+        //   title: 'Exam Schedule',
+        //   icon: Icons.event,
+        //   route: '/classes/exam-schedule',
+        // ),
         MenuItem(
-          title: 'Exam Schedule',
-          icon: Icons.event,
-          route: '/classes/exam-schedule',
+          title: 'Uniform Management',
+          icon: Icons.checkroom,
+          route: '/classes/uniform-management',
         ),
+      ],
+    ),
+    MenuItem(
+      title: 'Academic Settings',
+      icon: Icons.school,
+      route: '/academic-settings',
+      allowedRoles: ['admin'],
+      subItems: [
+        MenuItem(
+          title: 'Academic Years',
+          icon: Icons.calendar_today,
+          route: '/academic-settings',
+        ),
+      ],
+    ),
+    MenuItem(
+      title: 'Parents',
+      icon: Icons.family_restroom,
+      route: '/parents',
+      allowedRoles: ['admin'],
+      subItems: [
+        MenuItem(title: 'All Parents', icon: Icons.list, route: '/parents'),
+        MenuItem(title: 'Add Parent', icon: Icons.add, route: '/parents/add'),
       ],
     ),
     MenuItem(
@@ -283,26 +331,26 @@ final menuItemsProvider = Provider<List<MenuItem>>((ref) {
         // ),
       ],
     ),
-    MenuItem(
-      title: 'Exams',
-      icon: Icons.quiz,
-      route: '/exams',
-      allowedRoles: ['admin', 'teacher'],
-      subItems: [
-        // MenuItem(title: 'All Exams', icon: Icons.list, route: '/exams'),
-        // MenuItem(title: 'Add Exam', icon: Icons.add, route: '/exams/add'),
-        // MenuItem(
-        //   title: 'Exam Schedule',
-        //   icon: Icons.schedule,
-        //   route: '/exams/schedule',
-        // ),
-        MenuItem(
-          title: 'Records',
-          icon: Icons.record_voice_over,
-          route: '/exams/records',
-        ),
-      ],
-    ),
+    // MenuItem(
+    //   title: 'Exams',
+    //   icon: Icons.quiz,
+    //   route: '/exams',
+    //   allowedRoles: ['admin', 'teacher'],
+    //   subItems: [
+    //     // MenuItem(title: 'All Exams', icon: Icons.list, route: '/exams'),
+    //     // MenuItem(title: 'Add Exam', icon: Icons.add, route: '/exams/add'),
+    //     // MenuItem(
+    //     //   title: 'Exam Schedule',
+    //     //   icon: Icons.schedule,
+    //     //   route: '/exams/schedule',
+    //     // ),
+    //     MenuItem(
+    //       title: 'Records',
+    //       icon: Icons.record_voice_over,
+    //       route: '/exams/records',
+    //     ),
+    //   ],
+    // ),
     MenuItem(
       title: 'Admissions',
       icon: Icons.school,
@@ -321,19 +369,19 @@ final menuItemsProvider = Provider<List<MenuItem>>((ref) {
         ),
       ],
     ),
-    MenuItem(
-      title: 'Communications',
-      icon: Icons.notifications,
-      route: '/notifications',
-      allowedRoles: ['admin'],
-      subItems: [
-        MenuItem(
-          title: 'New Notification',
-          icon: Icons.add,
-          route: '/notifications/new',
-        ),
-      ],
-    ),
+    // MenuItem(
+    //   title: 'Communications',
+    //   icon: Icons.notifications,
+    //   route: '/notifications',
+    //   allowedRoles: ['admin'],
+    //   subItems: [
+    //     MenuItem(
+    //       title: 'New Notification',
+    //       icon: Icons.add,
+    //       route: '/notifications/new',
+    //     ),
+    //   ],
+    // ),
     MenuItem(
       title: 'Promotions',
       icon: Icons.trending_up,
@@ -345,16 +393,16 @@ final menuItemsProvider = Provider<List<MenuItem>>((ref) {
           icon: Icons.manage_accounts,
           route: '/promotions/manage',
         ),
-        MenuItem(
-          title: 'Report Card',
-          icon: Icons.description,
-          route: '/promotions/report-card',
-        ),
-        MenuItem(
-          title: 'Single Report',
-          icon: Icons.description_outlined,
-          route: '/promotions/single-report',
-        ),
+        // MenuItem(
+        //   title: 'Report Card',
+        //   icon: Icons.description,
+        //   route: '/promotions/report-card',
+        // ),
+        // MenuItem(
+        //   title: 'Single Report',
+        //   icon: Icons.description_outlined,
+        //   route: '/promotions/single-report',
+        // ),
       ],
     ),
     MenuItem(
@@ -413,9 +461,20 @@ final menuItemsProvider = Provider<List<MenuItem>>((ref) {
 final router = GoRouter(
   initialLocation: '/login',
   redirect: (context, state) {
-    // Get the current user role from the provider
+    // Get the current authentication state from the provider
     final container = ProviderScope.containerOf(context);
-    final userRole = container.read(currentUserRoleProvider);
+    final authState = container.read(authStateProvider);
+    final userRole = authState.userRole;
+
+    // Always allow navigation to login page regardless of user role
+    if (state.uri.path == '/login') {
+      return null; // No redirect needed
+    }
+
+    // If user is not authenticated and trying to access protected routes, redirect to login
+    if (!authState.isAuthenticated && state.uri.path != '/login') {
+      return '/login';
+    }
 
     // If user is a parent and trying to access non-parent routes, redirect to parent dashboard
     if (userRole == 'parent' &&
@@ -479,19 +538,12 @@ final router = GoRouter(
               },
             ),
             GoRoute(
-              path: 'parents',
-              builder: (context, state) => const AllParentsScreen(),
-            ),
-            GoRoute(
-              path: 'single-parent/:parentId',
-              builder: (context, state) {
-                final parentId = state.pathParameters['parentId']!;
-                return SingleParentScreen(parentId: parentId);
-              },
-            ),
-            GoRoute(
               path: 'parent-transactions',
               builder: (context, state) => const ParentTransactionsScreen(),
+            ),
+            GoRoute(
+              path: 'assign',
+              builder: (context, state) => const AssignStudentsScreen(),
             ),
             GoRoute(
               path: 'timetable',
@@ -504,6 +556,37 @@ final router = GoRouter(
             GoRoute(
               path: 'attendance',
               builder: (context, state) => const StudentAttendanceScreen(),
+            ),
+          ],
+        ),
+
+        // Admin Change Password Route
+        GoRoute(
+          path: '/admin/change-password',
+          builder: (context, state) => const AdminChangePasswordScreen(),
+        ),
+
+        // Admin Update Status Route
+        GoRoute(
+          path: '/admin/update-status',
+          builder: (context, state) => const AdminUpdateStatusScreen(),
+        ),
+
+        // Parents Routes
+        GoRoute(
+          path: '/parents',
+          builder: (context, state) => const AllParentsScreen(),
+          routes: [
+            GoRoute(
+              path: 'add',
+              builder: (context, state) => const AddParentScreen(),
+            ),
+            GoRoute(
+              path: 'single/:parentId',
+              builder: (context, state) {
+                final parentId = state.pathParameters['parentId']!;
+                return SingleParentScreen(parentId: parentId);
+              },
             ),
           ],
         ),
@@ -541,17 +624,13 @@ final router = GoRouter(
                   ),
             ),
             GoRoute(
-              path: 'assign',
-              builder: (context, state) => const AssignStudentsScreen(),
-            ),
-            GoRoute(
               path: 'timetable',
               builder: (context, state) => const ClassTimetableScreen(),
             ),
-            GoRoute(
-              path: 'exam-schedule',
-              builder: (context, state) => const ExamScheduleScreen(),
-            ),
+            // GoRoute(
+            //   path: 'exam-schedule',
+            //   builder: (context, state) => const ExamScheduleScreen(),
+            // ),
             GoRoute(
               path: 'level-management',
               builder: (context, state) => const ClassLevelManagementScreen(),
@@ -560,7 +639,21 @@ final router = GoRouter(
               path: 'curriculum-management',
               builder: (context, state) => const CurriculumManagementScreen(),
             ),
+            GoRoute(
+              path: 'uniform-management',
+              builder:
+                  (context, state) => provider.ChangeNotifierProvider(
+                    create: (context) => ClassProvider(),
+                    child: const UniformManagementScreen(),
+                  ),
+            ),
           ],
+        ),
+
+        // Academic Settings Routes
+        GoRoute(
+          path: '/academic-settings',
+          builder: (context, state) => const AcademicSettingsScreen(),
         ),
 
         // Staff Routes
@@ -721,6 +814,47 @@ final router = GoRouter(
             GoRoute(
               path: 'fees',
               builder: (context, state) => const SchoolFeesScreen(),
+            ),
+            GoRoute(
+              path: 'payment-processing',
+              builder: (context, state) {
+                print('Payment processing route called');
+                print('Query parameters: ${state.uri.queryParameters}');
+
+                final studentId = state.uri.queryParameters['studentId'] ?? '';
+                final studentName = state.uri.queryParameters['studentName'];
+                final parentName = state.uri.queryParameters['parentName'];
+                final className = state.uri.queryParameters['className'];
+                final classLevel = state.uri.queryParameters['classLevel'];
+                final academicYear = state.uri.queryParameters['academicYear'];
+                final term = state.uri.queryParameters['term'];
+                final outstandingBalance = int.tryParse(
+                  state.uri.queryParameters['outstandingBalance'] ?? '0',
+                );
+                final paidAmount = int.tryParse(
+                  state.uri.queryParameters['paidAmount'] ?? '0',
+                );
+                final paymentStatus =
+                    state.uri.queryParameters['paymentStatus'];
+
+                print('Creating PaymentProcessingScreen with:');
+                print('Student ID: $studentId');
+                print('Student Name: $studentName');
+                print('Outstanding Balance: $outstandingBalance');
+
+                return PaymentProcessingScreen(
+                  studentId: studentId,
+                  studentName: studentName,
+                  parentName: parentName,
+                  className: className,
+                  classLevel: classLevel,
+                  currentAcademicYear: academicYear,
+                  currentTerm: term,
+                  outstandingBalance: outstandingBalance,
+                  paidAmount: paidAmount,
+                  paymentStatus: paymentStatus,
+                );
+              },
             ),
           ],
         ),
@@ -1055,71 +1189,27 @@ class PersistentHeader extends ConsumerWidget {
 
     if (segments.isEmpty) return const SizedBox.shrink();
 
-    return Row(
-      children: [
-        for (int i = 0; i < segments.length; i++) ...[
-          if (i > 0)
-            const Icon(Icons.chevron_right, size: 16, color: Colors.grey),
-          Text(
-            segments[i],
-            style: TextStyle(
-              fontSize: 14,
-              color:
-                  i == segments.length - 1 ? Colors.indigo : Colors.grey[600],
-              fontWeight:
-                  i == segments.length - 1
-                      ? FontWeight.bold
-                      : FontWeight.normal,
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          for (int i = 0; i < segments.length; i++) ...[
+            if (i > 0)
+              const Icon(Icons.chevron_right, size: 16, color: Colors.grey),
+            Text(
+              segments[i],
+              style: TextStyle(
+                fontSize: 14,
+                color:
+                    i == segments.length - 1 ? Colors.indigo : Colors.grey[600],
+                fontWeight:
+                    i == segments.length - 1
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+              ),
             ),
-          ),
+          ],
         ],
-      ],
-    );
-  }
-
-  Widget _buildRoleSelector(WidgetRef ref) {
-    final currentRole = ref.watch(currentUserRoleProvider);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey[300]!),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: DropdownButton<String>(
-        value: currentRole,
-        underline: const SizedBox.shrink(),
-        icon: const Icon(Icons.arrow_drop_down, color: Colors.grey),
-        style: const TextStyle(
-          color: Colors.black87,
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-        ),
-        items:
-            ['admin', 'teacher', 'accountant', 'parent'].map((role) {
-              return DropdownMenuItem(
-                value: role,
-                child: Text(
-                  role.toUpperCase(),
-                  style: TextStyle(
-                    color:
-                        role == 'admin'
-                            ? Colors.red
-                            : role == 'teacher'
-                            ? Colors.blue
-                            : role == 'accountant'
-                            ? Colors.green
-                            : Colors.orange,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              );
-            }).toList(),
-        onChanged: (newRole) {
-          if (newRole != null) {
-            ref.read(currentUserRoleProvider.notifier).state = newRole;
-          }
-        },
       ),
     );
   }
@@ -1139,12 +1229,11 @@ class PersistentHeader extends ConsumerWidget {
             ElevatedButton(
               onPressed: () async {
                 Navigator.of(context).pop();
-                // Clear saved credentials
+                // Clear saved credentials and auth state
                 await _clearSavedCredentials();
-                // Reset user role to default
+                // Reset authentication state
                 final container = ProviderScope.containerOf(context);
-                container.read(currentUserRoleProvider.notifier).state =
-                    'admin';
+                container.read(authStateProvider.notifier).logout();
                 // Clear user data and redirect to login
                 context.go('/login');
                 showSnackbar(context, 'Logged out successfully');
@@ -1240,7 +1329,7 @@ class AllParentsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return AllParents(
       navigateTo: (parentId) {
-        context.go('/students/single-parent/$parentId');
+        context.go('/parents/single/$parentId');
       },
     );
   }
@@ -1260,7 +1349,7 @@ class SingleParentScreen extends StatelessWidget {
     return SingleParent(
       parentId: parentId,
       navigateTo: () {
-        context.go('/students/parents');
+        context.go('/parents');
       },
       navigateTo2: () {
         context.go('/students/parent-transactions');
@@ -1323,7 +1412,7 @@ class ClassesScreen extends StatelessWidget {
         context.go('/classes/single');
       },
       navigateTo3: () {
-        context.go('/classes/assign');
+        context.go('/students/assign');
       },
     );
   }
@@ -1658,5 +1747,15 @@ class SchoolFeesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SchoolFeesDashboard();
+  }
+}
+
+class AddParentScreen extends StatelessWidget {
+  const AddParentScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    // For now, redirect to AllParentsScreen as AddParent functionality may not be implemented yet
+    return const AllParentsScreen();
   }
 }

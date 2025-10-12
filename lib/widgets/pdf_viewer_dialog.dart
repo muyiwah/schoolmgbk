@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -5,6 +7,7 @@ import 'package:pdf_render/pdf_render.dart';
 import 'package:http/http.dart' as http;
 import 'package:schmgtsystem/constants/appcolor.dart';
 import 'package:schmgtsystem/widgets/custom_toast_notification.dart';
+import 'package:schmgtsystem/utils/enums.dart';
 
 class PdfViewerDialog extends StatefulWidget {
   final String pdfUrl;
@@ -19,6 +22,7 @@ class PdfViewerDialog extends StatefulWidget {
 class _PdfViewerDialogState extends State<PdfViewerDialog> {
   bool _isLoading = true;
   bool _hasError = false;
+  bool _showFallbackOption = false;
   String _errorMessage = '';
   PdfDocument? _pdfDocument;
   int _currentPage = 0;
@@ -27,16 +31,59 @@ class _PdfViewerDialogState extends State<PdfViewerDialog> {
   @override
   void initState() {
     super.initState();
-    _loadPdf();
+    _checkPlatformSupport();
   }
 
-  Future<Uint8List> _fetchPdfData(String url) async {
-    final response = await http.get(Uri.parse(url));
-    if (response.statusCode == 200) {
-      return response.bodyBytes;
-    } else {
-      throw Exception('Failed to load PDF: ${response.statusCode}');
+  // Check if the platform supports PDF rendering
+  Future<void> _checkPlatformSupport() async {
+    try {
+      // Test with a minimal PDF data to detect platform compatibility
+      final testPdfData = Uint8List.fromList([
+        0x25, 0x50, 0x44, 0x46, // PDF header
+        0x2d, 0x31, 0x2e, 0x34, // Version
+        0x0a, // Newline
+      ]);
+
+      // Try to initialize PdfDocument to detect platform issues
+      await PdfDocument.openData(testPdfData);
+
+      // If we get here, platform should work - proceed with actual load
+      _loadPdf();
+    } catch (e) {
+      debugPrint('❌ Platform compatibility test failed: $e');
+
+      // Platform doesn't support PDF rendering - show fallback immediately
+      setState(() {
+        _isLoading = false;
+        _hasError = true;
+        _showFallbackOption = true;
+        _errorMessage =
+            'PDF preview is not supported on this platform. Please use "Open in Browser" instead.';
+      });
+
+      // Auto-prompt user to open in browser
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        if (mounted && _hasError) {
+          _handlePlatformError();
+        }
+      });
     }
+  }
+
+  // Method to handle platform incompatibility automatically
+  Future<void> _handlePlatformError() async {
+    // Show a brief message and then auto-open in browser
+    CustomToastNotification.show(
+      'Opening PDF in browser...',
+      type: ToastType.success,
+    );
+
+    // Small delay to show the message
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    // Close dialog and open in browser
+    Navigator.of(context).pop();
+    await _openInExternalApp();
   }
 
   Future<void> _loadPdf() async {
@@ -46,18 +93,69 @@ class _PdfViewerDialogState extends State<PdfViewerDialog> {
         _hasError = false;
       });
 
-      _pdfDocument = await PdfDocument.openData(
-        await _fetchPdfData(widget.pdfUrl),
-      );
-      setState(() {
-        _totalPages = _pdfDocument!.pageCount;
-        _isLoading = false;
-      });
+      debugPrint('🔄 Fetching PDF from: ${widget.pdfUrl}');
+      final response = await http
+          .get(Uri.parse(widget.pdfUrl))
+          .timeout(const Duration(seconds: 30));
+
+      debugPrint('📊 Response status: ${response.statusCode}');
+      debugPrint('📁 Content length: ${response.contentLength} bytes');
+
+      if (response.statusCode == 200) {
+        if (response.bodyBytes.isEmpty) {
+          throw Exception('PDF file is empty');
+        }
+
+        debugPrint('🚀 Loading PDF document...');
+        final pdfData = response.bodyBytes;
+
+        // Validate PDF data
+        if (pdfData.length < 100) {
+          throw Exception('PDF file appears to be corrupted or too small');
+        }
+
+        _pdfDocument = await PdfDocument.openData(pdfData);
+
+        if (_pdfDocument == null) {
+          throw Exception('Failed to parse PDF document');
+        }
+
+        setState(() {
+          _totalPages = _pdfDocument!.pageCount;
+          _isLoading = false;
+        });
+
+        debugPrint('✅ PDF loaded successfully: $_totalPages pages');
+      } else {
+        throw Exception('Failed to fetch PDF: ${response.statusCode}');
+      }
     } catch (e) {
+      debugPrint('❌ PDF Loading error: $e');
+      String errorMessage = e.toString();
+      bool isPlatformError = false;
+
+      // Simplify error messages for user and detect platform issues
+      if (errorMessage.contains('getDocument') ||
+          errorMessage.contains('PlatformException') ||
+          errorMessage.contains('Cannot read properties of undefined')) {
+        errorMessage =
+            'PDF viewer is not supported on this platform. Pleaso use "Open in Browser" instead.';
+        isPlatformError = true;
+      } else if (errorMessage.contains('Malformed PDF')) {
+        errorMessage = 'PDF file appears to be corrupted or invalid';
+      } else if (errorMessage.contains('Network error')) {
+        errorMessage =
+            'Unable to download PDF. Please check your internet connection.';
+      } else if (errorMessage.contains('timeout')) {
+        errorMessage =
+            'PDF download timed out. Please try again or use browser.';
+      }
+
       setState(() {
         _isLoading = false;
         _hasError = true;
-        _errorMessage = e.toString();
+        _showFallbackOption = isPlatformError;
+        _errorMessage = errorMessage;
       });
     }
   }

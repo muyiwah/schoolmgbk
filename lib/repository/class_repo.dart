@@ -67,6 +67,38 @@ class ClassRepo {
     );
   }
 
+  // ✅ Update fee structure
+  Future<HTTPResponseModel> updateFeeStructure(
+    String feeStructureId,
+    Map<String, dynamic> body,
+  ) async {
+    return await _httpService.runApi(
+      type: ApiRequestType.put,
+      url: "/classes/update/$feeStructureId",
+      body: body,
+    );
+  }
+
+  // ✅ Delete fee structure
+  Future<HTTPResponseModel> deleteFeeStructure(String feeStructureId) async {
+    return await _httpService.runApi(
+      type: ApiRequestType.delete,
+      url: "/classes/fee-structures/$feeStructureId",
+    );
+  }
+
+  // ✅ Set active fee structure for a class
+  Future<HTTPResponseModel> setActiveFeeStructure(
+    String classId,
+    Map<String, dynamic> body,
+  ) async {
+    return await _httpService.runApi(
+      type: ApiRequestType.put,
+      url: "/classes/$classId/active-fee-structure",
+      body: body,
+    );
+  }
+
   // ✅ Update a class fee structure
   Future<HTTPResponseModel> updateClass(
     String classId,
@@ -226,11 +258,27 @@ class ClassRepo {
     );
   }
 
+  // ✅ Get all classes statistics grouped by terms
+  Future<HTTPResponseModel> getAllTermsClassStatistics() async {
+    return await _httpService.runApi(
+      type: ApiRequestType.get,
+      url: "/classes/statistics/all-terms",
+    );
+  }
+
   // ✅ Delete class level
   Future<HTTPResponseModel> deleteClassLevel(String classId) async {
     return await _httpService.runApi(
       type: ApiRequestType.delete,
       url: "/classes/$classId",
+    );
+  }
+
+  // ✅ Get ImageKit authentication parameters for secure frontend uploads
+  Future<HTTPResponseModel> getImageKitAuth() async {
+    return await _httpService.runApi(
+      type: ApiRequestType.get,
+      url: "/classes/imagekit-auth",
     );
   }
 }

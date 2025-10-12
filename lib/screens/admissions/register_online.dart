@@ -12,6 +12,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
+import 'package:schmgtsystem/utils/academic_year_helper.dart';
 
 class StudentAdmissionForm extends ConsumerStatefulWidget {
   @override
@@ -53,7 +54,7 @@ class _StudentAdmissionFormState extends ConsumerState<StudentAdmissionForm> {
 
   // Selected values
   String _selectedGender = '';
-  String _admissionNumber = 'ADM-2025-001';
+  String _admissionNumber = 'ADM-2025-001'; // Will be updated in initState
   String? _selectedClassId;
   DateTime? _selectedDOB;
   DateTime? _selectedAdmissionDate;
@@ -65,7 +66,9 @@ class _StudentAdmissionFormState extends ConsumerState<StudentAdmissionForm> {
   @override
   void initState() {
     super.initState();
-    _academicYearController.text = '2025/2026';
+    _academicYearController.text = AcademicYearHelper.getCurrentAcademicYear(
+      ref,
+    );
     _generateAdmissionNumber();
     _loadClasses();
   }
@@ -124,8 +127,7 @@ class _StudentAdmissionFormState extends ConsumerState<StudentAdmissionForm> {
 
   void _generateAdmissionNumber() {
     setState(() {
-      _admissionNumber =
-          'ADM-2025-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}';
+      _admissionNumber = AcademicYearHelper.generateAdmissionNumber(ref);
     });
   }
 
@@ -212,7 +214,7 @@ class _StudentAdmissionFormState extends ConsumerState<StudentAdmissionForm> {
 
     try {
       // Prepare submission data
-      final studentInfo = StudentInfo(
+      final personalInfo = PersonalInfo(
         firstName: _firstNameController.text.trim(),
         middleName:
             _middleNameController.text.trim().isEmpty
@@ -221,7 +223,7 @@ class _StudentAdmissionFormState extends ConsumerState<StudentAdmissionForm> {
         lastName: _lastNameController.text.trim(),
         dateOfBirth: _selectedDOB!,
         gender: _selectedGender.toLowerCase(),
-        picture: _imageUrl,
+        profileImage: _imageUrl,
         previousSchool:
             _previousSchoolController.text.trim().isEmpty
                 ? null
@@ -229,21 +231,34 @@ class _StudentAdmissionFormState extends ConsumerState<StudentAdmissionForm> {
       );
 
       final parentInfo = ParentInfo(
-        name: _guardianNameController.text.trim(),
-        phone: _guardianPhoneController.text.trim(),
-        email: _guardianEmailController.text.trim(),
-        occupation: _guardianOccupationController.text.trim(),
-        address: _guardianAddressController.text.trim(),
+        legacy: Legacy(
+          name: _guardianNameController.text.trim(),
+          phone: _guardianPhoneController.text.trim(),
+          email: _guardianEmailController.text.trim(),
+          occupation: _guardianOccupationController.text.trim(),
+          address: _guardianAddressController.text.trim(),
+        ),
       );
 
       final academicInfo = AcademicInfo(
-        desiredClassId: _selectedClassId!,
         desiredClass: _selectedClassController.text,
         academicYear: _academicYearController.text.trim(),
       );
 
+      final contactInfo = ContactInfo(
+        address: Address(
+          streetName: _guardianAddressController.text.trim(),
+          city: '',
+          state: '',
+          country: '',
+        ),
+        phone: _guardianPhoneController.text.trim(),
+        email: _guardianEmailController.text.trim(),
+      );
+
       final submission = AdmissionSubmissionModel(
-        studentInfo: studentInfo,
+        personalInfo: personalInfo,
+        contactInfo: contactInfo,
         parentInfo: parentInfo,
         academicInfo: academicInfo,
         additionalInfo: null,
@@ -976,7 +991,6 @@ class _StudentAdmissionFormState extends ConsumerState<StudentAdmissionForm> {
             ),
 
             const SizedBox(height: 24),
-
           ],
         ),
       ),
@@ -1226,7 +1240,6 @@ class _StudentAdmissionFormState extends ConsumerState<StudentAdmissionForm> {
     );
   }
 
- 
   Widget _buildGenderField() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1250,7 +1263,6 @@ class _StudentAdmissionFormState extends ConsumerState<StudentAdmissionForm> {
             _buildRadioOption('Male'),
             const SizedBox(width: 24),
             _buildRadioOption('Female'),
-          
           ],
         ),
       ],

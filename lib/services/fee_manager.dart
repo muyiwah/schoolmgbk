@@ -167,7 +167,7 @@ class FeeManager {
       amount = getFeeAmount(feeName, feeDetails);
     }
 
-    return '₦${amount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}';
+    return '£${amount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}';
   }
 
   /// Pre-select required fees

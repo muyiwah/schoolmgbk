@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-
-
-
-
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:schmgtsystem/models/fees_paid_report_model.dart';
+import 'package:schmgtsystem/providers/fees_paid_report_provider.dart';
+import 'package:schmgtsystem/services/global_academic_year_service.dart';
+import 'package:intl/intl.dart';
 
 class PaymentRecord {
   final String parentName;
@@ -28,53 +30,127 @@ class PaymentRecord {
 
 enum PaymentStatus { paid, partial, notPaid }
 
-class SchoolFeesDashboard extends StatefulWidget {
+class SchoolFeesDashboard extends ConsumerStatefulWidget {
   const SchoolFeesDashboard({super.key});
 
   @override
-  State<SchoolFeesDashboard> createState() => _SchoolFeesDashboardState();
+  ConsumerState<SchoolFeesDashboard> createState() =>
+      _SchoolFeesDashboardState();
 }
 
-class _SchoolFeesDashboardState extends State<SchoolFeesDashboard> {
+class _SchoolFeesDashboardState extends ConsumerState<SchoolFeesDashboard> {
   final TextEditingController _searchController = TextEditingController();
-  String _selectedStatus = 'All Status';
-  String _selectedClass = 'All Classes';
-  bool _selectAll = false;
-  List<bool> _selectedRecords = List.generate(3, (index) => false);
+  final ScrollController _scrollController = ScrollController();
+  final ScrollController _tableScrollController = ScrollController();
 
-  final List<PaymentRecord> _paymentRecords = [
-    PaymentRecord(
-      parentName: 'Mrs. Adeola',
-      studentName: 'Tobi A.',
-      className: 'JSS 2',
-      amountPaid: '₦150,000',
-      balance: '₦0',
-      status: PaymentStatus.paid,
-      paymentDate: '5 Apr 2025',
-      avatarUrl: 'assets/images/avatar1.jpg',
-    ),
-    PaymentRecord(
-      parentName: 'Mr. Okeke',
-      studentName: 'Ada O.',
-      className: 'SS 1',
-      amountPaid: '₦100,000',
-      balance: '₦50,000',
-      status: PaymentStatus.partial,
-      avatarUrl: 'assets/images/avatar2.jpg',
-    ),
-    PaymentRecord(
-      parentName: 'Mrs. Musa',
-      studentName: 'Yusuf M.',
-      className: 'Pry 4',
-      amountPaid: '₦0',
-      balance: '₦120,000',
-      status: PaymentStatus.notPaid,
-      avatarUrl: 'assets/images/avatar3.jpg',
-    ),
-  ];
+  String _selectedStatus = 'all';
+  String _selectedSortBy = 'outstandingBalance';
+  String _selectedSortOrder = 'desc';
+  List<bool> _selectedRecords = [];
+  bool _showStatisticsAndFilters = true;
+  late GlobalAcademicYearService _academicYearService;
+
+  @override
+  void initState() {
+    super.initState();
+    _academicYearService = GlobalAcademicYearService();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadData();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _scrollController.dispose();
+    _tableScrollController.dispose();
+    super.dispose();
+  }
+
+  void _loadData() {
+    ref
+        .read(feesPaidReportProvider.notifier)
+        .loadFeesPaidReport(
+          paymentStatus: _selectedStatus,
+          academicYear: _academicYearService.currentAcademicYearString,
+          sortBy: _selectedSortBy,
+          sortOrder: _selectedSortOrder,
+        );
+  }
+
+  void _onSearchChanged(String value) {
+    if (value.isEmpty) {
+      _loadData();
+    } else {
+      ref
+          .read(feesPaidReportProvider.notifier)
+          .updateFilters(
+            search: value,
+            paymentStatus: _selectedStatus,
+            academicYear: _academicYearService.currentAcademicYearString,
+            sortBy: _selectedSortBy,
+            sortOrder: _selectedSortOrder,
+          );
+    }
+  }
+
+  void _onStatusChanged(String value) {
+    setState(() {
+      _selectedStatus = value.toLowerCase().replaceAll(' ', '');
+    });
+    ref
+        .read(feesPaidReportProvider.notifier)
+        .updateFilters(
+          paymentStatus: _selectedStatus,
+          academicYear: _academicYearService.currentAcademicYearString,
+          sortBy: _selectedSortBy,
+          sortOrder: _selectedSortOrder,
+        );
+  }
+
+  void _onSortChanged(String sortBy, String sortOrder) {
+    setState(() {
+      _selectedSortBy = sortBy;
+      _selectedSortOrder = sortOrder;
+    });
+    ref
+        .read(feesPaidReportProvider.notifier)
+        .updateFilters(
+          paymentStatus: _selectedStatus,
+          academicYear: _academicYearService.currentAcademicYearString,
+          sortBy: _selectedSortBy,
+          sortOrder: _selectedSortOrder,
+        );
+  }
+
+  String _formatCurrency(int amount) {
+    return '£${amount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}';
+  }
+
+  String _formatDate(DateTime? date) {
+    if (date == null) return '—';
+    return DateFormat('dd MMM yyyy').format(date);
+  }
+
+  PaymentStatus _getPaymentStatus(String status) {
+    switch (status.toLowerCase()) {
+      case 'paid':
+        return PaymentStatus.paid;
+      case 'partial':
+        return PaymentStatus.partial;
+      case 'not paid':
+      case 'unpaid':
+      case 'owing':
+        return PaymentStatus.notPaid;
+      default:
+        return PaymentStatus.notPaid;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final feesPaidReportState = ref.watch(feesPaidReportProvider);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       body: SafeArea(
@@ -84,14 +160,48 @@ class _SchoolFeesDashboardState extends State<SchoolFeesDashboard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildHeader(),
-              const SizedBox(height: 24),
-              _buildStatsCards(),
-              const SizedBox(height: 24),
-              _buildActionButtons(),
-              const SizedBox(height: 24),
-              _buildFilters(),
-              const SizedBox(height: 24),
-              Expanded(child: _buildPaymentRecords()),
+              const SizedBox(height: 32),
+
+              // Scrollable content from statistics cards onwards
+              Expanded(
+                child:
+                    _showStatisticsAndFilters
+                        ? SingleChildScrollView(
+                          controller: _scrollController,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Statistics Cards
+                              _buildStatsCards(
+                                feesPaidReportState
+                                    .feesPaidReport
+                                    ?.data
+                                    ?.statistics,
+                              ),
+                              const SizedBox(height: 24),
+
+                              // Action Buttons
+                              _buildActionButtons(),
+                              const SizedBox(height: 24),
+
+                              // Filters
+                              _buildFilters(),
+                              const SizedBox(height: 24),
+
+                              // Data Table with fixed height
+                              SizedBox(
+                                height:
+                                    MediaQuery.of(context).size.height *
+                                    0.6, // 60% of screen height
+                                child: _buildPaymentRecords(
+                                  feesPaidReportState,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                        : _buildPaymentRecords(feesPaidReportState),
+              ),
             ],
           ),
         ),
@@ -129,6 +239,47 @@ class _SchoolFeesDashboardState extends State<SchoolFeesDashboard> {
           ],
         ),
         const Spacer(),
+
+        // Toggle Statistics and Filters Button
+        ElevatedButton.icon(
+          onPressed: () {
+            setState(() {
+              _showStatisticsAndFilters = !_showStatisticsAndFilters;
+            });
+          },
+          icon: Icon(
+            _showStatisticsAndFilters ? Icons.visibility_off : Icons.visibility,
+            color:
+                _showStatisticsAndFilters
+                    ? Colors.white
+                    : const Color(0xFF64748B),
+            size: 18,
+          ),
+          label: Text(
+            _showStatisticsAndFilters ? 'Hide Cards' : 'Show Cards',
+            style: TextStyle(
+              color:
+                  _showStatisticsAndFilters
+                      ? Colors.white
+                      : const Color(0xFF64748B),
+              fontWeight: FontWeight.w500,
+              fontSize: 14,
+            ),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor:
+                _showStatisticsAndFilters
+                    ? const Color(0xFF64748B)
+                    : Colors.grey[100],
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(6),
+            ),
+            elevation: _showStatisticsAndFilters ? 2 : 0,
+          ),
+        ),
+        const SizedBox(width: 8),
+
         Stack(
           children: [
             IconButton(
@@ -168,13 +319,18 @@ class _SchoolFeesDashboardState extends State<SchoolFeesDashboard> {
     );
   }
 
-  Widget _buildStatsCards() {
+  Widget _buildStatsCards(FeesStatistics? statistics) {
+    final currentYearStats = statistics?.currentAcademicYear;
+    final currentTermStats = statistics?.currentTerm;
+
     return Row(
       children: [
         Expanded(
           child: _buildStatCard(
             'Total Paid',
-            '₦4,250,000',
+            currentYearStats?.totalPaid != null
+                ? _formatCurrency(currentYearStats!.totalPaid!)
+                : '£0',
             Colors.green,
             Icons.check_circle,
           ),
@@ -183,7 +339,9 @@ class _SchoolFeesDashboardState extends State<SchoolFeesDashboard> {
         Expanded(
           child: _buildStatCard(
             'Total Owing',
-            '₦1,750,000',
+            currentYearStats?.totalOutstanding != null
+                ? _formatCurrency(currentYearStats!.totalOutstanding!)
+                : '£0',
             Colors.red,
             Icons.error,
           ),
@@ -192,7 +350,10 @@ class _SchoolFeesDashboardState extends State<SchoolFeesDashboard> {
         Expanded(
           child: _buildStatCard(
             'Paid Rate',
-            '71%',
+            currentYearStats?.totalFees != null &&
+                    currentYearStats!.totalFees! > 0
+                ? '${((currentYearStats.totalPaid! / currentYearStats.totalFees!) * 100).toStringAsFixed(1)}%'
+                : '0%',
             Colors.blue,
             Icons.trending_up,
           ),
@@ -201,7 +362,9 @@ class _SchoolFeesDashboardState extends State<SchoolFeesDashboard> {
         Expanded(
           child: _buildStatCard(
             'Current Term',
-            '3rd Term 2024/25',
+            currentTermStats != null
+                ? '${currentTermStats.term} ${currentTermStats.year}'
+                : '${_academicYearService.currentTermString} ${_academicYearService.currentAcademicYearString}',
             Colors.purple,
             Icons.calendar_today,
           ),
@@ -209,10 +372,12 @@ class _SchoolFeesDashboardState extends State<SchoolFeesDashboard> {
         const SizedBox(width: 16),
         Expanded(
           child: _buildStatCard(
-            'Reminders Sent',
-            '35 this week',
+            'Total Students',
+            currentYearStats?.totalStudents != null
+                ? '${currentYearStats!.totalStudents}'
+                : '0',
             Colors.orange,
-            Icons.send,
+            Icons.people,
           ),
         ),
       ],
@@ -303,6 +468,7 @@ class _SchoolFeesDashboardState extends State<SchoolFeesDashboard> {
         Expanded(
           child: TextField(
             controller: _searchController,
+            onChanged: _onSearchChanged,
             decoration: InputDecoration(
               hintText: 'Search by parent or student name...',
               prefixIcon: const Icon(Icons.search),
@@ -320,39 +486,32 @@ class _SchoolFeesDashboardState extends State<SchoolFeesDashboard> {
           ),
         ),
         const SizedBox(width: 16),
-        _buildDropdown(_selectedStatus, [
-          'All Status',
-          'Paid',
-          'Partial',
-          'Not Paid',
-        ]),
+        _buildDropdown(
+          _selectedStatus,
+          ['all', 'paid', 'partial', 'unpaid'],
+          'Status',
+          _onStatusChanged,
+        ),
         const SizedBox(width: 16),
-        _buildDropdown(_selectedClass, [
-          'All Classes',
-          'JSS 1',
-          'JSS 2',
-          'JSS 3',
-          'SS 1',
-          'SS 2',
-          'SS 3',
-          'Pry 1',
-          'Pry 2',
-          'Pry 3',
-          'Pry 4',
-          'Pry 5',
-          'Pry 6',
-        ]),
+        _buildSortDropdown(),
         const SizedBox(width: 16),
         OutlinedButton.icon(
-          onPressed: () {},
-          icon: const Icon(Icons.filter_list),
-          label: const Text('More Filters'),
+          onPressed: () {
+            ref.read(feesPaidReportProvider.notifier).refreshData();
+          },
+          icon: const Icon(Icons.refresh),
+          label: const Text('Refresh'),
         ),
       ],
     );
   }
 
-  Widget _buildDropdown(String value, List<String> items) {
+  Widget _buildDropdown(
+    String value,
+    List<String> items,
+    String label,
+    Function(String) onChanged,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
@@ -363,24 +522,141 @@ class _SchoolFeesDashboardState extends State<SchoolFeesDashboard> {
       child: DropdownButton<String>(
         value: value,
         underline: const SizedBox(),
+        hint: Text(label),
         onChanged: (String? newValue) {
-          setState(() {
-            if (items.contains('All Status')) {
-              _selectedStatus = newValue!;
-            } else {
-              _selectedClass = newValue!;
-            }
-          });
+          if (newValue != null) {
+            onChanged(newValue);
+          }
         },
         items:
-            items.map<DropdownMenuItem<String>>((String value) {
-              return DropdownMenuItem<String>(value: value, child: Text(value));
+            items.map<DropdownMenuItem<String>>((String item) {
+              return DropdownMenuItem<String>(
+                value: item,
+                child: Text(
+                  item == 'all'
+                      ? 'All Status'
+                      : item == 'paid'
+                      ? 'Paid'
+                      : item == 'partial'
+                      ? 'Partial'
+                      : item == 'unpaid'
+                      ? 'Unpaid'
+                      : item,
+                ),
+              );
             }).toList(),
       ),
     );
   }
 
-  Widget _buildPaymentRecords() {
+  Widget _buildSortDropdown() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+        borderRadius: BorderRadius.circular(8),
+        color: Colors.white,
+      ),
+      child: DropdownButton<String>(
+        value: '${_selectedSortBy}_$_selectedSortOrder',
+        underline: const SizedBox(),
+        hint: const Text('Sort By'),
+        onChanged: (String? newValue) {
+          if (newValue != null) {
+            final parts = newValue.split('_');
+            if (parts.length == 2) {
+              _onSortChanged(parts[0], parts[1]);
+            }
+          }
+        },
+        items: [
+          DropdownMenuItem<String>(
+            value: 'outstandingBalance_desc',
+            child: const Text('Outstanding Balance (High to Low)'),
+          ),
+          DropdownMenuItem<String>(
+            value: 'outstandingBalance_asc',
+            child: const Text('Outstanding Balance (Low to High)'),
+          ),
+          DropdownMenuItem<String>(
+            value: 'paymentRate_desc',
+            child: const Text('Payment Rate (High to Low)'),
+          ),
+          DropdownMenuItem<String>(
+            value: 'paymentRate_asc',
+            child: const Text('Payment Rate (Low to High)'),
+          ),
+          DropdownMenuItem<String>(
+            value: 'lastPaymentDate_desc',
+            child: const Text('Last Payment (Recent)'),
+          ),
+          DropdownMenuItem<String>(
+            value: 'lastPaymentDate_asc',
+            child: const Text('Last Payment (Oldest)'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentRecords(FeesPaidReportState state) {
+    final students = state.feesPaidReport?.data?.students ?? [];
+    final pagination = state.feesPaidReport?.data?.pagination;
+
+    // Update selected records list based on current data
+    if (_selectedRecords.length != students.length) {
+      _selectedRecords = List.generate(students.length, (index) => false);
+    }
+
+    if (state.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (state.error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+            const SizedBox(height: 16),
+            Text(
+              'Error loading data',
+              style: TextStyle(fontSize: 18, color: Colors.red[300]),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              state.error!,
+              style: const TextStyle(color: Colors.grey),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                ref.read(feesPaidReportProvider.notifier).refreshData();
+              },
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (students.isEmpty) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.inbox_outlined, size: 64, color: Colors.grey),
+            SizedBox(height: 16),
+            Text(
+              'No payment records found',
+              style: TextStyle(fontSize: 18, color: Colors.grey),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -395,220 +671,444 @@ class _SchoolFeesDashboardState extends State<SchoolFeesDashboard> {
       ),
       child: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(20),
+          // Table Header
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
+              ),
+            ),
             child: Row(
               children: [
-                const Text(
-                  'Payment Records',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                const SizedBox(width: 40), // Space for checkbox column
+                const Expanded(
+                  flex: 2,
+                  child: Text(
+                    'PARENT NAME',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black54,
+                    ),
+                  ),
                 ),
-                const Spacer(),
-                TextButton(
-                  onPressed: () {
-                    setState(() {
-                      _selectAll = !_selectAll;
-                      _selectedRecords = List.generate(
-                        3,
-                        (index) => _selectAll,
-                      );
-                    });
-                  },
-                  child: const Text('Select All'),
+                const Expanded(
+                  child: Text(
+                    'STUDENT(S)',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black54,
+                    ),
+                  ),
+                ),
+                const Expanded(
+                  child: Text(
+                    'CLASS',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black54,
+                    ),
+                  ),
+                ),
+                const Expanded(
+                  child: Text(
+                    'AMOUNT PAID',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black54,
+                    ),
+                  ),
+                ),
+                const Expanded(
+                  child: Text(
+                    'BALANCE',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black54,
+                    ),
+                  ),
+                ),
+                const Expanded(
+                  child: Text(
+                    'STATUS',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black54,
+                    ),
+                  ),
+                ),
+                const Expanded(
+                  child: Text(
+                    'PAYMENT DATE',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black54,
+                    ),
+                  ),
+                ),
+                const SizedBox(
+                  width: 100,
+                  child: Text(
+                    'ACTIONS',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black54,
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
-          _buildTableHeader(),
+
+          // Table Body
           Expanded(
             child: ListView.builder(
-              itemCount: _paymentRecords.length,
+              controller: _tableScrollController,
+              itemCount: students.length,
               itemBuilder: (context, index) {
-                return _buildTableRow(_paymentRecords[index], index);
+                return _buildTableRow(students[index], index);
               },
             ),
           ),
-          _buildPagination(),
+
+          // Pagination
+          if (pagination != null) _buildPagination(pagination),
         ],
       ),
     );
   }
 
-  Widget _buildTableHeader() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      decoration: const BoxDecoration(
-        color: Color(0xFFF9FAFB),
-        border: Border(
-          top: BorderSide(color: Color(0xFFE5E7EB)),
-          bottom: BorderSide(color: Color(0xFFE5E7EB)),
-        ),
-      ),
-      child: const Row(
-        children: [
-          SizedBox(width: 40),
-          Expanded(
-            flex: 2,
-            child: Text(
-              'PARENT NAME',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF6B7280),
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              'STUDENT(S)',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF6B7280),
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              'CLASS',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF6B7280),
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              'AMOUNT PAID',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF6B7280),
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              'BALANCE',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF6B7280),
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              'STATUS',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF6B7280),
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              'PAYMENT DATE',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF6B7280),
-              ),
-            ),
-          ),
-          SizedBox(
-            width: 80,
-            child: Text(
-              'ACTIONS',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF6B7280),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _buildTableRow(StudentFeeRecord record, int index) {
+    final paymentStatus = _getPaymentStatus(record.paymentStatus ?? 'unpaid');
 
-  Widget _buildTableRow(PaymentRecord record, int index) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
       ),
       child: Row(
         children: [
-          Checkbox(
-            value: _selectedRecords[index],
-            onChanged: (bool? value) {
-              setState(() {
-                _selectedRecords[index] = value!;
-              });
-            },
+          // Checkbox
+          SizedBox(
+            width: 40,
+            child: Checkbox(
+              value:
+                  _selectedRecords.length > index
+                      ? _selectedRecords[index]
+                      : false,
+              onChanged: (bool? value) {
+                setState(() {
+                  if (_selectedRecords.length > index) {
+                    _selectedRecords[index] = value!;
+                  }
+                });
+              },
+            ),
           ),
+
+          // Parent Name
           Expanded(
             flex: 2,
             child: Row(
               children: [
                 CircleAvatar(
-                  radius: 16,
-                  backgroundColor: Colors.grey[300],
+                  radius: 20,
+                  backgroundColor: _getAvatarColor(record.parentName ?? 'U'),
                   child: Text(
-                    record.parentName[0],
-                    style: const TextStyle(fontSize: 12),
+                    (record.parentName ?? 'U')[0].toUpperCase(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  record.parentName,
-                  style: const TextStyle(fontWeight: FontWeight.w500),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        record.parentName ?? 'Unknown Parent',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 14,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (record.parentEmail != null)
+                        Text(
+                          record.parentEmail!,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
-          Expanded(child: Text(record.studentName)),
-          Expanded(child: Text(record.className)),
-          Expanded(child: Text(record.amountPaid)),
+
+          // Student Info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  record.studentName ?? 'Unknown Student',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  record.admissionNumber ?? '',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+
+          // Class Info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  record.className ?? 'Unknown Class',
+                  style: const TextStyle(fontSize: 14),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  record.classLevel ?? '',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+
+          // Amount Paid
           Expanded(
             child: Text(
-              record.balance,
+              record.paidAmount != null
+                  ? _formatCurrency(record.paidAmount!)
+                  : '£0',
+              style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+            ),
+          ),
+
+          // Balance
+          Expanded(
+            child: Text(
+              record.outstandingBalance != null
+                  ? _formatCurrency(record.outstandingBalance!)
+                  : '£0',
               style: TextStyle(
-                color: record.balance == '₦0' ? Colors.black : Colors.red,
+                color:
+                    (record.outstandingBalance ?? 0) == 0
+                        ? Colors.black
+                        : Colors.red,
                 fontWeight: FontWeight.w500,
+                fontSize: 14,
               ),
             ),
           ),
-          Expanded(child: _buildStatusBadge(record.status)),
-          Expanded(child: Text(record.paymentDate ?? '—')),
-          SizedBox(
-            width: 80,
-            child: Row(
+
+          // Status
+          Expanded(
+            child: Column(
               children: [
-                IconButton(
-                  onPressed: () {},
-                  icon: const Icon(Icons.chat_bubble_outline, size: 18),
-                  color: Colors.green,
-                ),
-                IconButton(
-                  onPressed: () {},
-                  icon: const Icon(Icons.email_outlined, size: 18),
-                  color: Colors.blue,
-                ),
-                IconButton(
-                  onPressed: () {},
-                  icon: const Icon(Icons.message_outlined, size: 18),
-                  color: Colors.purple,
-                ),
+                _buildStatusBadge(paymentStatus),
+                if (record.paymentRate != null)
+                  Text(
+                    '${record.paymentRate}%',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
               ],
             ),
+          ),
+
+          // Payment Date
+          Expanded(
+            child: Text(
+              _formatDate(record.lastPaymentDate),
+              style: const TextStyle(fontSize: 14),
+            ),
+          ),
+
+          // Actions
+          SizedBox(
+            width: 100,
+            child:
+                _shouldShowProcessButton(record)
+                    ? ElevatedButton(
+                      onPressed: () => _processPayment(record),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue[700],
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        minimumSize: const Size(0, 32),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                      child: const Text(
+                        'Process',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    )
+                    : Container(
+                      width: 100,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Center(
+                        child: Text(
+                          'Paid',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
+                    ),
           ),
         ],
       ),
     );
+  }
+
+  Color _getAvatarColor(String name) {
+    final colors = [
+      Colors.blue,
+      Colors.green,
+      Colors.orange,
+      Colors.purple,
+      Colors.red,
+      Colors.teal,
+      Colors.indigo,
+      Colors.pink,
+    ];
+    return colors[name.hashCode % colors.length];
+  }
+
+  bool _shouldShowProcessButton(StudentFeeRecord record) {
+    // Show process button only for students who haven't fully paid
+    final paymentStatus = record.paymentStatus?.toLowerCase();
+    final outstandingBalance = record.outstandingBalance ?? 0;
+
+    // Debug: Log the decision for process button
+    print('Process button check for ${record.studentName}:');
+    print(
+      '  Payment status: ${record.paymentStatus} (lowercase: $paymentStatus)',
+    );
+    print('  Outstanding balance: $outstandingBalance');
+
+    final shouldShow =
+        paymentStatus == 'unpaid' ||
+        paymentStatus == 'partial' ||
+        paymentStatus == 'not paid' ||
+        paymentStatus == 'owing' ||
+        outstandingBalance > 0;
+
+    print('  Should show process button: $shouldShow');
+
+    return shouldShow;
+  }
+
+  Future<void> _processPayment(StudentFeeRecord record) async {
+    try {
+      print('Processing payment for student: ${record.studentName}');
+      print('Student ID: ${record.id}');
+      print('Outstanding Balance: ${record.outstandingBalance}');
+
+      final uri = Uri(
+        path: '/accounts/payment-processing',
+        queryParameters: {
+          'studentId': record.id ?? '',
+          'studentName': record.studentName ?? '',
+          'parentName': record.parentName ?? '',
+          'className': record.className ?? '',
+          'academicYear': _academicYearService.currentAcademicYearString,
+          'term': _academicYearService.currentTermString,
+          'outstandingBalance': (record.outstandingBalance ?? 0).toString(),
+          'paidAmount': (record.paidAmount ?? 0).toString(),
+          'paymentStatus': record.paymentStatus ?? '',
+        },
+      );
+
+      print('Navigating to: ${uri.toString()}');
+      final result = await context.push(uri.toString());
+
+      // If payment was processed successfully, refresh the dashboard
+      if (result == true) {
+        print('Payment processed successfully, refreshing dashboard...');
+        await _refreshDashboardData();
+      }
+    } catch (e) {
+      print('Error in _processPayment: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error navigating to payment screen: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _refreshDashboardData() async {
+    try {
+      print('Refreshing dashboard data after payment processing...');
+
+      // Force refresh the fees paid report data
+      await ref
+          .read(feesPaidReportProvider.notifier)
+          .loadFeesPaidReport(
+            paymentStatus: _selectedStatus,
+            academicYear: _academicYearService.currentAcademicYearString,
+            sortBy: _selectedSortBy,
+            sortOrder: _selectedSortOrder,
+          );
+
+      print('Dashboard data refreshed successfully');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Dashboard updated with latest payment data'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error refreshing dashboard data: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error refreshing dashboard: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildStatusBadge(PaymentStatus status) {
@@ -662,33 +1162,85 @@ class _SchoolFeesDashboardState extends State<SchoolFeesDashboard> {
     );
   }
 
-  Widget _buildPagination() {
+  Widget _buildPagination(Pagination pagination) {
+    final currentPage = pagination.currentPage ?? 1;
+    final totalPages = pagination.totalPages ?? 1;
+    final totalCount = pagination.totalCount ?? 0;
+    final hasNext = pagination.hasNext ?? false;
+    final hasPrev = pagination.hasPrev ?? false;
+
+    final startRecord = ((currentPage - 1) * 20) + 1;
+    final endRecord = (currentPage * 20).clamp(0, totalCount);
+
     return Container(
       padding: const EdgeInsets.all(20),
       child: Row(
         children: [
-          const Text(
-            'Showing 1-3 of 150 records',
-            style: TextStyle(color: Color(0xFF6B7280)),
+          Text(
+            'Showing $startRecord-$endRecord of $totalCount records',
+            style: const TextStyle(color: Color(0xFF6B7280)),
           ),
           const Spacer(),
           Row(
             children: [
-              TextButton(onPressed: () {}, child: const Text('Previous')),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.blue,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: const Text('1', style: TextStyle(color: Colors.white)),
+              TextButton(
+                onPressed:
+                    hasPrev
+                        ? () {
+                          ref
+                              .read(feesPaidReportProvider.notifier)
+                              .changePage(currentPage - 1);
+                        }
+                        : null,
+                child: const Text('Previous'),
               ),
-              TextButton(onPressed: () {}, child: const Text('2')),
-              TextButton(onPressed: () {}, child: const Text('3')),
-              TextButton(onPressed: () {}, child: const Text('Next')),
+              // Show page numbers
+              ...List.generate(
+                totalPages.clamp(0, 5), // Show max 5 page numbers
+                (index) {
+                  final pageNumber = index + 1;
+                  final isCurrentPage = pageNumber == currentPage;
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child:
+                        isCurrentPage
+                            ? Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.blue,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                '$pageNumber',
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                            )
+                            : TextButton(
+                              onPressed: () {
+                                ref
+                                    .read(feesPaidReportProvider.notifier)
+                                    .changePage(pageNumber);
+                              },
+                              child: Text('$pageNumber'),
+                            ),
+                  );
+                },
+              ),
+              TextButton(
+                onPressed:
+                    hasNext
+                        ? () {
+                          ref
+                              .read(feesPaidReportProvider.notifier)
+                              .changePage(currentPage + 1);
+                        }
+                        : null,
+                child: const Text('Next'),
+              ),
             ],
           ),
         ],

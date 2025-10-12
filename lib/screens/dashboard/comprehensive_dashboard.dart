@@ -486,10 +486,10 @@
 //   }
 
 //   String _formatCurrency(dynamic amount) {
-//     if (amount == null) return '₦0';
+//     if (amount == null) return '£0';
 //     final numAmount =
 //         amount is num ? amount : double.tryParse(amount.toString()) ?? 0;
-//     return '₦${numAmount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}';
+//     return '£${numAmount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}';
 //   }
 
 //   String _formatDateTime(DateTime dateTime) {

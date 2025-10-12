@@ -16,6 +16,8 @@ class AllStudentsScreen extends ConsumerStatefulWidget {
 
 class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  final ScrollController _tableScrollController = ScrollController();
 
   // Filter states
   String _selectedClass = 'All Classes';
@@ -25,11 +27,13 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
   // Pagination for loading more students
   int _currentPage = 1;
   final int _itemsPerPage = 50; // Load 50 students per page
-  bool _hasMoreStudents = true;
   bool _isLoadingMore = false;
 
   // Flag to track if we need to reload when returning to screen
   bool _shouldReloadOnReturn = false;
+
+  // Toggle for showing/hiding statistics and filters
+  bool _showStatisticsAndFilters = true;
 
   // Get class options from ClassProvider
   List<String> _getClassOptions(ClassProvider classProvider) {
@@ -74,6 +78,10 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
   @override
   void initState() {
     super.initState();
+    _searchController.addListener(_onSearchChanged);
+    _scrollController.addListener(_onScroll);
+    _tableScrollController.addListener(_onTableScroll);
+
     // Use WidgetsBinding to defer the loading until after the build is complete
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadStudents();
@@ -118,16 +126,30 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
     List<StudentModel> filteredStudents,
     ClassProvider classProvider,
   ) {
-    if (!_hasMoreStudents) return false;
+    // Get pagination info from the current state
+    final studentState = ref.read(studentProvider);
+    final pagination = studentState.pagination;
+
+    // If no pagination info, return false
+    if (pagination == null) return false;
+
+    // Check if we have reached the total number of students
+    if (filteredStudents.length >= pagination.totalStudents) {
+      return false;
+    }
+
+    // Check if there are more pages available
+    if (!pagination.hasNext) {
+      return false;
+    }
 
     // If no class filter is applied, check if we have more students from API
     if (_selectedClass == 'All Classes') {
-      return _hasMoreStudents;
+      return pagination.hasNext;
     }
 
     // For class level filtering, we need to check if there might be more students
     // with this class level in the remaining data
-    final studentState = ref.read(studentProvider);
     final allStudents = studentState.students;
     final classIds = _getClassIdsFromLevel(_selectedClass, classProvider);
 
@@ -140,12 +162,14 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
     // If we have fewer students than expected, there might be more
     // This is a simple heuristic - if we have loaded students but fewer than expected
     // for this class level, there might be more to load
-    return _hasMoreStudents && currentCount > 0;
+    return pagination.hasNext && currentCount > 0;
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose();
+    _tableScrollController.dispose();
     super.dispose();
   }
 
@@ -171,30 +195,79 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
               _searchController.text.trim().isEmpty
                   ? null
                   : _searchController.text.trim(),
+          loadMore: loadMore,
         );
 
     if (loadMore) {
       setState(() {
         _currentPage++;
         _isLoadingMore = false;
-        // Check if we have more students to load based on pagination info
-        final studentState = ref.read(studentProvider);
-        final pagination = studentState.pagination;
-        _hasMoreStudents = pagination != null && pagination.hasNext;
       });
     } else {
       setState(() {
         _currentPage = 1;
-        // Check if we have more students to load based on pagination info
-        final studentState = ref.read(studentProvider);
-        final pagination = studentState.pagination;
-        _hasMoreStudents = pagination != null && pagination.hasNext;
       });
     }
   }
 
   Future<void> _loadMoreStudents() async {
+    // Store the current number of students before loading more
+    final currentStudentCount = ref.read(studentProvider).students.length;
+
     await _loadStudents(loadMore: true);
+
+    // After loading more students, scroll to show the newly loaded students
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_tableScrollController.hasClients) {
+        // Calculate the position to scroll to (approximately where new students start)
+        final newStudentCount = ref.read(studentProvider).students.length;
+        if (newStudentCount > currentStudentCount) {
+          // Scroll to show the newly loaded students
+          // Each student row is approximately 80 pixels high
+          final scrollPosition = (currentStudentCount * 80).toDouble();
+          _tableScrollController.animateTo(
+            scrollPosition,
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOut,
+          );
+        }
+      }
+    });
+  }
+
+  void _onScroll() {
+    // Removed automatic load more on scroll
+    // Load more is now only triggered by button click
+  }
+
+  void _onTableScroll() {
+    // When table reaches bottom, continue scrolling the main scroll view down
+    if (_tableScrollController.position.pixels >=
+        _tableScrollController.position.maxScrollExtent - 50) {
+      // If table is at bottom and main scroll can still scroll, continue scrolling
+      if (_scrollController.hasClients &&
+          _scrollController.position.pixels <
+              _scrollController.position.maxScrollExtent) {
+        _scrollController.animateTo(
+          _scrollController.position.pixels + 100,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+        );
+      }
+    }
+
+    // When table reaches top, scroll the main scroll view up to show statistics cards
+    if (_tableScrollController.position.pixels <= 50) {
+      // If table is at top and main scroll can still scroll up, continue scrolling
+      if (_scrollController.hasClients &&
+          _scrollController.position.pixels > 0) {
+        _scrollController.animateTo(
+          _scrollController.position.pixels - 100,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+        );
+      }
+    }
   }
 
   void _onSearchChanged() {
@@ -249,6 +322,47 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
                     ),
                   ],
                 ),
+                // Toggle Statistics and Filters Button
+                ElevatedButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _showStatisticsAndFilters = !_showStatisticsAndFilters;
+                    });
+                  },
+                  icon: Icon(
+                    _showStatisticsAndFilters
+                        ? Icons.visibility_off
+                        : Icons.visibility,
+                    color:
+                        _showStatisticsAndFilters
+                            ? Colors.white
+                            : Color(0xFF64748B),
+                    size: 18,
+                  ),
+                  label: Text(
+                    _showStatisticsAndFilters ? 'Hide Cards' : 'Show Cards',
+                    style: TextStyle(
+                      color:
+                          _showStatisticsAndFilters
+                              ? Colors.white
+                              : Color(0xFF64748B),
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        _showStatisticsAndFilters
+                            ? Color(0xFF64748B)
+                            : Colors.grey[100],
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    elevation: _showStatisticsAndFilters ? 2 : 0,
+                  ),
+                ),
+                SizedBox(width: 8),
                 ElevatedButton.icon(
                   onPressed: () {
                     _shouldReloadOnReturn = true;
@@ -277,64 +391,178 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
             ),
             const SizedBox(height: 32),
 
-            // Statistics Cards
-            _buildStatisticsCards(students, pagination, classOptions),
-            const SizedBox(height: 32),
+            // Scrollable content from statistics cards onwards
+            Expanded(
+              child:
+                  _showStatisticsAndFilters
+                      ? SingleChildScrollView(
+                        controller: _scrollController,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Statistics Cards
+                            _buildStatisticsCards(
+                              students,
+                              pagination,
+                              classOptions,
+                            ),
+                            const SizedBox(height: 32),
 
-            // Search and Filters
-            _buildSearchAndFilters(classOptions),
+                            // Search and Filters
+                            _buildSearchAndFilters(classOptions),
 
-            // Filter Status Indicator
-            _buildFilterStatusIndicator(),
+                            // Filter Status Indicator
+                            _buildFilterStatusIndicator(),
 
-            const SizedBox(height: 24),
+                            const SizedBox(height: 24),
 
-            // Data Table
-            Expanded(child: _buildDataTable(students, isLoading, errorMessage)),
+                            // Data Table with fixed height
+                            SizedBox(
+                              height:
+                                  MediaQuery.of(context).size.height *
+                                  0.6, // 60% of screen height
+                              child: _buildDataTable(
+                                students,
+                                isLoading,
+                                errorMessage,
+                              ),
+                            ),
 
-            // Load More Button
-            if (!isLoading &&
-                students.isNotEmpty &&
-                _hasMoreFilteredStudents(students, classState))
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Center(
-                  child: ElevatedButton.icon(
-                    onPressed: _isLoadingMore ? null : _loadMoreStudents,
-                    icon:
-                        _isLoadingMore
-                            ? SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
+                            // Load More Button or All Students Loaded Message
+                            if (!isLoading && students.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Center(
+                                  child: Column(
+                                    children: [
+                                      // Student count info
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 8,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[100],
+                                          borderRadius: BorderRadius.circular(
+                                            20,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          'Showing ${students.length} of ${pagination?.totalStudents ?? 0} students',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey[600],
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
+
+                                      // Show load more button or all loaded message
+                                      if (_hasMoreFilteredStudents(
+                                        students,
+                                        classState,
+                                      ))
+                                        // Load more button
+                                        ElevatedButton.icon(
+                                          onPressed:
+                                              _isLoadingMore
+                                                  ? null
+                                                  : _loadMoreStudents,
+                                          icon:
+                                              _isLoadingMore
+                                                  ? SizedBox(
+                                                    width: 16,
+                                                    height: 16,
+                                                    child: CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                      valueColor:
+                                                          AlwaysStoppedAnimation<
+                                                            Color
+                                                          >(Colors.white),
+                                                    ),
+                                                  )
+                                                  : Icon(Icons.add, size: 16),
+                                          label: Text(
+                                            _isLoadingMore
+                                                ? 'Loading...'
+                                                : 'Load More Students (${pagination?.currentPageStudents ?? 0} more)',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor:
+                                                AppColors.secondary,
+                                            foregroundColor: Colors.white,
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: 24,
+                                              vertical: 12,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                          ),
+                                        )
+                                      else
+                                        // All students loaded message
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 24,
+                                            vertical: 12,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.green[50],
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                            border: Border.all(
+                                              color: Colors.green[200]!,
+                                              width: 1,
+                                            ),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                Icons.check_circle,
+                                                color: Colors.green[600],
+                                                size: 20,
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                'All students loaded',
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  color: Colors.green[700],
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                            )
-                            : Icon(Icons.refresh, size: 16),
-                    label: Text(
-                      _isLoadingMore ? 'Loading...' : 'Load More Students',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
+                          ],
+                        ),
+                      )
+                      : Column(
+                        children: [
+                          // Data Table (expanded to fill space)
+                          Expanded(
+                            child: _buildDataTable(
+                              students,
+                              isLoading,
+                              errorMessage,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.secondary,
-                      foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+            ),
           ],
         ),
       ),
@@ -348,6 +576,15 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
   ) {
     return Row(
       children: [
+        Expanded(
+          child: _buildStatCard(
+            title: 'Total Students',
+            value: (pagination?.totalStudents ?? 0).toString(),
+            icon: Icons.school,
+            color: const Color(0xFF059669),
+          ),
+        ),
+        const SizedBox(width: 16),
         Expanded(
           child: _buildStatCard(
             title: 'Filtered Students',
@@ -594,6 +831,16 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
             child: Row(
               children: [
                 const Expanded(
+                  flex: 1,
+                  child: Text(
+                    'NO.',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black54,
+                    ),
+                  ),
+                ),
+                const Expanded(
                   flex: 3,
                   child: Text(
                     'STUDENT',
@@ -670,8 +917,16 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
           // Table Body
           Expanded(
             child: ListView.builder(
-              itemCount: students.length,
+              controller: _tableScrollController,
+              itemCount: students.length + (_isLoadingMore ? 1 : 0),
               itemBuilder: (context, index) {
+                // Show loading indicator at the bottom when loading more
+                if (index == students.length) {
+                  return Container(
+                    padding: const EdgeInsets.all(16),
+                    child: const Center(child: CircularProgressIndicator()),
+                  );
+                }
                 final student = students[index];
                 return Container(
                   padding: const EdgeInsets.all(16),
@@ -682,6 +937,20 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
                   ),
                   child: Row(
                     children: [
+                      // Row Number
+                      Expanded(
+                        flex: 1,
+                        child: Center(
+                          child: Text(
+                            '${index + 1}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black54,
+                            ),
+                          ),
+                        ),
+                      ),
                       // Student Info
                       Expanded(
                         flex: 3,
@@ -830,7 +1099,7 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(12),

@@ -26,30 +26,10 @@ Future<void> makePhoneCall(String phoneNumber) async {
       throw 'Could not launch $phoneNumber';
     }
   }
-  Future getUserProfile() async {
-    HTTPResponseModel res = await _profileRepo.getUserProfile();
-    EasyLoading.dismiss();
-
-    if (HTTPResponseModel.isApiCallSuccess(res)) {
-      user = UserModel.fromJson(res.data['user']);
-      notifyListeners();
-      return true;
-    }
-    return false;
-  }
+ 
 
 
-  Future<bool> toggleOnlineStatus() async {
-    HTTPResponseModel res = await _profileRepo.toggleOnlineStatus();
 
-    if (HTTPResponseModel.isApiCallSuccess(res)) {
-      // user!.online = res.data['online'];
-      // notifyListeners();
-      await getUserProfile();
-      return true;
-    }
-    return false;
-  }
 }
 
   // updateUserPushNotificationIds(
