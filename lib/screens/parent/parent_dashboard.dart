@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:schmgtsystem/providers/provider.dart';
 import 'package:schmgtsystem/models/parent_login_response_model.dart';
 import 'dart:async';
+import 'package:schmgtsystem/repository/payment_repo.dart';
+import 'package:schmgtsystem/utils/response_model.dart';
 import 'package:schmgtsystem/widgets/success_snack.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:schmgtsystem/services/global_academic_year_service.dart';
@@ -3062,10 +3064,52 @@ class _SchoolFeesPaymentPopupState extends State<SchoolFeesPaymentPopup> {
         "feeBreakdown": feeBreakdown, // Add detailed fee breakdown
       };
 
-      // Note: PaymentRepository no longer has initializePayment method
-      // This method call should be removed or replaced with appropriate alternative
-      Navigator.of(context).pop(); // Close loading dialog
-      _showErrorDialog('Payment initialization not available');
+      // Call the initialize payment endpoint
+      final paymentRepo = PaymentRepository();
+      final response = await paymentRepo.initializePayment(paymentData);
+      print(response.data);
+      // Close loading dialog
+      Navigator.of(context).pop();
+
+      if (HTTPResponseModel.isApiCallSuccess(response) &&
+          response.data != null) {
+        final data = response.data as Map<String, dynamic>;
+
+        // Debug: Print the response structure
+        print('🔍 Parent Dashboard Response: $data');
+        print('🔍 Response keys: ${data.keys.toList()}');
+
+        // Extract the payment URL from the nested data object
+        // The response structure is: {success: true, message: "...", data: {checkout_url: "..."}}
+        final dataObject = data['data'] as Map<String, dynamic>?;
+        final paymentUrl = dataObject?['checkout_url'] as String?;
+        print('🔍 Extracted payment URL: $paymentUrl');
+
+        if (paymentUrl != null && paymentUrl.isNotEmpty) {
+          // Launch the payment URL
+          await _launchPaymentUrl(paymentUrl);
+
+          // Show success message
+          showSnackbar(
+            context,
+            'Payment initialized successfully! Redirecting to payment gateway...',
+          );
+
+          // Close the payment popup
+          Navigator.of(context).pop();
+
+          // Schedule refresh after 25 seconds to fetch updated data
+          _scheduleDataRefresh();
+        } else {
+          _showErrorDialog(
+            'Payment initialization failed: No payment URL received',
+          );
+        }
+      } else {
+        _showErrorDialog(
+          'Payment initialization failed: ${response.message ?? 'Unknown error'}',
+        );
+      }
     } catch (e) {
       // Close loading dialog if it's still open
       if (Navigator.of(context).canPop()) {

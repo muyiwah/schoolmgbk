@@ -52,4 +52,32 @@ class PaymentRepository {
       return model;
     }
   }
+
+  Future<HTTPResponseModel> initializePayment(
+    Map<String, dynamic> paymentData,
+  ) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${AppConstants.kBaseUrl}/payments/stripe/initialize'),
+        headers: {
+          'Content-Type': 'application/json',
+          // TODO: Add authorization header
+          // 'Authorization': 'Bearer $token',
+        },
+        body: json.encode(paymentData),
+      );
+      print(response.body);
+      final model = HTTPResponseModel();
+      model.setSuccess = response.statusCode;
+      model.setData = json.decode(response.body);
+      model.setErrorMessage = response.body;
+      return model;
+    } catch (e) {
+      final model = HTTPResponseModel();
+      model.setSuccess = 500;
+      model.setData = null;
+      model.setErrorMessage = 'Error initializing payment: $e';
+      return model;
+    }
+  }
 }

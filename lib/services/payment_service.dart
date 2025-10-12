@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:schmgtsystem/repository/payment_repo.dart';
+import 'package:schmgtsystem/utils/response_model.dart';
 import 'package:schmgtsystem/widgets/custom_toast_notification.dart';
 
 class PaymentService {
+  static final PaymentRepository _paymentRepo = PaymentRepository();
+
   /// Initialize Stripe payment and redirect to checkout
   static Future<bool> initializeStripePayment({
     required Map<String, dynamic> paymentData,
@@ -11,10 +15,45 @@ class PaymentService {
     required VoidCallback? onClose,
   }) async {
     try {
-      // Note: PaymentRepository no longer has initializePayment method
-      // This method call should be removed or replaced with appropriate alternative
-      onError?.call('Payment initialization not available');
-      return false;
+      final response = await _paymentRepo.initializePayment(paymentData);
+
+      if (HTTPResponseModel.isApiCallSuccess(response) &&
+          response.data != null) {
+        final data = response.data as Map<String, dynamic>;
+
+        // Debug: Print the response structure
+        print('🔍 Payment Service Response: $data');
+        print('🔍 Response keys: ${data.keys.toList()}');
+
+        // Extract the payment URL from the nested data object
+        // The response structure is: {success: true, message: "...", data: {checkout_url: "..."}}
+        final dataObject = data['data'] as Map<String, dynamic>?;
+        final paymentUrl = dataObject?['checkout_url'] as String?;
+        print('🔍 Extracted payment URL: $paymentUrl');
+
+        if (paymentUrl != null && paymentUrl.isNotEmpty) {
+          // Launch the Stripe checkout URL
+          final launched = await _launchPaymentUrl(paymentUrl);
+
+          if (launched) {
+            onSuccess?.call();
+            return true;
+          } else {
+            onError?.call('Could not launch payment URL');
+            return false;
+          }
+        } else {
+          onError?.call(
+            'Payment initialization failed: No payment URL received',
+          );
+          return false;
+        }
+      } else {
+        onError?.call(
+          'Payment initialization failed: ${response.message ?? 'Unknown error'}',
+        );
+        return false;
+      }
     } catch (e) {
       onError?.call('Payment initialization error: $e');
       return false;
