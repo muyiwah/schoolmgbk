@@ -826,6 +826,7 @@ final router = GoRouter(
                 final parentName = state.uri.queryParameters['parentName'];
                 final className = state.uri.queryParameters['className'];
                 final classLevel = state.uri.queryParameters['classLevel'];
+                final classId = state.uri.queryParameters['classId'];
                 final academicYear = state.uri.queryParameters['academicYear'];
                 final term = state.uri.queryParameters['term'];
                 final outstandingBalance = int.tryParse(
@@ -840,6 +841,8 @@ final router = GoRouter(
                 print('Creating PaymentProcessingScreen with:');
                 print('Student ID: $studentId');
                 print('Student Name: $studentName');
+                print('Class ID: $classId');
+                print('Term: $term');
                 print('Outstanding Balance: $outstandingBalance');
 
                 return PaymentProcessingScreen(
@@ -848,6 +851,7 @@ final router = GoRouter(
                   parentName: parentName,
                   className: className,
                   classLevel: classLevel,
+                  classId: classId,
                   currentAcademicYear: academicYear,
                   currentTerm: term,
                   outstandingBalance: outstandingBalance,

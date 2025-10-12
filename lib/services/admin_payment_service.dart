@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:schmgtsystem/widgets/custom_toast_notification.dart';
+import 'package:schmgtsystem/repository/payment_repo.dart';
 
 /// Service for admin payment management operations
 class AdminPaymentService {
@@ -70,13 +71,6 @@ class AdminPaymentService {
         );
         return null;
       }
-
-      // Show loading indicator
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(child: CircularProgressIndicator()),
-      );
 
       // Note: adminManualPaymentUpdate method no longer exists in PaymentRepository
       // This method call should be removed or replaced with appropriate alternative
@@ -164,16 +158,8 @@ class AdminPaymentService {
         return false;
       }
 
-      // Show loading indicator
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(child: CircularProgressIndicator()),
-      );
-
       // Note: adminManualPaymentUpdate method no longer exists in PaymentRepository
       // This method call should be removed or replaced with appropriate alternative
-      Navigator.of(context).pop(); // Close loading dialog
       CustomToastNotification.show(
         'Payment entry creation not available',
         type: ToastType.error,
@@ -426,5 +412,85 @@ class AdminPaymentService {
               ) ??
               0),
     };
+  }
+
+  /// Update manual payment status
+  static Future<Map<String, dynamic>?> updateManualPaymentStatus({
+    required String studentId,
+    required String academicYear,
+    required String term,
+    required String remarks,
+    required BuildContext context,
+  }) async {
+    try {
+      // Validate required fields
+      if (studentId.isEmpty) {
+        CustomToastNotification.show(
+          'Student ID is required',
+          type: ToastType.error,
+        );
+        return null;
+      }
+
+      if (academicYear.isEmpty) {
+        CustomToastNotification.show(
+          'Academic year is required',
+          type: ToastType.error,
+        );
+        return null;
+      }
+
+      if (term.isEmpty) {
+        CustomToastNotification.show('Term is required', type: ToastType.error);
+        return null;
+      }
+
+      if (remarks.isEmpty) {
+        CustomToastNotification.show(
+          'Remarks are required',
+          type: ToastType.error,
+        );
+        return null;
+      }
+
+      // Prepare payment data
+      final paymentData = {
+        "studentId": studentId,
+        "academicYear": academicYear,
+        "term": term,
+        "remarks": remarks,
+      };
+
+      // Call the repository
+      final paymentRepo = PaymentRepository();
+      final response = await paymentRepo.updateManualPaymentStatu(paymentData);
+
+      print(
+        '🔍 AdminPaymentService: Repository response code: ${response.code}',
+      );
+      print(
+        '🔍 AdminPaymentService: Repository response data: ${response.data}',
+      );
+      print(
+        '🔍 AdminPaymentService: Repository response message: ${response.message}',
+      );
+
+      if (response.code == 200 || response.code == 201) {
+        // Don't show toast here - let the screen handle the success display
+        return response.data;
+      } else {
+        CustomToastNotification.show(
+          response.message ?? 'Failed to update payment status',
+          type: ToastType.error,
+        );
+        return null;
+      }
+    } catch (e) {
+      CustomToastNotification.show(
+        'Error updating payment status: $e',
+        type: ToastType.error,
+      );
+      return null;
+    }
   }
 }

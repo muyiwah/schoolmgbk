@@ -2,11 +2,20 @@ import 'package:schmgtsystem/services/http_service.dart';
 import 'package:schmgtsystem/utils/enums.dart';
 import 'package:schmgtsystem/utils/locator.dart';
 import 'package:schmgtsystem/utils/response_model.dart';
+import 'package:schmgtsystem/utils/constants.dart';
 
 class AuthRepo {
   final _httpService = locator<HttpService>();
 
   Future<HTTPResponseModel> login(Map<String, dynamic> body) async {
+    print('🔍 DEBUG: ===== AUTH REPO - PARENT LOGIN =====');
+    print('🔍 DEBUG: Full URL: ${AppConstants.kBaseUrl}/auth/login');
+    print('🔍 DEBUG: Method: POST');
+    print(
+      '🔍 DEBUG: This endpoint also returns payment information during login',
+    );
+    print('🔍 DEBUG: Email: ${body['email']}');
+
     return await _httpService.runApi(
       type: ApiRequestType.post,
       url: "/auth/login",

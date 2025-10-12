@@ -44,6 +44,7 @@ class _SchoolFeesDashboardState extends ConsumerState<SchoolFeesDashboard> {
   final ScrollController _tableScrollController = ScrollController();
 
   String _selectedStatus = 'all';
+  String _selectedTerm = 'Second'; // Default to current term
   String _selectedSortBy = 'outstandingBalance';
   String _selectedSortOrder = 'desc';
   List<bool> _selectedRecords = [];
@@ -54,6 +55,8 @@ class _SchoolFeesDashboardState extends ConsumerState<SchoolFeesDashboard> {
   void initState() {
     super.initState();
     _academicYearService = GlobalAcademicYearService();
+    // Set default term to current term
+    _selectedTerm = _academicYearService.currentTermString;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadData();
     });
@@ -73,6 +76,7 @@ class _SchoolFeesDashboardState extends ConsumerState<SchoolFeesDashboard> {
         .loadFeesPaidReport(
           paymentStatus: _selectedStatus,
           academicYear: _academicYearService.currentAcademicYearString,
+          term: _selectedTerm,
           sortBy: _selectedSortBy,
           sortOrder: _selectedSortOrder,
         );
@@ -88,6 +92,7 @@ class _SchoolFeesDashboardState extends ConsumerState<SchoolFeesDashboard> {
             search: value,
             paymentStatus: _selectedStatus,
             academicYear: _academicYearService.currentAcademicYearString,
+            term: _selectedTerm,
             sortBy: _selectedSortBy,
             sortOrder: _selectedSortOrder,
           );
@@ -103,6 +108,7 @@ class _SchoolFeesDashboardState extends ConsumerState<SchoolFeesDashboard> {
         .updateFilters(
           paymentStatus: _selectedStatus,
           academicYear: _academicYearService.currentAcademicYearString,
+          term: _selectedTerm,
           sortBy: _selectedSortBy,
           sortOrder: _selectedSortOrder,
         );
@@ -118,6 +124,22 @@ class _SchoolFeesDashboardState extends ConsumerState<SchoolFeesDashboard> {
         .updateFilters(
           paymentStatus: _selectedStatus,
           academicYear: _academicYearService.currentAcademicYearString,
+          term: _selectedTerm,
+          sortBy: _selectedSortBy,
+          sortOrder: _selectedSortOrder,
+        );
+  }
+
+  void _onTermChanged(String value) {
+    setState(() {
+      _selectedTerm = value;
+    });
+    ref
+        .read(feesPaidReportProvider.notifier)
+        .updateFilters(
+          paymentStatus: _selectedStatus,
+          academicYear: _academicYearService.currentAcademicYearString,
+          term: _selectedTerm,
           sortBy: _selectedSortBy,
           sortOrder: _selectedSortOrder,
         );
@@ -132,7 +154,30 @@ class _SchoolFeesDashboardState extends ConsumerState<SchoolFeesDashboard> {
     return DateFormat('dd MMM yyyy').format(date);
   }
 
-  PaymentStatus _getPaymentStatus(String status) {
+  PaymentStatus _getPaymentStatus(String status, {StudentFeeRecord? record}) {
+    // If we have the full record, use amount-based logic for more accurate status
+    if (record != null) {
+      final totalFees = record.totalFees ?? 0;
+      final paidAmount = record.paidAmount ?? 0;
+
+      // If totalFees is 0, we can't determine payment status from amounts
+      if (totalFees > 0) {
+        // Student has fully paid if paidAmount >= totalFees
+        if (paidAmount >= totalFees) {
+          return PaymentStatus.paid;
+        }
+        // Student has partially paid if paidAmount > 0 but < totalFees
+        else if (paidAmount > 0) {
+          return PaymentStatus.partial;
+        }
+        // Student hasn't paid anything
+        else {
+          return PaymentStatus.notPaid;
+        }
+      }
+    }
+
+    // Fallback to string-based status if no record or totalFees is 0
     switch (status.toLowerCase()) {
       case 'paid':
         return PaymentStatus.paid;
@@ -320,16 +365,35 @@ class _SchoolFeesDashboardState extends ConsumerState<SchoolFeesDashboard> {
   }
 
   Widget _buildStatsCards(FeesStatistics? statistics) {
-    final currentYearStats = statistics?.currentAcademicYear;
-    final currentTermStats = statistics?.currentTerm;
-
     return Row(
       children: [
         Expanded(
           child: _buildStatCard(
+            'Total Students',
+            statistics?.totalStudents != null
+                ? '${statistics!.totalStudents}'
+                : '0',
+            Colors.blue,
+            Icons.people,
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: _buildStatCard(
+            'Total Fees',
+            statistics?.totalFees != null
+                ? _formatCurrency(statistics!.totalFees!)
+                : '£0',
+            Colors.orange,
+            Icons.account_balance_wallet,
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: _buildStatCard(
             'Total Paid',
-            currentYearStats?.totalPaid != null
-                ? _formatCurrency(currentYearStats!.totalPaid!)
+            statistics?.totalPaid != null
+                ? _formatCurrency(statistics!.totalPaid!)
                 : '£0',
             Colors.green,
             Icons.check_circle,
@@ -338,46 +402,12 @@ class _SchoolFeesDashboardState extends ConsumerState<SchoolFeesDashboard> {
         const SizedBox(width: 16),
         Expanded(
           child: _buildStatCard(
-            'Total Owing',
-            currentYearStats?.totalOutstanding != null
-                ? _formatCurrency(currentYearStats!.totalOutstanding!)
+            'Outstanding',
+            statistics?.totalOutstanding != null
+                ? _formatCurrency(statistics!.totalOutstanding!)
                 : '£0',
             Colors.red,
             Icons.error,
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: _buildStatCard(
-            'Paid Rate',
-            currentYearStats?.totalFees != null &&
-                    currentYearStats!.totalFees! > 0
-                ? '${((currentYearStats.totalPaid! / currentYearStats.totalFees!) * 100).toStringAsFixed(1)}%'
-                : '0%',
-            Colors.blue,
-            Icons.trending_up,
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: _buildStatCard(
-            'Current Term',
-            currentTermStats != null
-                ? '${currentTermStats.term} ${currentTermStats.year}'
-                : '${_academicYearService.currentTermString} ${_academicYearService.currentAcademicYearString}',
-            Colors.purple,
-            Icons.calendar_today,
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: _buildStatCard(
-            'Total Students',
-            currentYearStats?.totalStudents != null
-                ? '${currentYearStats!.totalStudents}'
-                : '0',
-            Colors.orange,
-            Icons.people,
           ),
         ),
       ],
@@ -493,6 +523,13 @@ class _SchoolFeesDashboardState extends ConsumerState<SchoolFeesDashboard> {
           _onStatusChanged,
         ),
         const SizedBox(width: 16),
+        _buildDropdown(
+          _selectedTerm,
+          ['First', 'Second', 'Third'],
+          'Term',
+          _onTermChanged,
+        ),
+        const SizedBox(width: 16),
         _buildSortDropdown(),
         const SizedBox(width: 16),
         OutlinedButton.icon(
@@ -541,6 +578,12 @@ class _SchoolFeesDashboardState extends ConsumerState<SchoolFeesDashboard> {
                       ? 'Partial'
                       : item == 'unpaid'
                       ? 'Unpaid'
+                      : item == 'First'
+                      ? 'First Term'
+                      : item == 'Second'
+                      ? 'Second Term'
+                      : item == 'Third'
+                      ? 'Third Term'
                       : item,
                 ),
               );
@@ -781,7 +824,10 @@ class _SchoolFeesDashboardState extends ConsumerState<SchoolFeesDashboard> {
   }
 
   Widget _buildTableRow(StudentFeeRecord record, int index) {
-    final paymentStatus = _getPaymentStatus(record.paymentStatus ?? 'unpaid');
+    final paymentStatus = _getPaymentStatus(
+      record.paymentStatus ?? 'unpaid',
+      record: record,
+    );
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -949,7 +995,15 @@ class _SchoolFeesDashboardState extends ConsumerState<SchoolFeesDashboard> {
             child:
                 _shouldShowProcessButton(record)
                     ? ElevatedButton(
-                      onPressed: () => _processPayment(record),
+                      onPressed:
+                          () => _processPayment(record).then(() {
+                            Future.delayed(Duration(seconds: 2), () {
+                              ref
+                                  .read(feesPaidReportProvider.notifier)
+                                  .refreshData();
+                            });
+                          }),
+
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue[700],
                         foregroundColor: Colors.white,
@@ -1012,6 +1066,8 @@ class _SchoolFeesDashboardState extends ConsumerState<SchoolFeesDashboard> {
     // Show process button only for students who haven't fully paid
     final paymentStatus = record.paymentStatus?.toLowerCase();
     final outstandingBalance = record.outstandingBalance ?? 0;
+    final totalFees = record.totalFees ?? 0;
+    final paidAmount = record.paidAmount ?? 0;
 
     // Debug: Log the decision for process button
     print('Process button check for ${record.studentName}:');
@@ -1019,24 +1075,38 @@ class _SchoolFeesDashboardState extends ConsumerState<SchoolFeesDashboard> {
       '  Payment status: ${record.paymentStatus} (lowercase: $paymentStatus)',
     );
     print('  Outstanding balance: $outstandingBalance');
+    print('  Total fees: $totalFees');
+    print('  Paid amount: $paidAmount');
 
-    final shouldShow =
+    // Check if student has fully paid by comparing totalFees with paidAmount
+    final isFullyPaid = totalFees > 0 && paidAmount >= totalFees;
+
+    // Also check traditional indicators
+    final hasOutstandingBalance = outstandingBalance > 0;
+    final hasUnpaidStatus =
         paymentStatus == 'unpaid' ||
         paymentStatus == 'partial' ||
         paymentStatus == 'not paid' ||
-        paymentStatus == 'owing' ||
-        outstandingBalance > 0;
+        paymentStatus == 'owing';
 
+    // Show process button if student is not fully paid
+    final shouldShow =
+        !isFullyPaid && (hasOutstandingBalance || hasUnpaidStatus);
+
+    print('  Is fully paid (totalFees == paidAmount): $isFullyPaid');
+    print('  Has outstanding balance: $hasOutstandingBalance');
+    print('  Has unpaid status: $hasUnpaidStatus');
     print('  Should show process button: $shouldShow');
 
     return shouldShow;
   }
 
-  Future<void> _processPayment(StudentFeeRecord record) async {
+  _processPayment(StudentFeeRecord record) async {
     try {
       print('Processing payment for student: ${record.studentName}');
       print('Student ID: ${record.id}');
       print('Outstanding Balance: ${record.outstandingBalance}');
+      print('Selected Term: $_selectedTerm');
 
       final uri = Uri(
         path: '/accounts/payment-processing',
@@ -1045,8 +1115,10 @@ class _SchoolFeesDashboardState extends ConsumerState<SchoolFeesDashboard> {
           'studentName': record.studentName ?? '',
           'parentName': record.parentName ?? '',
           'className': record.className ?? '',
+          'classLevel': record.classLevel ?? '',
+          'classId': record.classId ?? '', // Add classId for fee breakdown
           'academicYear': _academicYearService.currentAcademicYearString,
-          'term': _academicYearService.currentTermString,
+          'term': _selectedTerm, // Use selected term instead of current term
           'outstandingBalance': (record.outstandingBalance ?? 0).toString(),
           'paidAmount': (record.paidAmount ?? 0).toString(),
           'paymentStatus': record.paymentStatus ?? '',
@@ -1059,16 +1131,35 @@ class _SchoolFeesDashboardState extends ConsumerState<SchoolFeesDashboard> {
       // If payment was processed successfully, refresh the dashboard
       if (result == true) {
         print('Payment processed successfully, refreshing dashboard...');
+
+        // Show loading indicator while refreshing data
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Row(
+                children: [
+                  SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  ),
+                  SizedBox(width: 16),
+                  Text('Refreshing payment data...'),
+                ],
+              ),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+
+        // Refresh data immediately
         await _refreshDashboardData();
       }
     } catch (e) {
       print('Error in _processPayment: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error navigating to payment screen: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
     }
   }
 
@@ -1076,12 +1167,13 @@ class _SchoolFeesDashboardState extends ConsumerState<SchoolFeesDashboard> {
     try {
       print('Refreshing dashboard data after payment processing...');
 
-      // Force refresh the fees paid report data
+      // Force refresh the fees paid report data with current filters
       await ref
           .read(feesPaidReportProvider.notifier)
           .loadFeesPaidReport(
             paymentStatus: _selectedStatus,
             academicYear: _academicYearService.currentAcademicYearString,
+            term: _selectedTerm,
             sortBy: _selectedSortBy,
             sortOrder: _selectedSortOrder,
           );
@@ -1091,9 +1183,15 @@ class _SchoolFeesDashboardState extends ConsumerState<SchoolFeesDashboard> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Dashboard updated with latest payment data'),
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white, size: 20),
+                SizedBox(width: 8),
+                Text('Payment data updated successfully!'),
+              ],
+            ),
             backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
+            duration: Duration(seconds: 3),
           ),
         );
       }
@@ -1102,9 +1200,15 @@ class _SchoolFeesDashboardState extends ConsumerState<SchoolFeesDashboard> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error refreshing dashboard: $e'),
+            content: Row(
+              children: [
+                const Icon(Icons.error, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Text('Error refreshing dashboard: $e'),
+              ],
+            ),
             backgroundColor: Colors.red,
-            duration: const Duration(seconds: 2),
+            duration: const Duration(seconds: 3),
           ),
         );
       }

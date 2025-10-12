@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:schmgtsystem/models/parent_login_response_model.dart';
 import 'package:schmgtsystem/repository/auth_repo.dart';
@@ -227,9 +226,21 @@ class ParentLoginProvider extends StateNotifier<ParentLoginState> {
 
       print('🔍 DEBUG: Found parent ID: $parentId');
       print('🔍 DEBUG: Fetching dashboard for parent ID: $parentId');
+      print('🔍 DEBUG: ===== CALLING PARENT DASHBOARD ENDPOINT =====');
+      print('🔍 DEBUG: Endpoint: GET /api/parents/$parentId');
+      print(
+        '🔍 DEBUG: Repository method: _parentRepo.getParentDashboard($parentId)',
+      );
 
       // Call the dashboard endpoint with parent ID
       final response = await _parentRepo.getParentDashboard(parentId);
+
+      print('🔍 DEBUG: ===== PARENT DASHBOARD ENDPOINT RESPONSE =====');
+      print('🔍 DEBUG: Response code: ${response.code}');
+      print(
+        '🔍 DEBUG: Response success: ${HTTPResponseModel.isApiCallSuccess(response)}',
+      );
+      print('🔍 DEBUG: Response message: ${response.message}');
 
       if (HTTPResponseModel.isApiCallSuccess(response)) {
         print('🔍 DEBUG: Dashboard API call successful');
@@ -314,8 +325,13 @@ class ParentLoginProvider extends StateNotifier<ParentLoginState> {
       );
 
       // Call login API
+      print('🔍 DEBUG: ===== CALLING PARENT LOGIN ENDPOINT =====');
+      print('🔍 DEBUG: Endpoint: POST /api/auth/login');
+      print('🔍 DEBUG: Repository method: _authRepo.login(loginBody)');
       print('🔍 DEBUG: Calling auth repository login method');
       final response = await _authRepo.login(loginBody);
+
+      print('🔍 DEBUG: ===== PARENT LOGIN ENDPOINT RESPONSE =====');
       print('🔍 DEBUG: Login API call completed');
       print(
         '🔍 DEBUG: Login response success: ${HTTPResponseModel.isApiCallSuccess(response)}',

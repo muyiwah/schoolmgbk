@@ -9,6 +9,8 @@ import 'package:schmgtsystem/utils/response_model.dart';
 import 'package:schmgtsystem/widgets/success_snack.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:schmgtsystem/services/global_academic_year_service.dart';
+import 'package:schmgtsystem/providers/auth_state_provider.dart';
+import 'package:go_router/go_router.dart';
 
 class ParentDashboardScreen extends ConsumerStatefulWidget {
   const ParentDashboardScreen({super.key});
@@ -101,6 +103,9 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
       );
       print('🔍 DEBUG: Parent login provider obtained');
 
+      print('🔍 DEBUG: ===== CALLING PARENT DASHBOARD ENDPOINT =====');
+      print('🔍 DEBUG: Method: parentLoginProvider.refreshDataFromDashboard()');
+      print('🔍 DEBUG: This will call: GET /api/parents/{parentId}');
       final success = await parentLoginProvider.refreshDataFromDashboard();
       print('🔍 DEBUG: Silent refresh result: $success');
 
@@ -137,6 +142,9 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
         );
       }
 
+      print('🔍 DEBUG: ===== CALLING PARENT DASHBOARD ENDPOINT =====');
+      print('🔍 DEBUG: Method: parentLoginProvider.refreshDataFromDashboard()');
+      print('🔍 DEBUG: This will call: GET /api/parents/{parentId}');
       final success = await parentLoginProvider.refreshDataFromDashboard();
       print('🔍 DEBUG: Refresh result: $success');
 
@@ -208,6 +216,27 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Check if user is actually a parent - prevent admin access
+    final authState = ref.watch(authStateProvider);
+    if (authState.userRole != 'parent') {
+      // If not a parent, redirect to appropriate dashboard
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (authState.userRole == 'admin') {
+          context.go('/dashboard');
+        } else if (authState.userRole == 'teacher') {
+          context.go('/teacher');
+        } else {
+          context.go('/login');
+        }
+      });
+
+      // Show loading while redirecting
+      return Scaffold(
+        backgroundColor: const Color(0xFFF8F9FA),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
     final parentLoginState = ref.watch(RiverpodProvider.parentLoginProvider);
     final parentLoginProvider = ref.read(
       RiverpodProvider.parentLoginProvider.notifier,
@@ -274,12 +303,16 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
         _selectedTerm = availableTerms.first;
       }
     } else {
-      // Fallback to available options
+      // Fallback to available options with safety checks
       if (availableYears.isNotEmpty) {
         _selectedAcademicYear = availableYears.first;
+      } else {
+        _selectedAcademicYear = '2024/2025'; // Default fallback
       }
       if (availableTerms.isNotEmpty) {
         _selectedTerm = availableTerms.first;
+      } else {
+        _selectedTerm = 'First'; // Default fallback
       }
     }
 
@@ -1356,13 +1389,16 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
     print('🔍 DEBUG: feeRecordDetails (nested): $feeRecordDetails');
     print('🔍 DEBUG: feeRecord: ${currentTerm?.feeRecord}');
 
-    // Check if fee structure is not set (feeRecord is null/false)
+    // Check if fee structure is not set - only check if feeDetails exists and has baseFee
+    final effectiveFeeDetails = feeDetails ?? feeRecordDetails;
     final hasNoFeeStructure =
-        currentTerm?.feeRecord == null ||
-        currentTerm?.status == 'No Fee Structure' ||
-        (feeDetails == null && feeRecordDetails == null);
+        effectiveFeeDetails == null ||
+        effectiveFeeDetails.baseFee == null ||
+        effectiveFeeDetails.baseFee == 0;
 
     print('🔍 DEBUG: Has no fee structure: $hasNoFeeStructure');
+    print('🔍 DEBUG: effectiveFeeDetails: $effectiveFeeDetails');
+    print('🔍 DEBUG: baseFee: ${effectiveFeeDetails?.baseFee}');
     print('🔍 DEBUG: Hiding outstanding balance: $hasNoFeeStructure');
 
     // Don't show outstanding balance if fee structure is not set
@@ -1371,8 +1407,7 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
       return const SizedBox.shrink();
     }
 
-    final effectiveFeeDetails = feeDetails ?? feeRecordDetails;
-    final totalFee = effectiveFeeDetails?.totalFee ?? 0;
+    final totalFee = effectiveFeeDetails.totalFee ?? 0;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -1435,20 +1470,18 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
     print('🔍 DEBUG: feeRecordDetails (nested): $feeRecordDetails');
     print('🔍 DEBUG: feeRecord: ${currentTerm?.feeRecord}');
 
-    // Check if fee structure is not set (feeRecord is null/false)
+    // Check if fee structure is not set - only check if feeDetails exists and has baseFee
+    final effectiveFeeDetails = feeDetails ?? feeRecordDetails;
     final hasNoFeeStructure =
-        currentTerm?.feeRecord == null ||
-        currentTerm?.status == 'No Fee Structure' ||
-        (feeDetails == null && feeRecordDetails == null);
+        effectiveFeeDetails == null ||
+        effectiveFeeDetails.baseFee == null ||
+        effectiveFeeDetails.baseFee == 0;
 
     print('🔍 DEBUG: Has no fee structure: $hasNoFeeStructure');
-    print('🔍 DEBUG: feeRecord is null: ${currentTerm?.feeRecord == null}');
-    print(
-      '🔍 DEBUG: status is No Fee Structure: ${currentTerm?.status == 'No Fee Structure'}',
-    );
-    print(
-      '🔍 DEBUG: both feeDetails are null: ${feeDetails == null && feeRecordDetails == null}',
-    );
+    print('🔍 DEBUG: effectiveFeeDetails: $effectiveFeeDetails');
+    print('🔍 DEBUG: baseFee: ${effectiveFeeDetails?.baseFee}');
+    print('🔍 DEBUG: feeDetails exists: ${feeDetails != null}');
+    print('🔍 DEBUG: feeRecordDetails exists: ${feeRecordDetails != null}');
 
     if (hasNoFeeStructure) {
       print('🔍 DEBUG: Showing No Fee Structure Card');
@@ -1653,13 +1686,16 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
     print('🔍 DEBUG: feeRecordDetails (nested): $feeRecordDetails');
     print('🔍 DEBUG: feeRecord: ${currentTerm?.feeRecord}');
 
-    // Check if fee structure is not set (feeRecord is null/false)
+    // Check if fee structure is not set - only check if feeDetails exists and has baseFee
+    final effectiveFeeDetails = feeDetails ?? feeRecordDetails;
     final hasNoFeeStructure =
-        currentTerm?.feeRecord == null ||
-        currentTerm?.status == 'No Fee Structure' ||
-        (feeDetails == null && feeRecordDetails == null);
+        effectiveFeeDetails == null ||
+        effectiveFeeDetails.baseFee == null ||
+        effectiveFeeDetails.baseFee == 0;
 
     print('🔍 DEBUG: Has no fee structure: $hasNoFeeStructure');
+    print('🔍 DEBUG: effectiveFeeDetails: $effectiveFeeDetails');
+    print('🔍 DEBUG: baseFee: ${effectiveFeeDetails?.baseFee}');
     print('🔍 DEBUG: Hiding payment button: $hasNoFeeStructure');
 
     // Don't show payment button if fee structure is not set
@@ -1963,13 +1999,18 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
         return false;
       }
 
-      // Check if fee structure is not set - if so, fees are NOT fully paid
+      // Check if fee structure is not set - only check if feeDetails exists and has baseFee
+      final feeDetails =
+          currentTerm.feeDetails ?? currentTerm.feeRecord?.feeDetails;
       final hasNoFeeStructure =
-          currentTerm.feeRecord == null ||
-          currentTerm.status == 'No Fee Structure';
+          feeDetails == null ||
+          feeDetails.baseFee == null ||
+          feeDetails.baseFee == 0;
 
       if (hasNoFeeStructure) {
-        print('🔍 DEBUG: No fee structure set, returning false');
+        print(
+          '🔍 DEBUG: No fee structure set (no feeDetails or baseFee), returning false',
+        );
         return false;
       }
 
@@ -2656,8 +2697,8 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
 
   void _showPaymentDialog(Child child) {
     final currentTerm = child.currentTerm;
-    final feeDetails = currentTerm?.feeRecord?.feeDetails;
-
+    final feeDetails = currentTerm?.feeDetails;
+    print('🔍 DEBUG: feeDetails: $currentTerm.');
     if (feeDetails == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -3016,20 +3057,22 @@ class _SchoolFeesPaymentPopupState extends State<SchoolFeesPaymentPopup> {
       final selectedChild = children[0]; // Use first child for now
       final studentId = selectedChild.student?.id ?? '';
       final parentId = parentLoginProvider.currentParent?.id ?? '';
+      final classId =
+          selectedChild.student?.academicInfo?.currentClass?.id ?? '';
 
-      if (studentId.isEmpty || parentId.isEmpty) {
+      if (studentId.isEmpty || parentId.isEmpty || classId.isEmpty) {
         Navigator.of(context).pop(); // Close loading dialog
-        _showErrorDialog('Student or parent information not found');
+        _showErrorDialog('Student, parent, or class information not found');
         return;
       }
 
-      // Get fee record ID
-      final feeRecordId = widget.feeRecord?.id ?? '';
-      if (feeRecordId.isEmpty) {
-        Navigator.of(context).pop(); // Close loading dialog
-        _showErrorDialog('Fee record not found');
-        return;
-      }
+      // // Get fee record ID
+      // final feeRecordId = widget.feeRecord?.id ?? '';
+      // if (feeRecordId.isEmpty) {
+      //   Navigator.of(context).pop(); // Close loading dialog
+      //   _showErrorDialog('Fee record not found');
+      //   return;
+      // }
 
       // Calculate total amount
       final totalAmount = _calculateSelectedTotal();
@@ -3046,6 +3089,7 @@ class _SchoolFeesPaymentPopupState extends State<SchoolFeesPaymentPopup> {
       final paymentData = {
         "studentId": studentId,
         "parentId": parentId,
+        "classId": classId,
         "academicYear": currentAcademicYear,
         "term": currentTerm,
         "paymentType": "Tuition",
@@ -3060,9 +3104,19 @@ class _SchoolFeesPaymentPopupState extends State<SchoolFeesPaymentPopup> {
           "accountNumber": "N/A",
           "referenceNumber": "REF${DateTime.now().millisecondsSinceEpoch}",
         },
-        "feeRecordId": feeRecordId,
+        // "feeRecordId": feeRecordId,
         "feeBreakdown": feeBreakdown, // Add detailed fee breakdown
       };
+
+      // Debug logging for payment data
+      print('🔍 DEBUG: ===== PAYMENT DATA WITH CLASS ID =====');
+      print('🔍 DEBUG: Student ID: $studentId');
+      print('🔍 DEBUG: Parent ID: $parentId');
+      print('🔍 DEBUG: Class ID: $classId');
+      print('🔍 DEBUG: Academic Year: $currentAcademicYear');
+      print('🔍 DEBUG: Term: $currentTerm');
+      print('🔍 DEBUG: Total Amount: $totalAmount');
+      print('🔍 DEBUG: ===== END PAYMENT DATA =====');
 
       // Call the initialize payment endpoint
       final paymentRepo = PaymentRepository();
@@ -3204,6 +3258,13 @@ class _SchoolFeesPaymentPopupState extends State<SchoolFeesPaymentPopup> {
       );
 
       // Call refreshData which re-authenticates using saved credentials
+      print(
+        '🔍 DEBUG: ===== CALLING PARENT LOGIN ENDPOINT FOR PAYMENT REFRESH =====',
+      );
+      print('🔍 DEBUG: Method: parentLoginProvider.refreshData()');
+      print(
+        '🔍 DEBUG: This will call: POST /api/auth/login (re-authentication)',
+      );
       final success = await parentLoginProvider.refreshData();
 
       if (success) {

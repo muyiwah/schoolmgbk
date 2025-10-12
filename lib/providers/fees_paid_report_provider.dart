@@ -17,6 +17,7 @@ class FeesPaidReportState {
   final int currentPage;
   final String paymentStatus;
   final String? academicYear;
+  final String? term;
   final String? sortBy;
   final String sortOrder;
   final String? classId;
@@ -29,6 +30,7 @@ class FeesPaidReportState {
     this.currentPage = 1,
     this.paymentStatus = 'all',
     this.academicYear,
+    this.term,
     this.sortBy,
     this.sortOrder = 'desc',
     this.classId,
@@ -42,6 +44,7 @@ class FeesPaidReportState {
     int? currentPage,
     String? paymentStatus,
     String? academicYear,
+    String? term,
     String? sortBy,
     String? sortOrder,
     String? classId,
@@ -54,6 +57,7 @@ class FeesPaidReportState {
       currentPage: currentPage ?? this.currentPage,
       paymentStatus: paymentStatus ?? this.paymentStatus,
       academicYear: academicYear ?? this.academicYear,
+      term: term ?? this.term,
       sortBy: sortBy ?? this.sortBy,
       sortOrder: sortOrder ?? this.sortOrder,
       classId: classId ?? this.classId,
@@ -71,6 +75,7 @@ class FeesPaidReportNotifier extends StateNotifier<FeesPaidReportState> {
     int? page,
     String? paymentStatus,
     String? academicYear,
+    String? term,
     String? sortBy,
     String? sortOrder,
     String? classId,
@@ -83,6 +88,7 @@ class FeesPaidReportNotifier extends StateNotifier<FeesPaidReportState> {
         page: page ?? state.currentPage,
         paymentStatus: paymentStatus ?? state.paymentStatus,
         academicYear: academicYear ?? state.academicYear,
+        term: term ?? state.term,
         sortBy: sortBy ?? state.sortBy,
         sortOrder: sortOrder ?? state.sortOrder,
         classId: classId ?? state.classId,
@@ -97,6 +103,7 @@ class FeesPaidReportNotifier extends StateNotifier<FeesPaidReportState> {
           currentPage: page ?? state.currentPage,
           paymentStatus: paymentStatus ?? state.paymentStatus,
           academicYear: academicYear ?? state.academicYear,
+          term: term ?? state.term,
           sortBy: sortBy ?? state.sortBy,
           sortOrder: sortOrder ?? state.sortOrder,
           classId: classId ?? state.classId,
@@ -122,16 +129,34 @@ class FeesPaidReportNotifier extends StateNotifier<FeesPaidReportState> {
   }
 
   Future<void> refreshData() async {
-    await loadFeesPaidReport();
+    await loadFeesPaidReport(
+      paymentStatus: state.paymentStatus,
+      academicYear: state.academicYear,
+      term: state.term,
+      sortBy: state.sortBy,
+      sortOrder: state.sortOrder,
+      classId: state.classId,
+      search: state.search,
+    );
   }
 
   Future<void> changePage(int page) async {
-    await loadFeesPaidReport(page: page);
+    await loadFeesPaidReport(
+      page: page,
+      paymentStatus: state.paymentStatus,
+      academicYear: state.academicYear,
+      term: state.term,
+      sortBy: state.sortBy,
+      sortOrder: state.sortOrder,
+      classId: state.classId,
+      search: state.search,
+    );
   }
 
   Future<void> updateFilters({
     String? paymentStatus,
     String? academicYear,
+    String? term,
     String? sortBy,
     String? sortOrder,
     String? classId,
@@ -141,6 +166,7 @@ class FeesPaidReportNotifier extends StateNotifier<FeesPaidReportState> {
       page: 1, // Reset to first page when filters change
       paymentStatus: paymentStatus,
       academicYear: academicYear,
+      term: term,
       sortBy: sortBy,
       sortOrder: sortOrder,
       classId: classId,
@@ -152,6 +178,7 @@ class FeesPaidReportNotifier extends StateNotifier<FeesPaidReportState> {
     state = state.copyWith(
       paymentStatus: 'all',
       academicYear: null,
+      term: null,
       sortBy: null,
       sortOrder: 'desc',
       classId: null,

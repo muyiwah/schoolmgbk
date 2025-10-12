@@ -79,6 +79,7 @@ class PaymentService {
   static Map<String, dynamic> createPaymentData({
     required String studentId,
     required String parentId,
+    required String classId,
     required String academicYear,
     required String term,
     required String paymentType,
@@ -93,6 +94,7 @@ class PaymentService {
     return {
       "studentId": studentId,
       "parentId": parentId,
+      "classId": classId,
       "academicYear": academicYear,
       "term": term,
       "paymentType": paymentType,

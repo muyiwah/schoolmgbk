@@ -2,6 +2,7 @@ import 'package:schmgtsystem/services/http_service.dart';
 import 'package:schmgtsystem/utils/enums.dart';
 import 'package:schmgtsystem/utils/locator.dart';
 import 'package:schmgtsystem/utils/response_model.dart';
+import 'package:schmgtsystem/utils/constants.dart';
 
 class ParentRepo {
   final _httpService = locator<HttpService>();
@@ -18,6 +19,14 @@ class ParentRepo {
   }
 
   Future<HTTPResponseModel> getParentDashboard(String parentId) async {
+    print('🔍 DEBUG: ===== PARENT REPO - GET PARENT DASHBOARD =====');
+    print('🔍 DEBUG: Parent ID: $parentId');
+    print('🔍 DEBUG: Full URL: ${AppConstants.kBaseUrl}/parents/$parentId');
+    print('🔍 DEBUG: Method: GET');
+    print(
+      '🔍 DEBUG: This endpoint provides payment information for parent dashboard',
+    );
+
     return await _httpService.runApi(
       type: ApiRequestType.get,
       url: "/parents/$parentId",

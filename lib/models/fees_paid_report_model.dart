@@ -89,6 +89,7 @@ class StudentFeeRecord {
   String? id;
   String? admissionNumber;
   String? studentName;
+  String? classId;
   String? className;
   String? classLevel;
   String? parentName;
@@ -108,6 +109,7 @@ class StudentFeeRecord {
     this.admissionNumber,
     this.studentName,
     this.className,
+    this.classId,
     this.classLevel,
     this.parentName,
     this.parentEmail,
@@ -128,19 +130,20 @@ class StudentFeeRecord {
         admissionNumber: json["admissionNumber"],
         studentName: json["studentName"],
         className: json["className"],
+        classId: json["classId"],
         classLevel: json["classLevel"],
         parentName: json["parentName"],
         parentEmail: json["parentEmail"],
         parentPhone: json["parentPhone"],
-        outstandingBalance: json["outstandingBalance"],
-        totalFees: json["totalFees"],
-        paidAmount: json["paidAmount"],
+        outstandingBalance: _parseInt(json["outstandingBalance"]),
+        totalFees: _parseInt(json["totalFees"]),
+        paidAmount: _parseInt(json["paidAmount"]),
         lastPaymentDate:
             json["lastPaymentDate"] == null
                 ? null
                 : DateTime.parse(json["lastPaymentDate"]),
         paymentStatus: json["paymentStatus"],
-        paymentRate: json["paymentRate"],
+        paymentRate: _parseInt(json["paymentRate"]),
         academicYear: json["academicYear"],
         term: json["term"],
       );
@@ -150,6 +153,7 @@ class StudentFeeRecord {
     "admissionNumber": admissionNumber,
     "studentName": studentName,
     "className": className,
+    "classId": classId,
     "classLevel": classLevel,
     "parentName": parentName,
     "parentEmail": parentEmail,
@@ -166,25 +170,42 @@ class StudentFeeRecord {
 }
 
 class FeesStatistics {
-  AcademicYearStats? currentAcademicYear;
-  TermStats? currentTerm;
+  int? totalStudents;
+  int? totalFees;
+  int? totalPaid;
+  int? totalOutstanding;
+  int? paidStudents;
+  int? owingStudents;
+  int? partialStudents;
 
-  FeesStatistics({this.currentAcademicYear, this.currentTerm});
+  FeesStatistics({
+    this.totalStudents,
+    this.totalFees,
+    this.totalPaid,
+    this.totalOutstanding,
+    this.paidStudents,
+    this.owingStudents,
+    this.partialStudents,
+  });
 
   factory FeesStatistics.fromJson(Map<String, dynamic> json) => FeesStatistics(
-    currentAcademicYear:
-        json["currentAcademicYear"] == null
-            ? null
-            : AcademicYearStats.fromJson(json["currentAcademicYear"]),
-    currentTerm:
-        json["currentTerm"] == null
-            ? null
-            : TermStats.fromJson(json["currentTerm"]),
+    totalStudents: _parseInt(json["totalStudents"]),
+    totalFees: _parseInt(json["totalFees"]),
+    totalPaid: _parseInt(json["totalPaid"]),
+    totalOutstanding: _parseInt(json["totalOutstanding"]),
+    paidStudents: _parseInt(json["paidStudents"]),
+    owingStudents: _parseInt(json["owingStudents"]),
+    partialStudents: _parseInt(json["partialStudents"]),
   );
 
   Map<String, dynamic> toJson() => {
-    "currentAcademicYear": currentAcademicYear?.toJson(),
-    "currentTerm": currentTerm?.toJson(),
+    "totalStudents": totalStudents,
+    "totalFees": totalFees,
+    "totalPaid": totalPaid,
+    "totalOutstanding": totalOutstanding,
+    "paidStudents": paidStudents,
+    "owingStudents": owingStudents,
+    "partialStudents": partialStudents,
   };
 }
 
@@ -289,9 +310,9 @@ class Pagination {
   });
 
   factory Pagination.fromJson(Map<String, dynamic> json) => Pagination(
-    currentPage: json["currentPage"],
-    totalPages: json["totalPages"],
-    totalCount: json["totalCount"],
+    currentPage: _parseInt(json["currentPage"]),
+    totalPages: _parseInt(json["totalPages"]),
+    totalCount: _parseInt(json["totalCount"]),
     hasNext: json["hasNext"],
     hasPrev: json["hasPrev"],
   );
@@ -343,4 +364,13 @@ class FeesFilters {
     "term": term,
     "search": search,
   };
+}
+
+// Helper function for safe integer parsing
+int? _parseInt(dynamic value) {
+  if (value == null) return null;
+  if (value is int) return value;
+  if (value is String) return int.tryParse(value);
+  if (value is double) return value.toInt();
+  return null;
 }
