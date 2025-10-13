@@ -26,7 +26,7 @@ enum StorageType { cloudinary, imagekit }
 
 class _CurriculumManagementScreenState
     extends ConsumerState<CurriculumManagementScreen> {
-  StorageType _selectedStorage = StorageType.cloudinary;
+  StorageType _selectedStorage = StorageType.imagekit;
   final ClassRepo _classRepo = locator<ClassRepo>();
 
   @override
@@ -364,150 +364,150 @@ class _CurriculumManagementScreenState
             const SizedBox(height: 32),
 
             // Storage Selection
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Row(
-                    children: [
-                      Icon(Icons.cloud_upload, color: Colors.blue, size: 24),
-                      SizedBox(width: 12),
-                      Text(
-                        'Storage Preference',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1F2937),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Choose your preferred storage service for curriculum uploads:',
-                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: RadioListTile<StorageType>(
-                          title: const Text(
-                            'Cloudinary',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          subtitle: const Text(
-                            'Fast uploads with global CDN',
-                            style: TextStyle(fontSize: 12),
-                          ),
-                          value: StorageType.cloudinary,
-                          groupValue: _selectedStorage,
-                          onChanged: (StorageType? value) {
-                            if (value != null) {
-                              setState(() {
-                                _selectedStorage = value;
-                              });
-                            }
-                          },
-                          contentPadding: EdgeInsets.zero,
-                          activeColor: Colors.blue,
-                        ),
-                      ),
-                      const SizedBox(width: 20),
-                      Expanded(
-                        child: RadioListTile<StorageType>(
-                          title: const Text(
-                            'ImageKit',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          subtitle: const Text(
-                            'Optimized media delivery',
-                            style: TextStyle(fontSize: 12),
-                          ),
-                          value: StorageType.imagekit,
-                          groupValue: _selectedStorage,
-                          onChanged: (StorageType? value) {
-                            if (value != null) {
-                              setState(() {
-                                _selectedStorage = value;
-                              });
-                            }
-                          },
-                          contentPadding: EdgeInsets.zero,
-                          activeColor: Colors.green,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color:
-                          _selectedStorage == StorageType.cloudinary
-                              ? Colors.blue.withOpacity(0.1)
-                              : Colors.green.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color:
-                            _selectedStorage == StorageType.cloudinary
-                                ? Colors.blue.withOpacity(0.3)
-                                : Colors.green.withOpacity(0.3),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          _selectedStorage == StorageType.cloudinary
-                              ? Icons.cloud_upload
-                              : Icons.image,
-                          color:
-                              _selectedStorage == StorageType.cloudinary
-                                  ? Colors.blue
-                                  : Colors.green,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            _selectedStorage == StorageType.cloudinary
-                                ? 'Files will be uploaded to Cloudinary with automatic optimization and CDN delivery.'
-                                : 'Files will be uploaded to ImageKit with automatic optimization and global delivery.',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color:
-                                  _selectedStorage == StorageType.cloudinary
-                                      ? Colors.blue[700]
-                                      : Colors.green[700],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            // Container(
+            //   padding: const EdgeInsets.all(20),
+            //   decoration: BoxDecoration(
+            //     color: Colors.red,
+            //     borderRadius: BorderRadius.circular(12),
+            //     boxShadow: [
+            //       BoxShadow(
+            //         color: Colors.black.withOpacity(0.05),
+            //         blurRadius: 10,
+            //         offset: const Offset(0, 2),
+            //       ),
+            //     ],
+            //   ),
+            //   child: Column(
+            //     crossAxisAlignment: CrossAxisAlignment.start,
+            //     children: [
+            //       const Row(
+            //         children: [
+            //           Icon(Icons.cloud_upload, color: Colors.blue, size: 24),
+            //           SizedBox(width: 12),
+            //           Text(
+            //             'Storage Preference',
+            //             style: TextStyle(
+            //               fontSize: 18,
+            //               fontWeight: FontWeight.bold,
+            //               color: Color(0xFF1F2937),
+            //             ),
+            //           ),
+            //         ],
+            //       ),
+            //       const SizedBox(height: 16),
+            //       Text(
+            //         'Choose your preferred storage service for curriculum uploads:',
+            //         style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            //       ),
+            //       const SizedBox(height: 20),
+            //       Row(
+            //         children: [
+            //           Expanded(
+            //             child: RadioListTile<StorageType>(
+            //               title: const Text(
+            //                 'Cloudinary',
+            //                 style: TextStyle(
+            //                   fontSize: 16,
+            //                   fontWeight: FontWeight.w500,
+            //                 ),
+            //               ),
+            //               subtitle: const Text(
+            //                 'Fast uploads with global CDN',
+            //                 style: TextStyle(fontSize: 12),
+            //               ),
+            //               value: StorageType.cloudinary,
+            //               groupValue: _selectedStorage,
+            //               onChanged: (StorageType? value) {
+            //                 if (value != null) {
+            //                   setState(() {
+            //                     _selectedStorage = value;
+            //                   });
+            //                 }
+            //               },
+            //               contentPadding: EdgeInsets.zero,
+            //               activeColor: Colors.blue,
+            //             ),
+            //           ),
+            //           const SizedBox(width: 20),
+            //           Expanded(
+            //             child: RadioListTile<StorageType>(
+            //               title: const Text(
+            //                 'ImageKit',
+            //                 style: TextStyle(
+            //                   fontSize: 16,
+            //                   fontWeight: FontWeight.w500,
+            //                 ),
+            //               ),
+            //               subtitle: const Text(
+            //                 'Optimized media delivery',
+            //                 style: TextStyle(fontSize: 12),
+            //               ),
+            //               value: StorageType.imagekit,
+            //               groupValue: _selectedStorage,
+            //               onChanged: (StorageType? value) {
+            //                 if (value != null) {
+            //                   setState(() {
+            //                     _selectedStorage = value;
+            //                   });
+            //                 }
+            //               },
+            //               contentPadding: EdgeInsets.zero,
+            //               activeColor: Colors.green,
+            //             ),
+            //           ),
+            //         ],
+            //       ),
+            //       const SizedBox(height: 12),
+            //       Container(
+            //         padding: const EdgeInsets.all(12),
+            //         decoration: BoxDecoration(
+            //           color:
+            //               _selectedStorage == StorageType.cloudinary
+            //                   ? Colors.blue.withOpacity(0.1)
+            //                   : Colors.green.withOpacity(0.1),
+            //           borderRadius: BorderRadius.circular(8),
+            //           border: Border.all(
+            //             color:
+            //                 _selectedStorage == StorageType.cloudinary
+            //                     ? Colors.blue.withOpacity(0.3)
+            //                     : Colors.green.withOpacity(0.3),
+            //           ),
+            //         ),
+            //         child: Row(
+            //           children: [
+            //             Icon(
+            //               _selectedStorage == StorageType.cloudinary
+            //                   ? Icons.cloud_upload
+            //                   : Icons.image,
+            //               color:
+            //                   _selectedStorage == StorageType.cloudinary
+            //                       ? Colors.blue
+            //                       : Colors.green,
+            //               size: 20,
+            //             ),
+            //             const SizedBox(width: 8),
+            //             Expanded(
+            //               child: Text(
+            //                 _selectedStorage == StorageType.cloudinary
+            //                     ? 'Files will be uploaded to Cloudinary with automatic optimization and CDN delivery.'
+            //                     : 'Files will be uploaded to ImageKit with automatic optimization and global delivery.',
+            //                 style: TextStyle(
+            //                   fontSize: 12,
+            //                   color:
+            //                       _selectedStorage == StorageType.cloudinary
+            //                           ? Colors.blue[700]
+            //                           : Colors.green[700],
+            //                 ),
+            //               ),
+            //             ),
+            //           ],
+            //         ),
+            //       ),
+            //     ],
+            //   ),
+            // ),
 
-            const SizedBox(height: 32),
+            // const SizedBox(height: 32),
 
             // Classes Grid
             if (classes.isEmpty)

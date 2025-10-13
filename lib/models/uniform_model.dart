@@ -1,59 +1,135 @@
 class UniformModel {
   final String day;
   final String uniform;
+  final String id;
 
-  UniformModel({required this.day, required this.uniform});
+  UniformModel({required this.day, required this.uniform, this.id = ''});
+
+  int get dayColor {
+    switch (day.toLowerCase()) {
+      case 'monday':
+        return 0xFF2196F3; // Blue
+      case 'tuesday':
+        return 0xFF4CAF50; // Green
+      case 'wednesday':
+        return 0xFFFF9800; // Orange
+      case 'thursday':
+        return 0xFF9C27B0; // Purple
+      case 'friday':
+        return 0xFFF44336; // Red
+      case 'saturday':
+        return 0xFF607D8B; // Blue Grey
+      case 'sunday':
+        return 0xFF795548; // Brown
+      default:
+        return 0xFF9E9E9E; // Grey
+    }
+  }
+
+  String get dayAbbreviation {
+    switch (day.toLowerCase()) {
+      case 'monday':
+        return 'MON';
+      case 'tuesday':
+        return 'TUE';
+      case 'wednesday':
+        return 'WED';
+      case 'thursday':
+        return 'THU';
+      case 'friday':
+        return 'FRI';
+      case 'saturday':
+        return 'SAT';
+      case 'sunday':
+        return 'SUN';
+      default:
+        return day.substring(0, 3).toUpperCase();
+    }
+  }
 
   factory UniformModel.fromJson(Map<String, dynamic> json) {
-    return UniformModel(day: json['day'] ?? '', uniform: json['uniform'] ?? '');
+    return UniformModel(
+      day: json['day'] ?? '',
+      uniform: json['uniform'] ?? '',
+      id: json['id'] ?? json['_id'] ?? '',
+    );
   }
 
   Map<String, dynamic> toJson() {
-    return {'day': day, 'uniform': uniform};
+    return {'day': day, 'uniform': uniform, 'id': id};
+  }
+}
+
+class UniformResponseModel {
+  final bool success;
+  final List<UniformModel> uniforms;
+
+  UniformResponseModel({required this.success, required this.uniforms});
+
+  factory UniformResponseModel.fromJson(Map<String, dynamic> json) {
+    return UniformResponseModel(
+      success: json['success'] ?? false,
+      uniforms:
+          (json['data'] as List<dynamic>?)
+              ?.map(
+                (item) => UniformModel.fromJson(item as Map<String, dynamic>),
+              )
+              .toList() ??
+          [],
+    );
   }
 
-  // Helper method to get day abbreviation
-  String get dayAbbreviation {
-    switch (day) {
-      case 'Monday':
-        return 'Mon';
-      case 'Tuesday':
-        return 'Tue';
-      case 'Wednesday':
-        return 'Wed';
-      case 'Thursday':
-        return 'Thu';
-      case 'Friday':
-        return 'Fri';
-      case 'Saturday':
-        return 'Sat';
-      case 'Sunday':
-        return 'Sun';
-      default:
-        return day;
-    }
+  Map<String, dynamic> toJson() {
+    return {
+      'success': success,
+      'data': uniforms.map((uniform) => uniform.toJson()).toList(),
+    };
+  }
+}
+
+class ClassWithUniforms {
+  final String id;
+  final String name;
+  final String level;
+  final String academicYear;
+  final List<UniformModel> uniforms;
+  final int uniformsCount;
+
+  ClassWithUniforms({
+    required this.id,
+    required this.name,
+    required this.level,
+    required this.academicYear,
+    required this.uniforms,
+    required this.uniformsCount,
+  });
+
+  factory ClassWithUniforms.fromJson(Map<String, dynamic> json) {
+    return ClassWithUniforms(
+      id: json['id'] ?? json['_id'] ?? '',
+      name: json['name'] ?? '',
+      level: json['level'] ?? '',
+      academicYear: json['academicYear'] ?? '',
+      uniforms:
+          (json['uniforms'] as List<dynamic>?)
+              ?.map(
+                (item) => UniformModel.fromJson(item as Map<String, dynamic>),
+              )
+              .toList() ??
+          [],
+      uniformsCount: json['uniformsCount'] ?? 0,
+    );
   }
 
-  // Helper method to get day color
-  int get dayColor {
-    switch (day) {
-      case 'Monday':
-        return 0xFF2196F3; // Blue
-      case 'Tuesday':
-        return 0xFF4CAF50; // Green
-      case 'Wednesday':
-        return 0xFFFF9800; // Orange
-      case 'Thursday':
-        return 0xFF9C27B0; // Purple
-      case 'Friday':
-        return 0xFFF44336; // Red
-      case 'Saturday':
-        return 0xFF607D8B; // Blue Grey
-      case 'Sunday':
-        return 0xFF795548; // Brown
-      default:
-        return 0xFF757575; // Grey
-    }
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'level': level,
+      'academicYear': academicYear,
+      'uniforms': uniforms.map((uniform) => uniform.toJson()).toList(),
+      'uniformsCount': uniformsCount,
+    };
   }
 }
 
@@ -69,11 +145,11 @@ class UniformResponse {
       success: json['success'] ?? false,
       message: json['message'] ?? '',
       data:
-          json['data'] != null
-              ? List<UniformModel>.from(
-                json['data'].map((x) => UniformModel.fromJson(x)),
+          (json['data'] as List<dynamic>?)
+              ?.map(
+                (item) => UniformModel.fromJson(item as Map<String, dynamic>),
               )
-              : null,
+              .toList(),
     );
   }
 }
@@ -93,121 +169,39 @@ class UniformSingleResponse {
     return UniformSingleResponse(
       success: json['success'] ?? false,
       message: json['message'] ?? '',
-      data: json['data'] != null ? UniformModel.fromJson(json['data']) : null,
+      data:
+          json['data'] != null
+              ? UniformModel.fromJson(json['data'] as Map<String, dynamic>)
+              : null,
     );
   }
-}
-
-class ClassLevel {
-  final String id;
-  final String name;
-
-  ClassLevel({required this.id, required this.name});
-
-  factory ClassLevel.fromJson(Map<String, dynamic> json) {
-    return ClassLevel(
-      id: json['_id'] ?? json['id'] ?? '',
-      name: json['name'] ?? '',
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {'_id': id, 'name': name};
-  }
-}
-
-class ClassWithUniforms {
-  final String id;
-  final String name;
-  final String level;
-  final String? section;
-  final String academicYear;
-  final ClassLevel classLevel;
-  final List<UniformModel> uniforms;
-
-  ClassWithUniforms({
-    required this.id,
-    required this.name,
-    required this.level,
-    this.section,
-    required this.academicYear,
-    required this.classLevel,
-    required this.uniforms,
-  });
-
-  factory ClassWithUniforms.fromJson(Map<String, dynamic> json) {
-    return ClassWithUniforms(
-      id: json['_id'] ?? json['id'] ?? '',
-      name: json['name'] ?? '',
-      level: json['level'] ?? '',
-      section: json['section'],
-      academicYear: json['academicYear'] ?? '',
-      classLevel: ClassLevel.fromJson(json['classLevel'] ?? {}),
-      uniforms:
-          json['uniforms'] != null
-              ? List<UniformModel>.from(
-                json['uniforms'].map((x) => UniformModel.fromJson(x)),
-              )
-              : [],
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      '_id': id,
-      'name': name,
-      'level': level,
-      'section': section,
-      'academicYear': academicYear,
-      'classLevel': classLevel.toJson(),
-      'uniforms': uniforms.map((x) => x.toJson()).toList(),
-    };
-  }
-
-  // Helper getter for display name
-  String get displayName {
-    if (section != null && section!.isNotEmpty) {
-      return '$name ($section)';
-    }
-    return name;
-  }
-
-  // Helper getter for full class info
-  String get fullInfo {
-    return '$displayName - $level ($academicYear)';
-  }
-
-  // Helper to get uniforms count
-  int get uniformsCount => uniforms.length;
-
-  // Helper to check if class has uniforms
-  bool get hasUniforms => uniforms.isNotEmpty;
 }
 
 class AllClassesUniformsResponse {
   final bool success;
   final String message;
-  final int count;
   final List<ClassWithUniforms>? data;
+  final int count;
 
   AllClassesUniformsResponse({
     required this.success,
     required this.message,
-    required this.count,
     this.data,
+    required this.count,
   });
 
   factory AllClassesUniformsResponse.fromJson(Map<String, dynamic> json) {
     return AllClassesUniformsResponse(
       success: json['success'] ?? false,
       message: json['message'] ?? '',
-      count: json['count'] ?? 0,
       data:
-          json['data'] != null
-              ? List<ClassWithUniforms>.from(
-                json['data'].map((x) => ClassWithUniforms.fromJson(x)),
+          (json['data'] as List<dynamic>?)
+              ?.map(
+                (item) =>
+                    ClassWithUniforms.fromJson(item as Map<String, dynamic>),
               )
-              : null,
+              .toList(),
+      count: json['count'] ?? 0,
     );
   }
 }

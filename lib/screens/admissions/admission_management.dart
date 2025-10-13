@@ -1465,7 +1465,9 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
 
   // Image upload variables
   XFile? _selectedImageFile;
+  XFile? _selectedPassportPhoto;
   String? _imageUrl;
+  String? _passportPhotoUrl;
   final ImagePicker _imagePicker = ImagePicker();
 
   // Form controllers - Student Personal Info
@@ -1495,6 +1497,7 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
   final _cityController = TextEditingController();
   final _stateController = TextEditingController();
   final _countryController = TextEditingController();
+  final _studentCountryController = TextEditingController();
   final _postalCodeController = TextEditingController();
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
@@ -1579,6 +1582,10 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
   // Additional Info
   final _additionalInfoController = TextEditingController();
 
+  // Date controllers
+  DateTime? _selectedRequestedStartDate;
+  DateTime? _selectedSignatureDate;
+
   // Parent controllers - Father
   final _fatherTitleController = TextEditingController();
   final _fatherFirstNameController = TextEditingController();
@@ -1619,295 +1626,7 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
   String? _selectedCountry;
   String? _selectedState;
 
-  // Comprehensive country and state data
-  final Map<String, List<String>> _countriesWithStates = {
-    'Nigeria': [
-      'Abia',
-      'Adamawa',
-      'Akwa Ibom',
-      'Anambra',
-      'Bauchi',
-      'Bayelsa',
-      'Benue',
-      'Borno',
-      'Cross River',
-      'Delta',
-      'Ebonyi',
-      'Edo',
-      'Ekiti',
-      'Enugu',
-      'FCT',
-      'Gombe',
-      'Imo',
-      'Jigawa',
-      'Kaduna',
-      'Kano',
-      'Katsina',
-      'Kebbi',
-      'Kogi',
-      'Kwara',
-      'Lagos',
-      'Nasarawa',
-      'Niger',
-      'Ogun',
-      'Ondo',
-      'Osun',
-      'Oyo',
-      'Plateau',
-      'Rivers',
-      'Sokoto',
-      'Taraba',
-      'Yobe',
-      'Zamfara',
-    ],
-    'United States': [
-      'Alabama',
-      'Alaska',
-      'Arizona',
-      'Arkansas',
-      'California',
-      'Colorado',
-      'Connecticut',
-      'Delaware',
-      'Florida',
-      'Georgia',
-      'Hawaii',
-      'Idaho',
-      'Illinois',
-      'Indiana',
-      'Iowa',
-      'Kansas',
-      'Kentucky',
-      'Louisiana',
-      'Maine',
-      'Maryland',
-      'Massachusetts',
-      'Michigan',
-      'Minnesota',
-      'Mississippi',
-      'Missouri',
-      'Montana',
-      'Nebraska',
-      'Nevada',
-      'New Hampshire',
-      'New Jersey',
-      'New Mexico',
-      'New York',
-      'North Carolina',
-      'North Dakota',
-      'Ohio',
-      'Oklahoma',
-      'Oregon',
-      'Pennsylvania',
-      'Rhode Island',
-      'South Carolina',
-      'South Dakota',
-      'Tennessee',
-      'Texas',
-      'Utah',
-      'Vermont',
-      'Virginia',
-      'Washington',
-      'West Virginia',
-      'Wisconsin',
-      'Wyoming',
-    ],
-    'United Kingdom': ['England', 'Scotland', 'Wales', 'Northern Ireland'],
-    'Canada': [
-      'Alberta',
-      'British Columbia',
-      'Manitoba',
-      'New Brunswick',
-      'Newfoundland and Labrador',
-      'Northwest Territories',
-      'Nova Scotia',
-      'Nunavut',
-      'Ontario',
-      'Prince Edward Island',
-      'Quebec',
-      'Saskatchewan',
-      'Yukon',
-    ],
-    'Australia': [
-      'Australian Capital Territory',
-      'New South Wales',
-      'Northern Territory',
-      'Queensland',
-      'South Australia',
-      'Tasmania',
-      'Victoria',
-      'Western Australia',
-    ],
-    'India': [
-      'Andhra Pradesh',
-      'Arunachal Pradesh',
-      'Assam',
-      'Bihar',
-      'Chhattisgarh',
-      'Goa',
-      'Gujarat',
-      'Haryana',
-      'Himachal Pradesh',
-      'Jharkhand',
-      'Karnataka',
-      'Kerala',
-      'Madhya Pradesh',
-      'Maharashtra',
-      'Manipur',
-      'Meghalaya',
-      'Mizoram',
-      'Nagaland',
-      'Odisha',
-      'Punjab',
-      'Rajasthan',
-      'Sikkim',
-      'Tamil Nadu',
-      'Telangana',
-      'Tripura',
-      'Uttar Pradesh',
-      'Uttarakhand',
-      'West Bengal',
-    ],
-    'South Africa': [
-      'Eastern Cape',
-      'Free State',
-      'Gauteng',
-      'KwaZulu-Natal',
-      'Limpopo',
-      'Mpumalanga',
-      'Northern Cape',
-      'North West',
-      'Western Cape',
-    ],
-    'Ghana': [
-      'Greater Accra',
-      'Ashanti',
-      'Western',
-      'Eastern',
-      'Volta',
-      'Central',
-      'Northern',
-      'Upper East',
-      'Upper West',
-      'Brong-Ahafo',
-    ],
-    'Kenya': [
-      'Nairobi',
-      'Mombasa',
-      'Kisumu',
-      'Nakuru',
-      'Eldoret',
-      'Thika',
-      'Malindi',
-      'Kitale',
-      'Garissa',
-      'Kakamega',
-    ],
-    // Add more countries that might be selected
-    'Antigua and Barbuda': [
-      'Saint John',
-      'Saint George',
-      'Saint Mary',
-      'Saint Paul',
-      'Saint Peter',
-      'Saint Philip',
-    ],
-    'Barbados': [
-      'Christ Church',
-      'Saint Michael',
-      'Saint George',
-      'Saint Philip',
-      'Saint John',
-      'Saint James',
-      'Saint Thomas',
-      'Saint Andrew',
-      'Saint Joseph',
-      'Saint Peter',
-      'Saint Lucy',
-    ],
-    'Jamaica': [
-      'Kingston',
-      'Saint Andrew',
-      'Saint Thomas',
-      'Portland',
-      'Saint Mary',
-      'Saint Ann',
-      'Trelawny',
-      'Saint James',
-      'Hanover',
-      'Westmoreland',
-      'Saint Elizabeth',
-      'Manchester',
-      'Clarendon',
-      'Saint Catherine',
-    ],
-    'Trinidad and Tobago': [
-      'Arima',
-      'Chaguanas',
-      'Couva-Tabaquite-Talparo',
-      'Diego Martin',
-      'Eastern Tobago',
-      'Mayaro-Rio Claro',
-      'Penal-Debe',
-      'Princes Town',
-      'Sangre Grande',
-      'San Juan-Laventille',
-      'Siparia',
-      'Tunapuna-Piarco',
-      'Western Tobago',
-    ],
-    'Guyana': [
-      'Barima-Waini',
-      'Cuyuni-Mazaruni',
-      'Demerara-Mahaica',
-      'East Berbice-Corentyne',
-      'Essequibo Islands-West Demerara',
-      'Mahaica-Berbice',
-      'Pomeroon-Supenaam',
-      'Potaro-Siparuni',
-      'Upper Demerara-Berbice',
-      'Upper Takutu-Upper Essequibo',
-    ],
-    'Belize': [
-      'Belize',
-      'Cayo',
-      'Corozal',
-      'Orange Walk',
-      'Stann Creek',
-      'Toledo',
-    ],
-    'Bahamas': [
-      'Acklins',
-      'Bimini',
-      'Black Point',
-      'Cat Island',
-      'Central Abaco',
-      'Central Andros',
-      'Central Eleuthera',
-      'Crooked Island',
-      'East Grand Bahama',
-      'Exuma',
-      'Grand Cay',
-      'Harbour Island',
-      'Hope Town',
-      'Inagua',
-      'Long Island',
-      'Mangrove Cay',
-      'Mayaguana',
-      'Moore\'s Island',
-      'North Abaco',
-      'North Andros',
-      'North Eleuthera',
-      'Ragged Island',
-      'Rum Cay',
-      'San Salvador',
-      'South Abaco',
-      'South Andros',
-      'South Eleuthera',
-      'Spanish Wells',
-      'West Grand Bahama',
-    ],
-  };
+
 
   @override
   void initState() {
@@ -1947,6 +1666,7 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
     _cityController.dispose();
     _stateController.dispose();
     _countryController.dispose();
+    _studentCountryController.dispose();
     _postalCodeController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
@@ -2087,6 +1807,7 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
     _cityController.text = data.contactInfo?.address?.city ?? '';
     _stateController.text = data.contactInfo?.address?.state ?? '';
     _countryController.text = data.contactInfo?.address?.country ?? '';
+    _studentCountryController.text = data.personalInfo?.nationality ?? '';
     _postalCodeController.text = data.contactInfo?.address?.postalCode ?? '';
     _phoneController.text = data.contactInfo?.phone ?? '';
     _emailController.text = data.contactInfo?.email ?? '';
@@ -2098,7 +1819,8 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
     if (_selectedAdmissionDate != null) {
       _admissionDateController.text = _formatDate(_selectedAdmissionDate!);
     }
-    _selectedClassId = data.academicInfo?.desiredClass?.id;
+
+    // Note: Class selection is handled in _loadClasses() after classes are loaded
 
     // Medical Info
     if (data.medicalInfo != null) {
@@ -2263,6 +1985,26 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
       if (classProvider.classData.classes != null) {
         setState(() {
           _classes = classProvider.classData.classes!;
+
+          // Preselect desired class from backend, or use first class if none specified
+          final data = widget.admissionData;
+          _selectedClassId = data.academicInfo?.desiredClass?.id;
+
+          print(
+            '🔍 DEBUG: Class selection - Desired class ID from backend: $_selectedClassId',
+          );
+          print('🔍 DEBUG: Available classes count: ${_classes.length}');
+
+          if (_selectedClassId == null && _classes.isNotEmpty) {
+            _selectedClassId = _classes.first?.id;
+            print(
+              '🔍 DEBUG: No desired class found, using first class: $_selectedClassId',
+            );
+          } else if (_selectedClassId != null) {
+            print(
+              '🔍 DEBUG: Using desired class from backend: $_selectedClassId',
+            );
+          }
         });
       }
     } catch (e) {
@@ -2285,31 +2027,11 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
       final selectedClass = _classes.firstWhere(
         (c) => c?.id == _selectedClassId,
       );
-      return '${selectedClass?.level} (${selectedClass?.name})';
+      return '${selectedClass?.level} - ${selectedClass?.name}';
     } catch (e) {
+      print('🔍 DEBUG: Error finding selected class: $e');
       return null;
     }
-  }
-
-  // Helper method to get states for selected country
-  List<String> _getStatesForCountry(String? country) {
-    if (country == null || country.isEmpty) {
-      print('_getStatesForCountry: country is null or empty');
-      return [];
-    }
-
-    final states = _countriesWithStates[country] ?? [];
-
-    // If no states found, provide a generic fallback
-    if (states.isEmpty) {
-      print(
-        '_getStatesForCountry: No states found for $country, using fallback',
-      );
-      return ['Not Available']; // Fallback for countries without states
-    }
-
-    print('_getStatesForCountry: country=$country, states=$states');
-    return states;
   }
 
   // Method to build country picker
@@ -2403,6 +2125,38 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
     }
   }
 
+  Future<void> _selectRequestedStartDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedRequestedStartDate ?? DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2030),
+    );
+
+    if (picked != null) {
+      setState(() {
+        _selectedRequestedStartDate = picked;
+        _requestedStartDateController.text = _formatDate(picked);
+      });
+    }
+  }
+
+  Future<void> _selectSignatureDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedSignatureDate ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+    );
+
+    if (picked != null) {
+      setState(() {
+        _selectedSignatureDate = picked;
+        _signatureDateController.text = _formatDate(picked);
+      });
+    }
+  }
+
   Future<void> _pickImage() async {
     try {
       final XFile? image = await _imagePicker.pickImage(
@@ -2490,6 +2244,85 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
     return Uint8List.fromList(img.encodeJpg(resizedImage, quality: 85));
   }
 
+  Future<void> _pickPassportPhoto() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        setState(() {
+          _selectedPassportPhoto = image;
+        });
+        await _uploadPassportPhotoToCloudinary();
+      }
+    } catch (e) {
+      showSnackbar(context, 'Error picking passport photo: $e');
+    }
+  }
+
+  Future<void> _takePassportPhoto() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        setState(() {
+          _selectedPassportPhoto = image;
+        });
+        await _uploadPassportPhotoToCloudinary();
+      }
+    } catch (e) {
+      showSnackbar(context, 'Error taking passport photo: $e');
+    }
+  }
+
+  Future<void> _uploadPassportPhotoToCloudinary() async {
+    if (_selectedPassportPhoto == null) return;
+
+    setState(() {
+      _isUploadingImage = true;
+    });
+
+    try {
+      final bytes = await _selectedPassportPhoto!.readAsBytes();
+      final compressedBytes = await _compressImage(bytes);
+
+      final base64Image = base64Encode(compressedBytes);
+      final uploadUrl = 'https://api.cloudinary.com/v1_1/demo/image/upload';
+
+      final request = http.MultipartRequest('POST', Uri.parse(uploadUrl));
+      request.fields['upload_preset'] = 'ml_default';
+      request.fields['file'] = 'data:image/jpeg;base64,$base64Image';
+
+      final response = await request.send();
+
+      if (response.statusCode == 200) {
+        final responseData = await response.stream.bytesToString();
+        final jsonData = json.decode(responseData);
+        setState(() {
+          _passportPhotoUrl = jsonData['secure_url'];
+        });
+        showSnackbar(context, 'Passport photo uploaded successfully!');
+      } else {
+        showSnackbar(context, 'Failed to upload passport photo');
+      }
+    } catch (e) {
+      showSnackbar(context, 'Error uploading passport photo: $e');
+    } finally {
+      setState(() {
+        _isUploadingImage = false;
+      });
+    }
+  }
+
   Widget _buildPersonalInfoTab() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -2497,6 +2330,8 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildImageUploadSection(),
+          const SizedBox(height: 20),
+          _buildPassportPhotoUploadSection(),
           const SizedBox(height: 20),
           Row(
             children: [
@@ -2679,14 +2514,21 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
           const SizedBox(height: 16),
           Row(
             children: [
-              Expanded(
-                child: _buildCountryPicker(
-                  label: 'Country',
-                  value: _selectedCountry,
-                  onChanged:
-                      (value) => setState(() => _selectedCountry = value),
+                 Expanded(
+                child: _buildTextField(
+                  controller: _studentCountryController,
+                  label: 'Student\'s Country',
+                  hintText: 'Enter student\'s country of origin',
                 ),
               ),
+              // Expanded(
+              //   child: _buildCountryPicker(
+              //     label: 'Country',
+              //     value: _selectedCountry,
+              //     onChanged:
+              //         (value) => setState(() => _selectedCountry = value),
+              //   ),
+              // ),
               const SizedBox(width: 12),
               Expanded(
                 child: _buildTextField(
@@ -2696,6 +2538,18 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
               ),
             ],
           ),
+          const SizedBox(height: 16),
+          // Row(
+          //   children: [
+          //     Expanded(
+          //       child: _buildTextField(
+          //         controller: _studentCountryController,
+          //         label: 'Student\'s Country',
+          //         hintText: 'Enter student\'s country of origin',
+          //       ),
+          //     ),
+          //   ],
+          // ),
           const SizedBox(height: 20),
           const Text(
             'Contact Information',
@@ -2970,6 +2824,9 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
           _buildTextField(
             controller: _requestedStartDateController,
             label: 'Requested Start Date',
+            readOnly: true,
+            onTap: () => _selectRequestedStartDate(context),
+            suffixIcon: const Icon(Icons.calendar_today),
           ),
           const SizedBox(height: 16),
           Row(
@@ -3037,6 +2894,18 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
             label: 'Behavioural Concerns',
             maxLines: 2,
           ),
+          const SizedBox(height: 20),
+          const Text(
+            'Additional Information',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 12),
+          _buildTextField(
+            controller: _additionalInfoController,
+            label: 'Additional Notes',
+            maxLines: 4,
+            hintText: 'Any additional information about the student...',
+          ),
         ],
       ),
     );
@@ -3084,6 +2953,9 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
                 child: _buildTextField(
                   controller: _signatureDateController,
                   label: 'Signature Date',
+                  readOnly: true,
+                  onTap: () => _selectSignatureDate(context),
+                  suffixIcon: const Icon(Icons.calendar_today),
                 ),
               ),
             ],
@@ -3194,6 +3066,7 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
     int maxLines = 1,
     Widget? suffixIcon,
     VoidCallback? onTap,
+    String? hintText,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -3213,7 +3086,7 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
           maxLines: maxLines,
           onTap: onTap,
           decoration: InputDecoration(
-            hintText: 'Enter $label',
+            hintText: hintText ?? 'Enter $label',
             suffixIcon: suffixIcon,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
@@ -3394,6 +3267,97 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
     );
   }
 
+  Widget _buildPassportPhotoUploadSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Passport Photo',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey[300]!),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child:
+                  _passportPhotoUrl != null
+                      ? ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          _passportPhotoUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Icon(Icons.photo, size: 50);
+                          },
+                        ),
+                      )
+                      : _selectedPassportPhoto != null
+                      ? ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.file(
+                          File(_selectedPassportPhoto!.path),
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                      : const Icon(Icons.photo, size: 50),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: _isUploadingImage ? null : _pickPassportPhoto,
+                    icon:
+                        _isUploadingImage
+                            ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                            : const Icon(Icons.photo_library, size: 18),
+                    label: Text(
+                      _isUploadingImage ? 'Uploading...' : 'Choose Photo',
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: _isUploadingImage ? null : _takePassportPhoto,
+                    icon: const Icon(Icons.camera_alt, size: 18),
+                    label: const Text('Take Photo'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
   void _handleApprove() {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -3423,12 +3387,12 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
     if (_cityController.text.trim().isEmpty) {
       missingFields.add('City');
     }
-    if (_selectedState == null) {
-      missingFields.add('State');
-    }
-    if (_selectedCountry == null) {
-      missingFields.add('Country');
-    }
+    // if (_selectedState == null) {
+    //   missingFields.add('State');
+    // }
+    // if (_selectedCountry == null) {
+    //   missingFields.add('Country');
+    // }
     if (_phoneController.text.trim().isEmpty) {
       missingFields.add('Phone Number');
     }
@@ -3584,7 +3548,8 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
           'streetName': _streetNameController.text.trim(),
           'city': _cityController.text.trim(),
           'state': _stateController.text.trim(),
-          'country': _countryController.text.trim(),
+          'country': _studentCountryController.text.trim(),
+          'studentCountry': _studentCountryController.text.trim(),
           'postalCode':
               _postalCodeController.text.trim().isNotEmpty
                   ? _postalCodeController.text.trim()
@@ -4063,24 +4028,47 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
 
           if (_isLoadingClasses)
             const Center(child: CircularProgressIndicator())
+          else if (_classes.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.orange[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.orange[200]!),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.warning, color: Colors.orange[600], size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'No classes available. Please ensure classes are configured in the system.',
+                      style: TextStyle(color: Colors.orange[700], fontSize: 14),
+                    ),
+                  ),
+                ],
+              ),
+            )
           else
             _buildDropdown(
-              label: 'Class Assignment',
+              label: 'Desired Class',
               value: _getSelectedClassName(),
               items:
                   _classes
-                      .map((c) => '${c?.level} (${c?.name})')
+                      .map((c) => '${c?.level} - ${c?.name}')
                       .cast<String>()
-                      .toSet()
                       .toList(),
               onChanged: (value) {
                 setState(() {
                   _selectedClassId =
                       _classes
                           .firstWhere(
-                            (c) => '${c?.level} (${c?.name})' == value,
+                            (c) => '${c?.level} - ${c?.name}' == value,
                           )
                           ?.id;
+                  print(
+                    '🔍 DEBUG: Class changed to: $_selectedClassId ($value)',
+                  );
                 });
               },
               isRequired: true,

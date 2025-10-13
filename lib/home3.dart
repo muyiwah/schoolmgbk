@@ -412,16 +412,16 @@ final menuItemsProvider = Provider<List<MenuItem>>((ref) {
       allowedRoles: ['admin', 'accountant'],
       subItems: [
         // MenuItem(title: 'Account Home', icon: Icons.home, route: '/accounts'),
-        MenuItem(
-          title: 'Fee Verification',
-          icon: Icons.home,
-          route: '/accounts/fee-verification',
-        ),
-        MenuItem(
-          title: 'Class Account',
-          icon: Icons.home,
-          route: '/accounts/class-account',
-        ),
+        // MenuItem(
+        //   title: 'Fee Verification',
+        //   icon: Icons.home,
+        //   route: '/accounts/fee-verification',
+        // ),
+        // MenuItem(
+        //   title: 'Class Account',
+        //   icon: Icons.home,
+        //   route: '/accounts/class-account',
+        // ),
         MenuItem(
           title: 'Class Fee Breakdown',
           icon: Icons.home,

@@ -1,6 +1,7 @@
 class AppConstants {
-  // static const String kBaseUrl = 'https://schoolmanagmentbackend-s15i.onrender.com/api';
-  static const String kBaseUrl = 'http://localhost:3000/api';
+  static const String kBaseUrl = 'https://schoolmanagmentbackend-s15i.onrender.com/api';
+  // static const String kBaseUrl = 'http://localhost:3000/api';
+  // static const String kBaseUrl = 'https://c39e1fe2af67.ngrok-free.app/api';
   static const String cloudinaryPreset = 'school_management';
   static const String cloudinaryCloudName = 'dor0zvihv';
   static const cloudinaryUrl =

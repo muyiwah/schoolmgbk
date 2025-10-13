@@ -126,7 +126,7 @@ class AdmissionRepo {
       if (additionalStudentData != null) {
         data['additionalStudentData'] = additionalStudentData;
       }
-
+print('data: $data');
       final httpService = HttpService();
       final response = await httpService.runApi(
         type: ApiRequestType.post,

@@ -11,6 +11,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:schmgtsystem/services/global_academic_year_service.dart';
 import 'package:schmgtsystem/providers/auth_state_provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:schmgtsystem/widgets/uniform_schedule_widget.dart';
 
 class ParentDashboardScreen extends ConsumerStatefulWidget {
   const ParentDashboardScreen({super.key});
@@ -429,6 +430,8 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
           _buildChildrenSection(children),
           const SizedBox(height: 20),
           _buildAcademicOverview(),
+          const SizedBox(height: 20),
+          _buildUniformSchedule(children),
           const SizedBox(height: 20),
           _buildAnnouncements(communications),
         ],
@@ -1927,6 +1930,27 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
     );
   }
 
+  Widget _buildUniformSchedule(List<Child> children) {
+    if (children.isEmpty || _selectedChildIndex >= children.length) {
+      return const SizedBox.shrink();
+    }
+
+    final child = children[_selectedChildIndex];
+    final studentName =
+        '${child.student?.personalInfo?.firstName ?? ''} ${child.student?.personalInfo?.lastName ?? ''}'
+            .trim();
+    final classId = child.student?.academicInfo?.currentClass?.id;
+
+    if (classId == null || classId.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return UniformScheduleWidget(
+      classId: classId,
+      studentName: studentName.isNotEmpty ? studentName : 'Your child',
+    );
+  }
+
   Widget _buildAnnouncements(List<dynamic> communications) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -2049,7 +2073,18 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
     final studentName = child.student?.personalInfo?.firstName ?? 'Your child';
     final currentTerm = child.currentTerm;
     final feeRecord = currentTerm?.feeRecord;
-    final totalPaid = feeRecord?.amountPaid ?? 0;
+
+    // Try multiple sources for the paid amount
+    final parentLoginProvider = ref.read(
+      RiverpodProvider.parentLoginProvider.notifier,
+    );
+    final financialSummary = parentLoginProvider.financialSummary;
+    final totalPaid =
+        feeRecord?.amountPaid ??
+        financialSummary?.totalAmountPaid ??
+        (currentTerm?.feeDetails?.totalFee ?? 0) -
+            (currentTerm?.amountOwed ?? 0);
+
     final academicYear = currentTerm?.academicYear ?? '2025/2026';
     final term = currentTerm?.term ?? 'Third';
 
@@ -2133,7 +2168,7 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
                       ),
                     ),
                     Text(
-                      '₦${totalPaid.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
+                      '£${totalPaid.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -2207,6 +2242,18 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
     if (feeDetails == null) {
       return const SizedBox.shrink();
     }
+
+    // Get the actual paid amount using the same logic as _buildThankYouCard
+    final parentLoginProvider = ref.read(
+      RiverpodProvider.parentLoginProvider.notifier,
+    );
+    final financialSummary = parentLoginProvider.financialSummary;
+    final currentTerm = child.currentTerm;
+    final actualPaidAmount =
+        feeRecord?.amountPaid ??
+        financialSummary?.totalAmountPaid ??
+        (currentTerm?.feeDetails?.totalFee ?? 0) -
+            (currentTerm?.amountOwed ?? 0);
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -2302,7 +2349,7 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
                   ),
                 ),
                 Text(
-                  '₦${(feeDetails.totalFee ?? 0).toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
+                  '₦${actualPaidAmount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,

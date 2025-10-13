@@ -14,6 +14,8 @@ import 'package:schmgtsystem/providers/attendance_provider.dart';
 import 'package:schmgtsystem/providers/communication_provider.dart';
 import 'package:schmgtsystem/providers/timetable_provider.dart';
 import 'package:schmgtsystem/providers/subject_provider.dart';
+import 'package:schmgtsystem/providers/uniform_provider.dart';
+import 'package:schmgtsystem/repository/class_repo.dart';
 
 class RiverpodProvider {
   static final appNavProvider = ChangeNotifierProvider<AppNavProvider>(
@@ -75,4 +77,9 @@ class RiverpodProvider {
   static final subjectProvider = ChangeNotifierProvider<SubjectProvider>(
     (ref) => SubjectProvider(),
   );
+
+  static final uniformProvider =
+      StateNotifierProvider<UniformNotifier, UniformState>(
+        (ref) => UniformNotifier(ClassRepo()),
+      );
 }

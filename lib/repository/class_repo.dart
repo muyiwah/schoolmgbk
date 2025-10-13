@@ -290,4 +290,12 @@ class ClassRepo {
       url: "/classes/imagekit-auth",
     );
   }
+
+  // ✅ Get class uniforms
+  Future<HTTPResponseModel> getClassUniforms(String classId) async {
+    return await _httpService.runApi(
+      type: ApiRequestType.get,
+      url: "/classes/$classId/uniforms",
+    );
+  }
 }
