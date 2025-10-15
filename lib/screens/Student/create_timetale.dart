@@ -452,11 +452,11 @@ class _CreateTimetaleState extends ConsumerState<CreateTimetale> {
               else
                 CustomDropdown(
                   allValues: classNames,
-                  title: 'Select Class for Timetable',
+                  title: 'Select Class',
                   onChanged: (value) {
                     setState(() {
                       _selectedClass = value;
-                    });
+                    }); 
                   },
                 ),
               if (_selectedClass != null) ...[

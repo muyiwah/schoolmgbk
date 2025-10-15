@@ -6,11 +6,14 @@ import 'package:schmgtsystem/constants/appcolor.dart';
 import 'package:schmgtsystem/models/single_class_model.dart';
 import 'package:schmgtsystem/models/attendance_model.dart';
 import 'package:schmgtsystem/models/communication_model.dart';
+import 'package:schmgtsystem/models/class_payment_data_model.dart' as payment;
+import 'package:schmgtsystem/models/fee_breakdown_model.dart' as fee;
 import 'package:schmgtsystem/providers/provider.dart';
 import 'package:schmgtsystem/widgets/message_popup.dart';
 import 'package:schmgtsystem/widgets/success_snack.dart';
 import 'package:schmgtsystem/utils/academic_year_helper.dart';
 import 'package:schmgtsystem/repository/class_repo.dart';
+import 'package:schmgtsystem/repository/payment_repo.dart';
 import 'package:schmgtsystem/utils/locator.dart';
 import 'package:schmgtsystem/utils/response_model.dart';
 
@@ -35,6 +38,16 @@ class _ClassDetailsScreenState extends ConsumerState<ClassDetailsScreen> {
   final Map<String, String> _attendanceRemarks = {};
   bool _isSubmittingAttendance = false;
   bool _hasUnsavedChanges = false;
+
+  // Payment data state
+  payment.ClassPaymentDataResponse? _paymentData;
+  bool _isLoadingPaymentData = false;
+  String? _paymentErrorMessage;
+
+  // Fee breakdown state
+  fee.FeeBreakdownResponse? _feeBreakdownData;
+  bool _isLoadingFeeBreakdown = false;
+  String? _feeBreakdownErrorMessage;
 
   @override
   void initState() {
@@ -131,6 +144,202 @@ class _ClassDetailsScreenState extends ConsumerState<ClassDetailsScreen> {
     }
 
     setState(() {});
+  }
+
+  double _parseToDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is num) return value.toDouble();
+    if (value is String) {
+      return double.tryParse(value) ?? 0.0;
+    }
+    return 0.0;
+  }
+
+  Future<void> _loadPaymentData() async {
+    try {
+      setState(() {
+        _isLoadingPaymentData = true;
+        _paymentErrorMessage = null;
+      });
+
+      // Use the existing class data instead of making a separate API call
+      // since the payment endpoint returns empty data
+      if (_localClassData.data != null) {
+        try {
+          // Convert the existing class data to payment data format
+          final classData = _localClassData.data!;
+
+          // Create payment data from existing class data
+          _paymentData = payment.ClassPaymentDataResponse(
+            classInfo: payment.ClassInfo(
+              id: classData.dataClass?.id ?? '',
+              name: classData.dataClass?.name ?? '',
+              level: classData.dataClass?.level ?? '',
+              section: classData.dataClass?.section,
+              classTeacher: classData.dataClass?.classTeacher?.name,
+            ),
+            students:
+                classData.students
+                    ?.map(
+                      (student) => payment.StudentPaymentInfo(
+                        id: student.id ?? '',
+                        name: student.name ?? '',
+                        admissionNumber: student.admissionNumber ?? '',
+                        parentName: student.parentName ?? '',
+                        feeStatus: student.feeStatus ?? 'unknown',
+                        todayAttendance:
+                            student.todayAttendance ?? 'Not Marked',
+                      ),
+                    )
+                    .toList() ??
+                [],
+            metrics: payment.PaymentMetrics(
+              totalStudents: classData.metrics?.totalStudents ?? 0,
+              maleStudents: classData.metrics?.maleStudents ?? 0,
+              femaleStudents: classData.metrics?.femaleStudents ?? 0,
+              genderRatio: payment.GenderRatio(
+                male: _parseToDouble(classData.metrics?.genderRatio?.male),
+                female: _parseToDouble(classData.metrics?.genderRatio?.female),
+              ),
+              feeStatus: payment.FeeStatus(
+                paid: classData.metrics?.feeStatus?.paid ?? 0,
+                partial: classData.metrics?.feeStatus?.partial ?? 0,
+                unpaid: classData.metrics?.feeStatus?.unpaid ?? 0,
+              ),
+              feeCollectionRate: _parseToDouble(
+                classData.metrics?.feeCollectionRate,
+              ),
+              todayAttendance: payment.TodayAttendance(
+                present: classData.metrics?.todayAttendance?.present ?? 0,
+                absent: classData.metrics?.todayAttendance?.absent ?? 0,
+                late: classData.metrics?.todayAttendance?.late ?? 0,
+                notMarked: classData.metrics?.todayAttendance?.notMarked ?? 0,
+                attendancePercentage: _parseToDouble(
+                  classData.metrics?.todayAttendance?.attendancePercentage,
+                ),
+              ),
+              enrollmentRate: _parseToDouble(classData.metrics?.enrollmentRate),
+              availableSlots: classData.metrics?.availableSlots ?? 0,
+              currentFeeStructure: payment.CurrentFeeStructure(
+                baseFee: _parseToDouble(
+                  classData.metrics?.currentFeeStructure?.baseFee,
+                ),
+                totalFee: _parseToDouble(
+                  classData.metrics?.currentFeeStructure?.totalFee,
+                ),
+                term: classData.metrics?.currentFeeStructure?.term ?? '',
+                academicYear:
+                    classData.metrics?.currentFeeStructure?.academicYear ?? '',
+              ),
+            ),
+            academicInfo: payment.AcademicInfo(
+              currentAcademicYear:
+                  classData.academicInfo?.currentAcademicYear ?? '',
+              currentTerm: classData.academicInfo?.currentTerm ?? '',
+              attendanceDate:
+                  classData.academicInfo?.attendanceDate?.toString() ?? '',
+            ),
+            recentCommunications: classData.recentCommunications ?? [],
+          );
+
+          print('✅ Payment data loaded from existing class data');
+          print('Class name: ${_paymentData?.classInfo.name}');
+          print('Total students: ${_paymentData?.metrics.totalStudents}');
+          print('Male students: ${_paymentData?.metrics.maleStudents}');
+          print('Female students: ${_paymentData?.metrics.femaleStudents}');
+          print(
+            'Base fee: ${_paymentData?.metrics.currentFeeStructure.baseFee}',
+          );
+        } catch (e) {
+          print('❌ Error converting class data to payment data: $e');
+          _paymentErrorMessage = 'Failed to convert class data: $e';
+        }
+      } else {
+        _paymentErrorMessage = 'No class data available';
+      }
+
+      if (mounted) {
+        setState(() {
+          _isLoadingPaymentData = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading payment data: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingPaymentData = false;
+          _paymentErrorMessage = 'Failed to load payment data: $e';
+        });
+      }
+    }
+  }
+
+  Future<void> _loadFeeBreakdown() async {
+    try {
+      setState(() {
+        _isLoadingFeeBreakdown = true;
+        _feeBreakdownErrorMessage = null;
+      });
+
+      final currentTerm = AcademicYearHelper.getCurrentTerm(ref);
+      final paymentRepository = locator<PaymentRepository>();
+
+      final response = await paymentRepository.getClassFeeBreakdown(
+        classId: widget.classId,
+        term: currentTerm,
+      );
+
+      if (HTTPResponseModel.isApiCallSuccess(response)) {
+        try {
+          print('Raw fee breakdown response: ${response.data}');
+          _feeBreakdownData = fee.FeeBreakdownResponse.fromJson(response.data);
+          print('✅ Fee breakdown data loaded successfully');
+          print('Class name: ${_feeBreakdownData?.data.classInfo.name}');
+          print(
+            'Total students: ${_feeBreakdownData?.data.paymentStatistics.totalStudents}',
+          );
+          print(
+            'Paid students: ${_feeBreakdownData?.data.paymentStatistics.paidStudents}',
+          );
+          print(
+            'Total outstanding: ${_feeBreakdownData?.data.paymentStatistics.totalOutstandingAmount}',
+          );
+          print(
+            'Expected revenue: ${_feeBreakdownData?.data.paymentStatistics.expectedRevenue}',
+          );
+          print(
+            'Collection rate: ${_feeBreakdownData?.data.paymentStatistics.collectionRate}',
+          );
+          print(
+            'Total amount paid: ${_feeBreakdownData?.data.paymentStatistics.totalAmountPaid}',
+          );
+          print(
+            'Total amount left: ${_feeBreakdownData?.data.paymentStatistics.totalAmountLeft}',
+          );
+        } catch (e) {
+          print('❌ Error parsing fee breakdown data: $e');
+          _feeBreakdownErrorMessage = 'Failed to parse fee breakdown data: $e';
+        }
+      } else {
+        print('❌ Failed to load fee breakdown data: ${response.message}');
+        _feeBreakdownErrorMessage =
+            'Failed to load fee breakdown data: ${response.message}';
+      }
+
+      if (mounted) {
+        setState(() {
+          _isLoadingFeeBreakdown = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading fee breakdown data: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingFeeBreakdown = false;
+          _feeBreakdownErrorMessage = 'Failed to load fee breakdown data: $e';
+        });
+      }
+    }
   }
 
   void _initializeAllStudentsWithDefaultStatus() {
@@ -650,21 +859,18 @@ class _ClassDetailsScreenState extends ConsumerState<ClassDetailsScreen> {
         ],
       ),
       child: Column(
-        children: [
-          _buildTabBar(),
-          Expanded(
-            child:
-                selectedTabIndex == 1
-                    ? _buildStudentsListAttendance(data.students ?? [])
-                    : _buildStudentsList(data.students ?? []),
-          ),
-        ],
+        children: [_buildTabBar(), Expanded(child: _buildTabContent(data))],
       ),
     );
   }
 
   Widget _buildTabBar() {
-    final tabs = ['Students List', 'Attendance'];
+    final tabs = [
+      'Students List',
+      'Attendance',
+      'Payment Data',
+      'Fee Breakdown',
+    ];
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -680,6 +886,10 @@ class _ClassDetailsScreenState extends ConsumerState<ClassDetailsScreen> {
                   setState(() => selectedTabIndex = index);
                   if (index == 1) {
                     _loadAttendanceForDate();
+                  } else if (index == 2) {
+                    _loadPaymentData();
+                  } else if (index == 3) {
+                    _loadFeeBreakdown();
                   }
                 },
                 child: Container(
@@ -715,6 +925,889 @@ class _ClassDetailsScreenState extends ConsumerState<ClassDetailsScreen> {
             }).toList(),
       ),
     );
+  }
+
+  Widget _buildTabContent(Data data) {
+    switch (selectedTabIndex) {
+      case 0:
+        return _buildStudentsList(data.students ?? []);
+      case 1:
+        return _buildStudentsListAttendance(data.students ?? []);
+      case 2:
+        return _buildPaymentData();
+      case 3:
+        return _buildFeeBreakdown();
+      default:
+        return _buildStudentsList(data.students ?? []);
+    }
+  }
+
+  Widget _buildPaymentData() {
+    if (_isLoadingPaymentData) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Loading payment data...'),
+          ],
+        ),
+      );
+    }
+
+    if (_paymentErrorMessage != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 64, color: Colors.red.shade400),
+            const SizedBox(height: 16),
+            Text(
+              _paymentErrorMessage!,
+              style: const TextStyle(fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _loadPaymentData,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_paymentData == null) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.payment_outlined, size: 64, color: Colors.grey),
+            SizedBox(height: 16),
+            Text(
+              'No payment data available',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header with class info and academic term
+          _buildPaymentHeader(),
+          const SizedBox(height: 24),
+
+          // Payment statistics cards
+          _buildPaymentStatisticsCards(),
+          const SizedBox(height: 24),
+
+          // Fee structure breakdown
+          _buildFeeStructureBreakdown(),
+          const SizedBox(height: 24),
+
+          // Payment breakdown details
+          _buildPaymentBreakdownDetails(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentHeader() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.blue.shade50, Colors.indigo.shade50],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.blue.shade200),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade600,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(
+              Icons.account_balance_wallet,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Payment Data - ${_paymentData!.classInfo.name}',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1F2937),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${_paymentData!.academicInfo.currentAcademicYear} • ${_paymentData!.academicInfo.currentTerm} Term',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${_paymentData!.metrics.totalStudents} Students • Level ${_paymentData!.classInfo.level}',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentStatisticsCards() {
+    final metrics = _paymentData!.metrics;
+
+    print('🔍 Debug - Payment Statistics:');
+    print('Total students: ${metrics.totalStudents}');
+    print('Male students: ${metrics.maleStudents}');
+    print('Female students: ${metrics.femaleStudents}');
+    print('Paid students: ${metrics.feeStatus.paid}');
+    print('Unpaid students: ${metrics.feeStatus.unpaid}');
+    print('Collection rate: ${metrics.feeCollectionRate}');
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Payment Statistics',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1F2937),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: _buildFeeBreakdownStatCard(
+                'Total Students',
+                '${metrics.totalStudents}',
+                Icons.people,
+                Colors.blue,
+                Colors.blue.shade50,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildFeeBreakdownStatCard(
+                'Paid Students',
+                '${metrics.feeStatus.paid}',
+                Icons.check_circle,
+                Colors.green,
+                Colors.green.shade50,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildFeeBreakdownStatCard(
+                'Unpaid Students',
+                '${metrics.feeStatus.unpaid}',
+                Icons.warning,
+                Colors.red,
+                Colors.red.shade50,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildFeeBreakdownStatCard(
+                'Partial Payments',
+                '${metrics.feeStatus.partial}',
+                Icons.pending,
+                Colors.orange,
+                Colors.orange.shade50,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildFeeBreakdownStatCard(
+                'Collection Rate',
+                '${metrics.feeCollectionRate.toStringAsFixed(1)}%',
+                Icons.trending_up,
+                Colors.purple,
+                Colors.purple.shade50,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildFeeBreakdownStatCard(
+                'Available Slots',
+                '${metrics.availableSlots}',
+                Icons.event_seat,
+                Colors.indigo,
+                Colors.indigo.shade50,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFeeStructureBreakdown() {
+    final metrics = _paymentData!.metrics;
+    final feeStructure = metrics.currentFeeStructure;
+
+    print('🔍 Debug - Fee Structure:');
+    print('Base fee: ${feeStructure.baseFee}');
+    print('Total fee: ${feeStructure.totalFee}');
+    print('Term: ${feeStructure.term}');
+    print('Academic year: ${feeStructure.academicYear}');
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Fee Structure Information',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1F2937),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Fee Structure Card
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.green.withOpacity(0.3)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.school,
+                      color: Colors.green,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Current Fee Structure',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF1F2937),
+                          ),
+                        ),
+                        Text(
+                          '${feeStructure.academicYear} • ${feeStructure.term} Term',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    '£${NumberFormat('#,##0.00').format(feeStructure.totalFee)}',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildFeeDetailCard(
+                      'Base Fee',
+                      '£${NumberFormat('#,##0.00').format(feeStructure.baseFee)}',
+                      Colors.blue,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildFeeDetailCard(
+                      'Total Fee',
+                      '£${NumberFormat('#,##0.00').format(feeStructure.totalFee)}',
+                      Colors.green,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
+        // Gender Distribution
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.purple.withOpacity(0.3)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.purple.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.people,
+                      color: Colors.purple,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Gender Distribution',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1F2937),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildGenderCard(
+                      'Male Students',
+                      '${metrics.maleStudents}',
+                      '${metrics.genderRatio.male.toStringAsFixed(1)}%',
+                      Colors.blue,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildGenderCard(
+                      'Female Students',
+                      '${metrics.femaleStudents}',
+                      '${metrics.genderRatio.female.toStringAsFixed(1)}%',
+                      Colors.pink,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
+        // Attendance Summary
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.orange.withOpacity(0.3)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.calendar_today,
+                      color: Colors.orange,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Today\'s Attendance',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1F2937),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildAttendanceCard(
+                      'Present',
+                      '${metrics.todayAttendance.present}',
+                      Colors.green,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildAttendanceCard(
+                      'Absent',
+                      '${metrics.todayAttendance.absent}',
+                      Colors.red,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildAttendanceCard(
+                      'Late',
+                      '${metrics.todayAttendance.late}',
+                      Colors.orange,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildAttendanceCard(
+                      'Not Marked',
+                      '${metrics.todayAttendance.notMarked}',
+                      Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'Attendance Rate: ${metrics.todayAttendance.attendancePercentage.toStringAsFixed(1)}%',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.blue,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFeeDetailCard(String title, String amount, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Column(
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            amount,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGenderCard(
+    String title,
+    String count,
+    String percentage,
+    Color color,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Column(
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            count,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          Text(percentage, style: TextStyle(fontSize: 12, color: color)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAttendanceCard(String status, String count, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Column(
+        children: [
+          Text(
+            status,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            count,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentBreakdownDetails() {
+    final students = _paymentData!.students;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Student Payment Status',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1F2937),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Students List
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    topRight: Radius.circular(12),
+                  ),
+                ),
+                child: const Row(
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        'Student Name',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        'Admission No.',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        'Parent',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        'Fee Status',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        'Attendance',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Students List
+              ...students
+                  .map(
+                    (student) => Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            color: Colors.grey[200]!,
+                            width: 1,
+                          ),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            flex: 2,
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 16,
+                                  backgroundColor: _getFeeStatusColor(
+                                    student.feeStatus,
+                                  ).withOpacity(0.1),
+                                  child: Text(
+                                    (student.name.isNotEmpty
+                                            ? student.name.substring(0, 1)
+                                            : '?')
+                                        .toUpperCase(),
+                                    style: TextStyle(
+                                      color: _getFeeStatusColor(
+                                        student.feeStatus,
+                                      ),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    student.name,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 14,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              student.admissionNumber,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              student.parentName,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Expanded(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _getFeeStatusColor(
+                                  student.feeStatus,
+                                ).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                student.feeStatus.toUpperCase(),
+                                style: TextStyle(
+                                  color: _getFeeStatusColor(student.feeStatus),
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _getAttendanceStatusColor(
+                                  student.todayAttendance,
+                                ).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                student.todayAttendance,
+                                style: TextStyle(
+                                  color: _getAttendanceStatusColor(
+                                    student.todayAttendance,
+                                  ),
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Color _getFeeStatusColor(String feeStatus) {
+    switch (feeStatus.toLowerCase()) {
+      case 'paid':
+        return Colors.green;
+      case 'partial':
+        return Colors.orange;
+      case 'unpaid':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  Color _getAttendanceStatusColor(String attendanceStatus) {
+    switch (attendanceStatus.toLowerCase()) {
+      case 'present':
+        return Colors.green;
+      case 'absent':
+        return Colors.red;
+      case 'late':
+        return Colors.orange;
+      case 'notmarked':
+        return Colors.grey;
+      default:
+        return Colors.grey;
+    }
   }
 
   Widget _buildStudentsList(List<Student> students) {
@@ -798,7 +1891,7 @@ class _ClassDetailsScreenState extends ConsumerState<ClassDetailsScreen> {
                         student.parentName ?? 'N/A',
                         student.feeStatus ?? 'Unknown',
                         student.todayAttendance ?? 'N/A',
-                        _getFeeStatusColor(student.feeStatus),
+                        _getFeeStatusColor(student.feeStatus ?? 'Unknown'),
                         student.id ??
                             student.admissionNumber ??
                             'N/A', // Pass student ID
@@ -812,7 +1905,6 @@ class _ClassDetailsScreenState extends ConsumerState<ClassDetailsScreen> {
 
   Widget _buildStudentsListAttendance(List<Student> students) {
     final attendanceProvider = ref.watch(RiverpodProvider.attendanceProvider);
-    final records = attendanceProvider.attendanceRecords;
     final isSubmitted =
         attendanceProvider.attendanceByDate?.isSubmitted ?? false;
     final isLocked = attendanceProvider.attendanceByDate?.isLocked ?? false;
@@ -1026,19 +2118,6 @@ class _ClassDetailsScreenState extends ConsumerState<ClassDetailsScreen> {
           ),
       ],
     );
-  }
-
-  Color _getFeeStatusColor(String? feeStatus) {
-    switch (feeStatus?.toLowerCase()) {
-      case 'paid':
-        return Colors.green;
-      case 'partial':
-        return Colors.orange;
-      case 'unpaid':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
   }
 
   Widget _buildStudentRow(
@@ -1264,195 +2343,6 @@ class _ClassDetailsScreenState extends ConsumerState<ClassDetailsScreen> {
                   ),
                   onChanged: (value) {
                     _updateStudentRemarks(studentId, value);
-                  },
-                ),
-              ] else if (currentRemarks.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[50],
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.note, size: 16, color: Colors.grey[600]),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          currentRemarks,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[700],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildAttendanceList(
-    List<AttendanceRecordDetail> records,
-    bool isLocked,
-  ) {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: records.length,
-      itemBuilder: (context, index) {
-        final record = records[index];
-        final student = record.student;
-        final currentStatus = _attendanceStatus[student.id] ?? record.status;
-        final currentRemarks = _attendanceRemarks[student.id] ?? record.remarks;
-
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: _getStatusColor(currentStatus).withOpacity(0.3),
-              width: 2,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  CircleAvatar(
-                    radius: 20,
-                    backgroundColor: _getStatusColor(
-                      currentStatus,
-                    ).withOpacity(0.1),
-                    child: Text(
-                      student.personalInfo.firstName[0].toUpperCase(),
-                      style: TextStyle(
-                        color: _getStatusColor(currentStatus),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          student.personalInfo.fullName,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        Text(
-                          student.admissionNumber,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Status indicator
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _getStatusColor(currentStatus).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: _getStatusColor(currentStatus).withOpacity(0.3),
-                      ),
-                    ),
-                    child: Text(
-                      currentStatus.toUpperCase(),
-                      style: TextStyle(
-                        color: _getStatusColor(currentStatus),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              if (!isLocked) ...[
-                const SizedBox(height: 16),
-
-                // Quick action buttons
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildStatusButton(
-                        'Present',
-                        'present',
-                        student.id,
-                        Colors.green,
-                        currentStatus == 'present',
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _buildStatusButton(
-                        'Absent',
-                        'absent',
-                        student.id,
-                        Colors.red,
-                        currentStatus == 'absent',
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _buildStatusButton(
-                        'Late',
-                        'late',
-                        student.id,
-                        Colors.orange,
-                        currentStatus == 'late',
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 12),
-
-                // Remarks field
-                TextFormField(
-                  initialValue: currentRemarks,
-                  decoration: InputDecoration(
-                    labelText: 'Remarks (Optional)',
-                    hintText: 'Add any notes...',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    prefixIcon: const Icon(Icons.note_add, size: 20),
-                  ),
-                  onChanged: (value) {
-                    _updateStudentRemarks(student.id, value);
                   },
                 ),
               ] else if (currentRemarks.isNotEmpty) ...[
@@ -1850,6 +2740,1040 @@ class _ClassDetailsScreenState extends ConsumerState<ClassDetailsScreen> {
                 ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFeeBreakdown() {
+    if (_isLoadingFeeBreakdown) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Loading fee breakdown...'),
+          ],
+        ),
+      );
+    }
+
+    if (_feeBreakdownErrorMessage != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+            const SizedBox(height: 16),
+            Text(
+              'Error loading fee breakdown',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _feeBreakdownErrorMessage!,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _loadFeeBreakdown,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_feeBreakdownData == null) {
+      return const Center(child: Text('No fee breakdown data available'));
+    }
+
+    final data = _feeBreakdownData!.data;
+    final stats = data.paymentStatistics;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildFeeBreakdownHeader(data),
+          const SizedBox(height: 24),
+          _buildFeeBreakdownPaymentStatisticsCards(stats),
+          const SizedBox(height: 24),
+          _buildFeeStructureCards(data),
+          const SizedBox(height: 24),
+          _buildPaymentBreakdownCards(data),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFeeBreakdownHeader(fee.FeeBreakdownData data) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.purple.shade50, Colors.indigo.shade50],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.purple.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.purple.shade600,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.account_balance,
+              color: Colors.white,
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Fee Breakdown - ${data.classInfo.name}',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1F2937),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${data.academicTerm.academicYear} • ${data.academicTerm.term} Term',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${data.classInfo.totalStudents} Students • Level ${data.classInfo.level}',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFeeBreakdownPaymentStatisticsCards(fee.PaymentStatistics stats) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Payment Statistics',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1F2937),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Revenue Overview Card
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.indigo.shade50, Colors.purple.shade50],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.indigo.shade200),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.indigo.shade600,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.trending_up,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  const Expanded(
+                    child: Text(
+                      'Revenue Overview',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1F2937),
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '${stats.collectionRate.toStringAsFixed(1)}%',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color:
+                          stats.collectionRate > 50 ? Colors.green : Colors.red,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildRevenueCard(
+                      'Expected Revenue',
+                      '£${NumberFormat('#,##0.00').format(stats.expectedRevenue)}',
+                      Icons.account_balance,
+                      Colors.blue,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildRevenueCard(
+                      'Amount Collected',
+                      '£${NumberFormat('#,##0.00').format(stats.totalAmountPaid)}',
+                      Icons.check_circle,
+                      Colors.green,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildRevenueCard(
+                      'Amount Left',
+                      '£${NumberFormat('#,##0.00').format(stats.totalAmountLeft)}',
+                      Icons.pending,
+                      Colors.orange,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 20),
+
+        // Student Payment Status
+        const Text(
+          'Student Payment Status',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1F2937),
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        Row(
+          children: [
+            Expanded(
+              child: _buildFeeBreakdownStatCard(
+                'Total Students',
+                '${stats.totalStudents}',
+                Icons.people,
+                Colors.blue,
+                Colors.blue.shade50,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildFeeBreakdownStatCard(
+                'Paid Students',
+                '${stats.paidStudents}',
+                Icons.check_circle,
+                Colors.green,
+                Colors.green.shade50,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildFeeBreakdownStatCard(
+                'Partial Students',
+                '${stats.partialStudents}',
+                Icons.pending,
+                Colors.orange,
+                Colors.orange.shade50,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        Row(
+          children: [
+            Expanded(
+              child: _buildFeeBreakdownStatCard(
+                'Owing Students',
+                '${stats.owingStudents}',
+                Icons.warning,
+                Colors.red,
+                Colors.red.shade50,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildFeeBreakdownStatCard(
+                'Completion Rate',
+                '${stats.overallCompletionPercentage.toStringAsFixed(1)}%',
+                Icons.trending_up,
+                Colors.purple,
+                Colors.purple.shade50,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildFeeBreakdownStatCard(
+                'Collection Rate',
+                '${stats.collectionRate.toStringAsFixed(1)}%',
+                Icons.analytics,
+                Colors.indigo,
+                Colors.indigo.shade50,
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 20),
+
+        // Payment Summary Cards
+        const Text(
+          'Payment Summary',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1F2937),
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        Row(
+          children: [
+            Expanded(
+              child: _buildAmountCard(
+                'Total Paid',
+                '£${NumberFormat('#,##0.00').format(stats.totalPaidAmount)}',
+                Icons.account_balance_wallet,
+                Colors.green,
+                Colors.green.shade50,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildAmountCard(
+                'Outstanding Amount',
+                '£${NumberFormat('#,##0.00').format(stats.totalOutstandingAmount)}',
+                Icons.money_off,
+                Colors.red,
+                Colors.red.shade50,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFeeStructureCards(fee.FeeBreakdownData data) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Fee Structure',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1F2937),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Base fee card
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.blue.shade200),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.school,
+                  color: Colors.blue.shade600,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      data.feeBreakdown.baseFee.name,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1F2937),
+                      ),
+                    ),
+                    Text(
+                      data.feeBreakdown.baseFee.description,
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                '£${NumberFormat('#,##0.00').format(data.feeBreakdown.baseFee.amount)}',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue.shade600,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 12),
+
+        // Add-ons
+        ...data.feeBreakdown.addOns
+            .map(
+              (addOn) => Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.green.shade200),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.add_circle,
+                        color: Colors.green.shade600,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            addOn.name.toUpperCase(),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF1F2937),
+                            ),
+                          ),
+                          Text(
+                            addOn.description,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Text(
+                      '£${NumberFormat('#,##0.00').format(addOn.amount)}',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green.shade600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+            .toList(),
+
+        const SizedBox(height: 16),
+
+        // Total fees card
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.purple.shade50, Colors.indigo.shade50],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.purple.shade200),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.purple.shade600,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.calculate,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Total Fees Per Student',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1F2937),
+                      ),
+                    ),
+                    Text(
+                      'Base: £${NumberFormat('#,##0.00').format(data.totals.baseFee)} + Add-ons: £${NumberFormat('#,##0.00').format(data.totals.addOnFees)}',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                '£${NumberFormat('#,##0.00').format(data.totals.totalFees)}',
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.purple,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
+        // Expected Revenue Card
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.green.shade50, Colors.teal.shade50],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.green.shade200),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade600,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.account_balance,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Total Expected Revenue',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1F2937),
+                      ),
+                    ),
+                    Text(
+                      '${data.classInfo.totalStudents} students × £${NumberFormat('#,##0.00').format(data.totals.totalFees)}',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                '£${NumberFormat('#,##0.00').format(data.totals.totalExpectedRevenue)}',
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPaymentBreakdownCards(fee.FeeBreakdownData data) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Payment Breakdown',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1F2937),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Base fee payment breakdown
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.blue.shade200),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.school,
+                      color: Colors.blue.shade600,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Base Fee Payments',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1F2937),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildPaymentDetailCard(
+                      'Total Amount',
+                      '£${NumberFormat('#,##0.00').format(data.paymentBreakdown.baseFee.totalAmount)}',
+                      Colors.blue,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildPaymentDetailCard(
+                      'Paid Amount',
+                      '£${NumberFormat('#,##0.00').format(data.paymentBreakdown.baseFee.paidAmount)}',
+                      Colors.green,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildPaymentDetailCard(
+                      'Outstanding',
+                      '£${NumberFormat('#,##0.00').format(data.paymentBreakdown.baseFee.outstandingAmount)}',
+                      Colors.red,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'Completion: ${data.paymentBreakdown.baseFee.completionPercentage.toStringAsFixed(1)}%',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.blue,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
+        // Add-ons payment breakdown
+        ...data.paymentBreakdown.addOns
+            .map(
+              (addOn) => Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.green.shade200),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            Icons.add_circle,
+                            color: Colors.green.shade600,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          '${addOn.name.toUpperCase()} Payments',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF1F2937),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildPaymentDetailCard(
+                            'Total Amount',
+                            '£${NumberFormat('#,##0.00').format(addOn.totalAmount)}',
+                            Colors.green,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _buildPaymentDetailCard(
+                            'Paid Amount',
+                            '£${NumberFormat('#,##0.00').format(addOn.paidAmount)}',
+                            Colors.green,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _buildPaymentDetailCard(
+                            'Outstanding',
+                            '£${NumberFormat('#,##0.00').format(addOn.outstandingAmount)}',
+                            Colors.red,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        'Completion: ${addOn.completionPercentage.toStringAsFixed(1)}%',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.green,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+            .toList(),
+      ],
+    );
+  }
+
+  Widget _buildFeeBreakdownStatCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+    Color backgroundColor,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF1F2937),
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAmountCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+    Color backgroundColor,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF1F2937),
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentDetailCard(String title, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+              color: color,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRevenueCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF1F2937),
+            ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),

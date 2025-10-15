@@ -93,7 +93,9 @@ class PaymentRepository {
       final uri = Uri.parse(
         '${AppConstants.kBaseUrl}/payments/class-fee-breakdown/$classId',
       ).replace(queryParameters: queryParams);
-
+      print(uri);
+      print(queryParams);
+      print('how are you');
       final response = await http.get(
         uri,
         headers: {
@@ -136,7 +138,7 @@ class PaymentRepository {
         },
         body: json.encode(paymentData),
       );
-print(response.body);
+      print(response.body);
       final model = HTTPResponseModel();
       model.setSuccess = response.statusCode;
       model.setData = json.decode(response.body);

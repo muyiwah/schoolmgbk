@@ -759,15 +759,7 @@ class _SchoolClassesState extends ConsumerState<SchoolClasses> {
             isWarning: true,
           ),
         ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: _buildStatCard(
-            'Upcoming Events',
-            '12',
-            Icons.event,
-            const Color(0xFF10B981),
-          ),
-        ),
+       
       ],
     );
   }
