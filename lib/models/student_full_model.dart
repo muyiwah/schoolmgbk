@@ -312,6 +312,9 @@ class Student {
   AcademicInfo? academicInfo;
   ParentInfo? parentInfo;
   MedicalInfo? medicalInfo;
+  SenInfo? senInfo;
+  Permissions? permissions;
+  BackgroundInfo? backgroundInfo;
   FinancialInfo? financialInfo;
   String? id;
   String? admissionNumber;
@@ -331,6 +334,9 @@ class Student {
     this.academicInfo,
     this.parentInfo,
     this.medicalInfo,
+    this.senInfo,
+    this.permissions,
+    this.backgroundInfo,
     this.financialInfo,
     this.id,
     this.admissionNumber,
@@ -366,6 +372,15 @@ class Student {
         json["medicalInfo"] == null
             ? null
             : MedicalInfo.fromJson(json["medicalInfo"]),
+    senInfo: json["senInfo"] == null ? null : SenInfo.fromJson(json["senInfo"]),
+    permissions:
+        json["permissions"] == null
+            ? null
+            : Permissions.fromJson(json["permissions"]),
+    backgroundInfo:
+        json["backgroundInfo"] == null
+            ? null
+            : BackgroundInfo.fromJson(json["backgroundInfo"]),
     financialInfo:
         json["financialInfo"] == null
             ? null
@@ -397,6 +412,9 @@ class Student {
     "academicInfo": academicInfo?.toJson(),
     "parentInfo": parentInfo?.toJson(),
     "medicalInfo": medicalInfo?.toJson(),
+    "senInfo": senInfo?.toJson(),
+    "permissions": permissions?.toJson(),
+    "backgroundInfo": backgroundInfo?.toJson(),
     "financialInfo": financialInfo?.toJson(),
     "_id": id,
     "admissionNumber": admissionNumber,
@@ -900,25 +918,42 @@ class StudentContactInfo {
 }
 
 class Address {
+  String? streetNumber;
+  String? streetName;
   String? street;
   String? city;
   String? state;
   String? country;
+  String? postalCode;
 
-  Address({this.street, this.city, this.state, this.country});
+  Address({
+    this.streetNumber,
+    this.streetName,
+    this.street,
+    this.city,
+    this.state,
+    this.country,
+    this.postalCode,
+  });
 
   factory Address.fromJson(Map<String, dynamic> json) => Address(
+    streetNumber: json["streetNumber"],
+    streetName: json["streetName"],
     street: json["street"],
     city: json["city"],
     state: json["state"],
     country: json["country"],
+    postalCode: json["postalCode"],
   );
 
   Map<String, dynamic> toJson() => {
+    "streetNumber": streetNumber,
+    "streetName": streetName,
     "street": street,
     "city": city,
     "state": state,
     "country": country,
+    "postalCode": postalCode,
   };
 }
 
@@ -1164,27 +1199,51 @@ class PaymentStatusSummary {
 }
 
 class MedicalInfo {
+  GeneralPractitioner? generalPractitioner;
   EmergencyContact? emergencyContact;
+  String? medicalHistory;
   List<String>? allergies;
+  String? ongoingMedicalConditions;
+  String? specialNeeds;
+  String? currentMedication;
+  String? immunisationRecord;
+  String? dietaryRequirements;
   List<String>? medications;
   List<String>? medicalConditions;
 
   MedicalInfo({
+    this.generalPractitioner,
     this.emergencyContact,
+    this.medicalHistory,
     this.allergies,
+    this.ongoingMedicalConditions,
+    this.specialNeeds,
+    this.currentMedication,
+    this.immunisationRecord,
+    this.dietaryRequirements,
     this.medications,
     this.medicalConditions,
   });
 
   factory MedicalInfo.fromJson(Map<String, dynamic> json) => MedicalInfo(
+    generalPractitioner:
+        json["generalPractitioner"] == null
+            ? null
+            : GeneralPractitioner.fromJson(json["generalPractitioner"]),
     emergencyContact:
         json["emergencyContact"] == null
             ? null
             : EmergencyContact.fromJson(json["emergencyContact"]),
+    medicalHistory: json["medicalHistory"],
     allergies:
         json["allergies"] == null
             ? []
             : List<String>.from(json["allergies"]!.map((x) => x)),
+    ongoingMedicalConditions: json["ongoingMedicalConditions"],
+    specialNeeds: json["specialNeeds"],
+    currentMedication: json["currentMedication"],
+    immunisationRecord: json["immunisationRecord"],
+    dietaryRequirements: json["dietaryRequirements"],
     medications:
         json["medications"] == null
             ? []
@@ -1196,9 +1255,16 @@ class MedicalInfo {
   );
 
   Map<String, dynamic> toJson() => {
+    "generalPractitioner": generalPractitioner?.toJson(),
     "emergencyContact": emergencyContact?.toJson(),
+    "medicalHistory": medicalHistory,
     "allergies":
         allergies == null ? [] : List<dynamic>.from(allergies!.map((x) => x)),
+    "ongoingMedicalConditions": ongoingMedicalConditions,
+    "specialNeeds": specialNeeds,
+    "currentMedication": currentMedication,
+    "immunisationRecord": immunisationRecord,
+    "dietaryRequirements": dietaryRequirements,
     "medications":
         medications == null
             ? []
@@ -1210,24 +1276,62 @@ class MedicalInfo {
   };
 }
 
+class GeneralPractitioner {
+  String? name;
+  String? address;
+  String? telephoneNumber;
+
+  GeneralPractitioner({this.name, this.address, this.telephoneNumber});
+
+  factory GeneralPractitioner.fromJson(Map<String, dynamic> json) =>
+      GeneralPractitioner(
+        name: json["name"],
+        address: json["address"],
+        telephoneNumber: json["telephoneNumber"],
+      );
+
+  Map<String, dynamic> toJson() => {
+    "name": name,
+    "address": address,
+    "telephoneNumber": telephoneNumber,
+  };
+}
+
 class EmergencyContact {
   String? name;
   String? relationship;
   String? phone;
+  String? email;
+  Address? address;
+  bool? authorisedToCollectChild;
 
-  EmergencyContact({this.name, this.relationship, this.phone});
+  EmergencyContact({
+    this.name,
+    this.relationship,
+    this.phone,
+    this.email,
+    this.address,
+    this.authorisedToCollectChild,
+  });
 
   factory EmergencyContact.fromJson(Map<String, dynamic> json) =>
       EmergencyContact(
         name: json["name"],
         relationship: json["relationship"],
         phone: json["phone"],
+        email: json["email"],
+        address:
+            json["address"] == null ? null : Address.fromJson(json["address"]),
+        authorisedToCollectChild: json["authorisedToCollectChild"],
       );
 
   Map<String, dynamic> toJson() => {
     "name": name,
     "relationship": relationship,
     "phone": phone,
+    "email": email,
+    "address": address?.toJson(),
+    "authorisedToCollectChild": authorisedToCollectChild,
   };
 }
 
@@ -1703,6 +1807,7 @@ class StudentPersonalInfo {
   String? firstName;
   String? lastName;
   String? middleName;
+  String? profileImage;
   DateTime? dateOfBirth;
   String? gender;
   String? nationality;
@@ -1710,12 +1815,21 @@ class StudentPersonalInfo {
   String? localGovernment;
   String? religion;
   String? bloodGroup;
-  String? profileImage;
+  String? passportPhoto;
+  String? languagesSpokenAtHome;
+  String? ethnicBackground;
+  String? formOfIdentification;
+  String? idNumber;
+  String? idPhoto;
+  bool? hasSiblings;
+  List<dynamic>? siblingDetails;
+  int? age;
 
   StudentPersonalInfo({
     this.firstName,
     this.lastName,
     this.middleName,
+    this.profileImage,
     this.dateOfBirth,
     this.gender,
     this.nationality,
@@ -1723,7 +1837,15 @@ class StudentPersonalInfo {
     this.localGovernment,
     this.religion,
     this.bloodGroup,
-    this.profileImage,
+    this.passportPhoto,
+    this.languagesSpokenAtHome,
+    this.ethnicBackground,
+    this.formOfIdentification,
+    this.idNumber,
+    this.idPhoto,
+    this.hasSiblings,
+    this.siblingDetails,
+    this.age,
   });
 
   factory StudentPersonalInfo.fromJson(Map<String, dynamic> json) =>
@@ -1731,6 +1853,7 @@ class StudentPersonalInfo {
         firstName: json["firstName"],
         lastName: json["lastName"],
         middleName: json["middleName"],
+        profileImage: json["profileImage"],
         dateOfBirth:
             json["dateOfBirth"] == null
                 ? null
@@ -1741,13 +1864,25 @@ class StudentPersonalInfo {
         localGovernment: json["localGovernment"],
         religion: json["religion"],
         bloodGroup: json["bloodGroup"],
-        profileImage: json["profileImage"],
+        passportPhoto: json["passportPhoto"],
+        languagesSpokenAtHome: json["languagesSpokenAtHome"],
+        ethnicBackground: json["ethnicBackground"],
+        formOfIdentification: json["formOfIdentification"],
+        idNumber: json["idNumber"],
+        idPhoto: json["idPhoto"],
+        hasSiblings: json["hasSiblings"],
+        siblingDetails:
+            json["siblingDetails"] == null
+                ? []
+                : List<dynamic>.from(json["siblingDetails"]!.map((x) => x)),
+        age: json["age"],
       );
 
   Map<String, dynamic> toJson() => {
     "firstName": firstName,
     "lastName": lastName,
     "middleName": middleName,
+    "profileImage": profileImage,
     "dateOfBirth": dateOfBirth?.toIso8601String(),
     "gender": gender,
     "nationality": nationality,
@@ -1755,7 +1890,18 @@ class StudentPersonalInfo {
     "localGovernment": localGovernment,
     "religion": religion,
     "bloodGroup": bloodGroup,
-    "profileImage": profileImage,
+    "passportPhoto": passportPhoto,
+    "languagesSpokenAtHome": languagesSpokenAtHome,
+    "ethnicBackground": ethnicBackground,
+    "formOfIdentification": formOfIdentification,
+    "idNumber": idNumber,
+    "idPhoto": idPhoto,
+    "hasSiblings": hasSiblings,
+    "siblingDetails":
+        siblingDetails == null
+            ? []
+            : List<dynamic>.from(siblingDetails!.map((x) => x)),
+    "age": age,
   };
 }
 
@@ -1769,6 +1915,92 @@ class User {
       User(id: json["_id"], email: json["email"]);
 
   Map<String, dynamic> toJson() => {"_id": id, "email": email};
+}
+
+class SenInfo {
+  bool? hasSpecialNeeds;
+  bool? receivingAdditionalSupport;
+  bool? hasEHCP;
+
+  SenInfo({
+    this.hasSpecialNeeds,
+    this.receivingAdditionalSupport,
+    this.hasEHCP,
+  });
+
+  factory SenInfo.fromJson(Map<String, dynamic> json) => SenInfo(
+    hasSpecialNeeds: json["hasSpecialNeeds"],
+    receivingAdditionalSupport: json["receivingAdditionalSupport"],
+    hasEHCP: json["hasEHCP"],
+  );
+
+  Map<String, dynamic> toJson() => {
+    "hasSpecialNeeds": hasSpecialNeeds,
+    "receivingAdditionalSupport": receivingAdditionalSupport,
+    "hasEHCP": hasEHCP,
+  };
+}
+
+class Permissions {
+  bool? emergencyMedicalTreatment;
+  bool? administrationOfMedication;
+  bool? firstAidConsent;
+  bool? outingsAndTrips;
+  bool? transportConsent;
+  bool? useOfPhotosVideos;
+  bool? suncreamApplication;
+  bool? observationAndAssessment;
+
+  Permissions({
+    this.emergencyMedicalTreatment,
+    this.administrationOfMedication,
+    this.firstAidConsent,
+    this.outingsAndTrips,
+    this.transportConsent,
+    this.useOfPhotosVideos,
+    this.suncreamApplication,
+    this.observationAndAssessment,
+  });
+
+  factory Permissions.fromJson(Map<String, dynamic> json) => Permissions(
+    emergencyMedicalTreatment: json["emergencyMedicalTreatment"],
+    administrationOfMedication: json["administrationOfMedication"],
+    firstAidConsent: json["firstAidConsent"],
+    outingsAndTrips: json["outingsAndTrips"],
+    transportConsent: json["transportConsent"],
+    useOfPhotosVideos: json["useOfPhotosVideos"],
+    suncreamApplication: json["suncreamApplication"],
+    observationAndAssessment: json["observationAndAssessment"],
+  );
+
+  Map<String, dynamic> toJson() => {
+    "emergencyMedicalTreatment": emergencyMedicalTreatment,
+    "administrationOfMedication": administrationOfMedication,
+    "firstAidConsent": firstAidConsent,
+    "outingsAndTrips": outingsAndTrips,
+    "transportConsent": transportConsent,
+    "useOfPhotosVideos": useOfPhotosVideos,
+    "suncreamApplication": suncreamApplication,
+    "observationAndAssessment": observationAndAssessment,
+  };
+}
+
+class BackgroundInfo {
+  List<dynamic>? siblings;
+
+  BackgroundInfo({this.siblings});
+
+  factory BackgroundInfo.fromJson(Map<String, dynamic> json) => BackgroundInfo(
+    siblings:
+        json["siblings"] == null
+            ? []
+            : List<dynamic>.from(json["siblings"]!.map((x) => x)),
+  );
+
+  Map<String, dynamic> toJson() => {
+    "siblings":
+        siblings == null ? [] : List<dynamic>.from(siblings!.map((x) => x)),
+  };
 }
 
 class EnumValues<T> {

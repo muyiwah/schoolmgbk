@@ -1272,7 +1272,7 @@ class _PaymentBreakdownScreenState
     final hasAllTermsFeeStructure = _hasAllTermsFeeStructure(classData);
     final totalStudents = classData.totalStudents ?? 0;
     final capacity = classData.capacity ?? 0;
-    final classTeacher = classData.classTeacher?.name ?? 'No Teacher Assigned';
+    // final classTeacher = classData.classTeacher?.name ?? 'No Teacher Assigned';
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -1351,7 +1351,7 @@ class _PaymentBreakdownScreenState
           const SizedBox(height: 8),
 
           // Class Teacher
-          _buildInfoRow('Class Teacher', classTeacher),
+          // _buildInfoRow('Class Teacher', classTeacher),
           const SizedBox(height: 8),
 
           // Enrollment
