@@ -1,57 +1,5 @@
 {
     "version": 2,
-    "builds": [
-        {
-            "src": "build/web/**",
-            "use": "@vercel/static"
-        }
-    ],
-    "routes": [
-        {
-            "src": "/assets/(.*)",
-            "dest": "/assets/$1"
-        },
-        {
-            "src": "/canvaskit/(.*)",
-            "dest": "/canvaskit/$1"
-        },
-        {
-            "src": "/icons/(.*)",
-            "dest": "/icons/$1"
-        },
-        {
-            "src": "/version.json",
-            "dest": "/version.json"
-        },
-        {
-            "src": "/manifest.json",
-            "dest": "/manifest.json"
-        },
-        {
-            "src": "/favicon.png",
-            "dest": "/favicon.png"
-        },
-        {
-            "src": "/flutter_service_worker.js",
-            "dest": "/flutter_service_worker.js"
-        },
-        {
-            "src": "/flutter.js",
-            "dest": "/flutter.js"
-        },
-        {
-            "src": "/flutter_bootstrap.js",
-            "dest": "/flutter_bootstrap.js"
-        },
-        {
-            "src": "/main.dart.js",
-            "dest": "/main.dart.js"
-        },
-        {
-            "src": "/(.*)",
-            "dest": "/index.html"
-        }
-    ],
     "buildCommand": "flutter build web --release",
     "outputDirectory": "build/web",
     "installCommand": "if cd flutter; then git pull && cd .. ; else git clone https://github.com/flutter/flutter.git; fi && ls && flutter/bin/flutter doctor && flutter/bin/flutter clean && flutter/bin/flutter config --enable-web && flutter/bin/flutter pub get"
