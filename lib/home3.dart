@@ -64,8 +64,8 @@ import 'package:schmgtsystem/screens/exams/overview2.dart';
 import 'package:schmgtsystem/screens/adminhome/dashboar_details.dart';
 import 'package:schmgtsystem/screens/adminhome/dshboard.dart';
 import 'package:schmgtsystem/screens/parent/parent_dashboard.dart';
-import 'package:schmgtsystem/screens/teacher/teacher_dashboard.dart';
-import 'package:schmgtsystem/screens/teacher/teacher_students.dart';
+import 'package:schmgtsystem/screens/Teacher/teacher_dashboard.dart';
+import 'package:schmgtsystem/screens/Teacher/teacher_students.dart';
 
 // Screen imports - Promotions
 import 'package:schmgtsystem/screens/promotions/manage_promotion.dart';

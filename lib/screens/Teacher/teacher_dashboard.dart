@@ -10,7 +10,7 @@ import 'package:schmgtsystem/models/communication_model.dart';
 import 'package:schmgtsystem/widgets/success_snack.dart';
 import 'package:schmgtsystem/widgets/communication_dialog.dart';
 import 'package:schmgtsystem/RoleHome/teacher.dart';
-import 'package:schmgtsystem/screens/teacher/teacher_timetable_screen.dart';
+import 'package:schmgtsystem/screens/Teacher/teacher_timetable_screen.dart';
 import 'package:schmgtsystem/screens/Student/create_timetale.dart';
 import 'package:schmgtsystem/models/uniform_model.dart';
 import 'package:schmgtsystem/repository/uniform_repository.dart';
