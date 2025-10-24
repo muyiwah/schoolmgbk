@@ -34,6 +34,27 @@ class _CreateAcademicSettingsScreenState
   DateTime? _thirdTermEnd;
 
   final List<String> _terms = ['First', 'Second', 'Third'];
+  String? _selectedAcademicYear;
+  List<String> _academicYears = [];
+
+  // Generate academic years list
+  List<String> _generateAcademicYears() {
+    final years = <String>[];
+
+    // Generate years from 2025 to 2035
+    for (int year = 2025; year <= 2035; year++) {
+      years.add('$year/${year + 1}');
+    }
+
+    return years;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize academic years list
+    _academicYears = _generateAcademicYears();
+  }
 
   @override
   void dispose() {
@@ -42,10 +63,30 @@ class _CreateAcademicSettingsScreenState
     super.dispose();
   }
 
+  void _onAcademicYearSelected(String? selectedYear) {
+    if (selectedYear != null) {
+      setState(() {
+        _selectedAcademicYear = selectedYear;
+        _academicYearController.text = selectedYear;
+      });
+
+      // Update dates automatically
+      final defaultStartDate = _getDefaultStartDate();
+      final defaultEndDate = _getDefaultEndDate();
+      setState(() {
+        _startDate = defaultStartDate;
+        _endDate = defaultEndDate;
+      });
+    }
+  }
+
   Future<void> _selectStartDate() async {
+    // Get the default start date based on academic year
+    final defaultStartDate = _getDefaultStartDate();
+
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _startDate ?? DateTime.now(),
+      initialDate: _startDate ?? defaultStartDate,
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
     );
@@ -59,10 +100,34 @@ class _CreateAcademicSettingsScreenState
     }
   }
 
+  DateTime _getDefaultStartDate() {
+    // Use the selected academic year from dropdown
+    if (_selectedAcademicYear != null && _selectedAcademicYear!.isNotEmpty) {
+      // Extract year from academic year format (e.g., "2025/2026" -> 2025)
+      final yearPattern = RegExp(r'^(\d{4})');
+      final match = yearPattern.firstMatch(_selectedAcademicYear!);
+
+      if (match != null) {
+        final year = int.tryParse(match.group(1)!);
+        if (year != null) {
+          // Default to September 1st of the extracted year
+          return DateTime(year, 9, 1);
+        }
+      }
+    }
+
+    // Fallback to current year September 1st
+    final currentYear = DateTime.now().year;
+    return DateTime(currentYear, 9, 1);
+  }
+
   Future<void> _selectEndDate() async {
+    // Get the default end date based on start date
+    final defaultEndDate = _getDefaultEndDate();
+
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _endDate ?? _startDate ?? DateTime.now(),
+      initialDate: _endDate ?? defaultEndDate,
       firstDate: _startDate ?? DateTime.now(),
       lastDate: DateTime(2030),
     );
@@ -71,6 +136,33 @@ class _CreateAcademicSettingsScreenState
         _endDate = picked;
       });
     }
+  }
+
+  DateTime _getDefaultEndDate() {
+    // Use selected academic year to determine end date
+    if (_selectedAcademicYear != null && _selectedAcademicYear!.isNotEmpty) {
+      // Extract the end year from academic year format (e.g., "2025/2026" -> 2026)
+      final yearPattern = RegExp(r'^(\d{4})/(\d{4})$');
+      final match = yearPattern.firstMatch(_selectedAcademicYear!);
+
+      if (match != null) {
+        final endYear = int.tryParse(match.group(2)!);
+        if (endYear != null) {
+          // Default to August 31st of the end year from academic year
+          return DateTime(endYear, 8, 31);
+        }
+      }
+    }
+
+    // Fallback: if no academic year selected, use start date
+    if (_startDate != null) {
+      // Default to August 31st of the year after start date
+      return DateTime(_startDate!.year + 1, 8, 31);
+    }
+
+    // Final fallback
+    final currentYear = DateTime.now().year;
+    return DateTime(currentYear + 1, 8, 31);
   }
 
   Future<void> _selectTermDate(String term, String type) async {
@@ -368,22 +460,8 @@ class _CreateAcademicSettingsScreenState
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Academic Year Input
-              _buildInputCard(
-                'Academic Year',
-                'Enter academic year (e.g., 2024/2025)',
-                _academicYearController,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Academic year is required';
-                  }
-                  final pattern = RegExp(r'^(20\d{2}[-/]20\d{2}|20\d{2})$');
-                  if (!pattern.hasMatch(value.trim())) {
-                    return 'Invalid format. Use 2024/2025, 2024-2025, or 2024';
-                  }
-                  return null;
-                },
-              ),
+              // Academic Year Selector
+              _buildAcademicYearSelector(),
 
               const SizedBox(height: 16),
 
@@ -456,6 +534,97 @@ class _CreateAcademicSettingsScreenState
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildAcademicYearSelector() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.calendar_today, color: AppColors.primary, size: 20),
+              const SizedBox(width: 8),
+              const Text(
+                'Academic Year',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+              const Text(
+                ' *',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.red,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            value: _selectedAcademicYear,
+            decoration: InputDecoration(
+              hintText: 'Select academic year',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              prefixIcon: const Icon(Icons.school),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 16,
+              ),
+            ),
+            items:
+                _academicYears.map((String year) {
+                  return DropdownMenuItem<String>(
+                    value: year,
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.calendar_month,
+                          size: 16,
+                          color: Colors.grey[600],
+                        ),
+                        const SizedBox(width: 8),
+                        Text(year, style: const TextStyle(fontSize: 16)),
+                      ],
+                    ),
+                  );
+                }).toList(),
+            onChanged: _onAcademicYearSelected,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please select an academic year';
+              }
+              return null;
+            },
+            isExpanded: true,
+            icon: const Icon(Icons.arrow_drop_down),
+            style: const TextStyle(fontSize: 16, color: Colors.black87),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Choose from predefined academic years to avoid typos',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[600],
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
       ),
     );
   }

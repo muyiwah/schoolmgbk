@@ -6,6 +6,7 @@ import 'package:schmgtsystem/models/student_model.dart';
 import 'package:schmgtsystem/providers/student_provider.dart';
 import 'package:schmgtsystem/providers/class_provider.dart';
 import 'package:schmgtsystem/providers/provider.dart';
+import 'package:schmgtsystem/screens/Student/single_student.dart';
 
 class AllStudentsScreen extends ConsumerStatefulWidget {
   const AllStudentsScreen({super.key});
@@ -1059,8 +1060,21 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
                         child: Row(
                           children: [
                             IconButton(
-                              onPressed: () {
-                                context.go('/students/single/${student.id}');
+                              onPressed: () async {
+                                final result = await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) => SingleStudent(
+                                          studentId: student.id ?? '',
+                                        ),
+                                  ),
+                                );
+
+                                // If student was updated, reload the students list
+                                if (result == true) {
+                                  _loadStudents();
+                                }
                               },
                               icon: const Icon(
                                 Icons.visibility,

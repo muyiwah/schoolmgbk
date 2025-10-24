@@ -42,6 +42,9 @@ class _PromotionManagementScreenState
   // Toggle for showing/hiding statistics and filters
   bool _showStatisticsAndFilters = true;
 
+  // Refresh loading state
+  bool _isRefreshing = false;
+
   // Pagination (for future use)
   // int _currentPage = 1;
   // final int _itemsPerPage = 50;
@@ -53,9 +56,9 @@ class _PromotionManagementScreenState
     _searchController.addListener(_onSearchChanged);
     _scrollController.addListener(_onScroll);
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadAcademicYear();
-      _loadClasses();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _loadAcademicYear();
+      await _loadClasses();
     });
   }
 
@@ -67,8 +70,9 @@ class _PromotionManagementScreenState
     super.dispose();
   }
 
-  void _loadAcademicYear() {
+  Future<void> _loadAcademicYear() async {
     final academicYearService = GlobalAcademicYearService();
+    await academicYearService.forceRefresh();
     setState(() {
       _selectedAcademicYear = academicYearService.currentAcademicYearString;
     });
@@ -94,6 +98,44 @@ class _PromotionManagementScreenState
             classId: classId,
             academicYear: _selectedAcademicYear,
           );
+    }
+  }
+
+  Future<void> _refreshScreen() async {
+    setState(() {
+      _isRefreshing = true;
+    });
+
+    try {
+      // Refresh academic year
+      await _loadAcademicYear();
+
+      // Refresh classes
+      await _loadClasses();
+
+      // Refresh eligible students if a specific class is selected
+      if (_selectedClass != 'All Classes') {
+        await _loadEligibleStudents();
+      }
+
+      // Clear any selections that might be stale
+      setState(() {
+        _selectedStudentIds.clear();
+        _selectedClass = 'All Classes'; // Reset to initial state
+        _selectedPromotionType = 'All Types'; // Reset promotion type filter
+        _selectedFromClassId = null; // Reset bulk promotion from class
+        _selectedToClassId = null; // Reset bulk promotion to class
+        _selectedFromClassName = null;
+        _selectedToClassName = null;
+        _bulkPromotionStudents.clear(); // Clear bulk promotion students
+      });
+
+      // Clear search controller
+      _searchController.clear();
+    } finally {
+      setState(() {
+        _isRefreshing = false;
+      });
     }
   }
 
@@ -208,20 +250,10 @@ class _PromotionManagementScreenState
             term: 'First', // You can make this configurable
             promotionType: 'promoted',
             studentIds: studentIds,
-            processedBy:
-                '68bcd2bdd7349a8d4073bfb3', // This should come from user context
+            // This should come from user context
           );
 
       if (response) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Successfully promoted ${studentIds.length} students from $_selectedFromClassName to $_selectedToClassName',
-            ),
-            backgroundColor: Colors.green,
-          ),
-        );
-
         // Reset selections
         setState(() {
           _selectedFromClassId = null;
@@ -355,6 +387,7 @@ class _PromotionManagementScreenState
                     toClassId: toClassId,
                     academicYear: _selectedAcademicYear,
                     studentIds: studentIds,
+                    term: 'First',
                     promotionType: promotionType,
                   );
 
@@ -366,7 +399,10 @@ class _PromotionManagementScreenState
               }
             },
           ),
-    );
+    ).then((_) {
+      // Refresh the screen when dialog is dismissed
+      _refreshScreen();
+    });
   }
 
   @override
@@ -443,6 +479,44 @@ class _PromotionManagementScreenState
                       borderRadius: BorderRadius.circular(6),
                     ),
                     elevation: _showStatisticsAndFilters ? 2 : 0,
+                  ),
+                ),
+                SizedBox(width: 8),
+                // Refresh Button
+                ElevatedButton.icon(
+                  onPressed:
+                      _isRefreshing
+                          ? null
+                          : () async {
+                            await _refreshScreen();
+                          },
+                  icon:
+                      _isRefreshing
+                          ? SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          )
+                          : const Icon(Icons.refresh, color: Colors.white),
+                  label: Text(
+                    _isRefreshing ? 'Refreshing...' : 'Refresh',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    elevation: 2,
                   ),
                 ),
                 SizedBox(width: 8),
@@ -629,6 +703,11 @@ class _PromotionManagementScreenState
                           _selectedFromClassName =
                               classes.firstWhere((cls) => cls.id == value).name;
                           _bulkPromotionStudents.clear();
+                          // Clear "to class" selection if it's the same as the new "from class"
+                          if (_selectedToClassId == value) {
+                            _selectedToClassId = null;
+                            _selectedToClassName = null;
+                          }
                         });
                         if (value != null) {
                           _loadStudentsForBulkPromotion(value);
@@ -687,12 +766,15 @@ class _PromotionManagementScreenState
                       ),
                       hint: const Text('Select destination class'),
                       items:
-                          classes.map((cls) {
-                            return DropdownMenuItem(
-                              value: cls.id,
-                              child: Text('${cls.name} (${cls.level})'),
-                            );
-                          }).toList(),
+                          classes
+                              .where((cls) => cls.id != _selectedFromClassId)
+                              .map((cls) {
+                                return DropdownMenuItem(
+                                  value: cls.id,
+                                  child: Text('${cls.name} (${cls.level})'),
+                                );
+                              })
+                              .toList(),
                       onChanged: (value) {
                         setState(() {
                           _selectedToClassId = value;
@@ -1491,7 +1573,11 @@ class _PromotionDialogState extends State<PromotionDialog> {
               ),
               items:
                   widget.availableClasses
-                      .where((cls) => cls.availableSlots > 0)
+                      .where(
+                        (cls) =>
+                            cls.availableSlots > 0 &&
+                            cls.id != widget.fromClassId,
+                      )
                       .map(
                         (cls) => DropdownMenuItem(
                           value: cls.id,
