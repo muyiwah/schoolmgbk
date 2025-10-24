@@ -8,6 +8,46 @@
     ],
     "routes": [
         {
+            "src": "/assets/(.*)",
+            "dest": "/assets/$1"
+        },
+        {
+            "src": "/canvaskit/(.*)",
+            "dest": "/canvaskit/$1"
+        },
+        {
+            "src": "/icons/(.*)",
+            "dest": "/icons/$1"
+        },
+        {
+            "src": "/version.json",
+            "dest": "/version.json"
+        },
+        {
+            "src": "/manifest.json",
+            "dest": "/manifest.json"
+        },
+        {
+            "src": "/favicon.png",
+            "dest": "/favicon.png"
+        },
+        {
+            "src": "/flutter_service_worker.js",
+            "dest": "/flutter_service_worker.js"
+        },
+        {
+            "src": "/flutter.js",
+            "dest": "/flutter.js"
+        },
+        {
+            "src": "/flutter_bootstrap.js",
+            "dest": "/flutter_bootstrap.js"
+        },
+        {
+            "src": "/main.dart.js",
+            "dest": "/main.dart.js"
+        },
+        {
             "src": "/(.*)",
             "dest": "/index.html"
         }
