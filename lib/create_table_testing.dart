@@ -747,6 +747,7 @@ class _EditEntryDialogState extends State<EditEntryDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             DropdownButtonFormField<Subject>(
+              dropdownColor: Colors.white,
               value: _selectedSubject,
               decoration: const InputDecoration(labelText: 'Subject'),
               items: widget.subjects
@@ -769,6 +770,7 @@ class _EditEntryDialogState extends State<EditEntryDialog> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<Teacher>(
+              dropdownColor: Colors.white,
               value: _selectedTeacher,
               decoration: const InputDecoration(labelText: 'Teacher (optional)'),
               items: widget.teachers
@@ -781,6 +783,7 @@ class _EditEntryDialogState extends State<EditEntryDialog> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<Classroom>(
+              dropdownColor: Colors.white,
               value: _selectedClassroom,
               decoration: const InputDecoration(labelText: 'Classroom (optional)'),
               items: widget.classrooms

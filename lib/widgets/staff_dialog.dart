@@ -551,6 +551,7 @@ class _StaffDialogState extends State<StaffDialog>
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
+          dropdownColor: Colors.white,
           value: value,
           decoration: InputDecoration(
             prefixIcon: Icon(

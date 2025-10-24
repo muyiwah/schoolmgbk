@@ -1,20 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:schmgtsystem/constants/appcolor.dart';
-import 'package:schmgtsystem/home3.dart';
-import 'package:schmgtsystem/providers/user_provider.dart';
-import 'package:schmgtsystem/widgets/success_snack.dart';
+import 'package:schmgtsystem/providers/provider.dart';
+import 'package:schmgtsystem/providers/auth_state_provider.dart';
+import 'package:schmgtsystem/screens/auth/forgot_password_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 enum userRole { Admin, Parent, Teacher }
 
-class OakwoodLoginScreen extends StatefulWidget {
-  const OakwoodLoginScreen({Key? key}) : super(key: key);
+class LoginScreen extends ConsumerStatefulWidget {
+  const LoginScreen({Key? key}) : super(key: key);
 
   @override
-  State<OakwoodLoginScreen> createState() => _OakwoodLoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _OakwoodLoginScreenState extends State<OakwoodLoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -24,10 +25,73 @@ class _OakwoodLoginScreenState extends State<OakwoodLoginScreen> {
   bool _obscurePassword = true;
 
   @override
+  void initState() {
+    super.initState();
+    _loadSavedCredentials();
+  }
+
+  @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  // Load saved credentials from SharedPreferences
+  Future<void> _loadSavedCredentials() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedEmail = prefs.getString('saved_email');
+      final savedPassword = prefs.getString('saved_password');
+      final rememberMe = prefs.getBool('remember_me') ?? false;
+      final savedRole = prefs.getString('saved_role');
+
+      if (rememberMe && savedEmail != null && savedPassword != null) {
+        setState(() {
+          _emailController.text = savedEmail;
+          _passwordController.text = savedPassword;
+          _rememberMe = rememberMe;
+          _selectedRole = savedRole ?? 'Admin';
+        });
+
+        // Set the authentication state in the provider if credentials are loaded
+        if (savedRole != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            ref
+                .read(authStateProvider.notifier)
+                .setAuthenticated(
+                  userRole: savedRole.toLowerCase(),
+                  token: '', // Token will be set during actual login
+                );
+          });
+        }
+      }
+    } catch (e) {
+      // Handle error silently
+      print('Error loading saved credentials: $e');
+    }
+  }
+
+  // Save credentials to SharedPreferences
+  Future<void> _saveCredentials() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (_rememberMe) {
+        await prefs.setString('saved_email', _emailController.text);
+        await prefs.setString('saved_password', _passwordController.text);
+        await prefs.setBool('remember_me', true);
+        await prefs.setString('saved_role', _selectedRole);
+      } else {
+        // Clear saved credentials if remember me is unchecked
+        await prefs.remove('saved_email');
+        await prefs.remove('saved_password');
+        await prefs.setBool('remember_me', false);
+        await prefs.remove('saved_role');
+      }
+    } catch (e) {
+      // Handle error silently
+      print('Error saving credentials: $e');
+    }
   }
 
   @override
@@ -37,23 +101,35 @@ class _OakwoodLoginScreenState extends State<OakwoodLoginScreen> {
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            padding: EdgeInsets.symmetric(
+              horizontal: MediaQuery.of(context).size.width > 600 ? 24.0 : 16.0,
+            ),
             child: Column(
               children: [
-                const SizedBox(height: 20),
+                SizedBox(
+                  height: MediaQuery.of(context).size.height > 600 ? 20 : 10,
+                ),
 
                 // Header Section
                 _buildHeader(),
 
-                const SizedBox(height: 40),
+                SizedBox(
+                  height: MediaQuery.of(context).size.height > 600 ? 40 : 24,
+                ),
 
                 // Login Form
-                _buildLoginForm(),
+                Center(child: _buildLoginForm()),
 
-                const SizedBox(height: 30),
+                SizedBox(
+                  height: MediaQuery.of(context).size.height > 600 ? 30 : 20,
+                ),
 
                 // Support Link
                 _buildSupportLink(),
+
+                SizedBox(
+                  height: MediaQuery.of(context).size.height > 600 ? 20 : 10,
+                ),
               ],
             ),
           ),
@@ -65,7 +141,7 @@ class _OakwoodLoginScreenState extends State<OakwoodLoginScreen> {
   Widget _buildHeader() {
     return Column(
       children: [
-        // Moon icon in top right corner would be positioned differently in real app
+        // Moon icon in top right corner
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -85,28 +161,34 @@ class _OakwoodLoginScreenState extends State<OakwoodLoginScreen> {
           ],
         ),
 
-        const SizedBox(height: 40),
+        SizedBox(height: MediaQuery.of(context).size.height > 600 ? 40 : 20),
 
         // Logo
         Container(
-          width: 80,
-          height: 80,
+          width: MediaQuery.of(context).size.width > 600 ? 80 : 60,
+          height: MediaQuery.of(context).size.width > 600 ? 80 : 60,
           decoration: BoxDecoration(
             color: AppColors.secondary,
-            borderRadius: BorderRadius.circular(40),
+            borderRadius: BorderRadius.circular(
+              MediaQuery.of(context).size.width > 600 ? 40 : 30,
+            ),
           ),
-          child: const Icon(Icons.school, color: Colors.white, size: 40),
+          child: Icon(
+            Icons.school,
+            color: Colors.white,
+            size: MediaQuery.of(context).size.width > 600 ? 40 : 30,
+          ),
         ),
 
-        const SizedBox(height: 24),
+        SizedBox(height: MediaQuery.of(context).size.height > 600 ? 24 : 16),
 
         // Title and Subtitle
-        const Text(
+        Text(
           'Welcome to LOVESPRING',
           textAlign: TextAlign.center,
           style: TextStyle(
             color: Colors.white,
-            fontSize: 28,
+            fontSize: MediaQuery.of(context).size.width > 600 ? 28 : 24,
             fontWeight: FontWeight.bold,
             height: 1.2,
           ),
@@ -114,10 +196,13 @@ class _OakwoodLoginScreenState extends State<OakwoodLoginScreen> {
 
         const SizedBox(height: 12),
 
-        const Text(
+        Text(
           'Login to manage academics, finance, and school activities',
           textAlign: TextAlign.center,
-          style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 16),
+          style: TextStyle(
+            color: const Color(0xFF9CA3AF),
+            fontSize: MediaQuery.of(context).size.width > 600 ? 16 : 14,
+          ),
         ),
       ],
     );
@@ -125,8 +210,14 @@ class _OakwoodLoginScreenState extends State<OakwoodLoginScreen> {
 
   Widget _buildLoginForm() {
     return Container(
-      width: MediaQuery.sizeOf(context).width * .4,
-      padding: const EdgeInsets.all(32),
+      width:
+          MediaQuery.of(context).size.width > 600
+              ? MediaQuery.of(context).size.width * 0.4
+              : MediaQuery.of(context).size.width * 0.9,
+      constraints: const BoxConstraints(maxWidth: 400),
+      padding: EdgeInsets.all(
+        MediaQuery.of(context).size.width > 600 ? 32 : 24,
+      ),
       decoration: BoxDecoration(
         color: const Color(0xFF1F2937).withOpacity(0.5),
         borderRadius: BorderRadius.circular(16),
@@ -137,22 +228,6 @@ class _OakwoodLoginScreenState extends State<OakwoodLoginScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Role Selection
-            const Text(
-              'Select Your Role',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            _buildRoleSelection(),
-
-            const SizedBox(height: 24),
-
             // Email Field
             const Text(
               'Email / Username',
@@ -193,73 +268,6 @@ class _OakwoodLoginScreenState extends State<OakwoodLoginScreen> {
             // Login Button
             _buildLoginButton(),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRoleSelection() {
-    return Row(
-      children: [
-        _buildRoleCard('Admin', Icons.admin_panel_settings),
-        const SizedBox(width: 12),
-        _buildRoleCard('Teacher', Icons.co_present),
-        const SizedBox(width: 12),
-        _buildRoleCard('Accountant', Icons.calculate),
-      ],
-    );
-  }
-
-  Widget _buildRoleCard(String role, IconData icon) {
-    final isSelected = _selectedRole == role;
-
-    return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            _selectedRole = role;
-          });
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(
-            color:
-                isSelected
-                    ? const Color(0xFF6366F1).withOpacity(0.2)
-                    : const Color(0xFF374151),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color:
-                  isSelected
-                      ? const Color(0xFF6366F1)
-                      : const Color(0xFF4B5563),
-              width: 1,
-            ),
-          ),
-          child: Column(
-            children: [
-              Icon(
-                icon,
-                color:
-                    isSelected
-                        ? const Color(0xFF6366F1)
-                        : const Color(0xFF9CA3AF),
-                size: 24,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                role,
-                style: TextStyle(
-                  color:
-                      isSelected
-                          ? const Color(0xFF6366F1)
-                          : const Color(0xFF9CA3AF),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );
@@ -327,39 +335,84 @@ class _OakwoodLoginScreenState extends State<OakwoodLoginScreen> {
   }
 
   Widget _buildRememberMeSection() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
+    return MediaQuery.of(context).size.width > 400
+        ? Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Checkbox(
-              value: _rememberMe,
-              onChanged: (value) {
-                setState(() {
-                  _rememberMe = value ?? false;
-                });
-              },
-              activeColor: const Color(0xFF6366F1),
-              checkColor: Colors.white,
-              side: const BorderSide(color: Color(0xFF6B7280)),
+            Row(
+              children: [
+                Checkbox(
+                  value: _rememberMe,
+                  onChanged: (value) {
+                    setState(() {
+                      _rememberMe = value ?? false;
+                    });
+                  },
+                  activeColor: const Color(0xFF6366F1),
+                  checkColor: Colors.white,
+                  side: const BorderSide(color: Color(0xFF6B7280)),
+                ),
+                const Text(
+                  'Remember me',
+                  style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 14),
+                ),
+              ],
             ),
-            const Text(
-              'Remember me',
-              style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 14),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const ForgotPasswordScreen(),
+                  ),
+                );
+              },
+              child: const Text(
+                'Forgot Password?',
+                style: TextStyle(color: Color(0xFF6366F1), fontSize: 14),
+              ),
             ),
           ],
-        ),
-        TextButton(
-          onPressed: () {
-            // Handle forgot password
-          },
-          child: const Text(
-            'Forgot Password?',
-            style: TextStyle(color: Color(0xFF6366F1), fontSize: 14),
-          ),
-        ),
-      ],
-    );
+        )
+        : Column(
+          children: [
+            Row(
+              children: [
+                Checkbox(
+                  value: _rememberMe,
+                  onChanged: (value) {
+                    setState(() {
+                      _rememberMe = value ?? false;
+                    });
+                  },
+                  activeColor: const Color(0xFF6366F1),
+                  checkColor: Colors.white,
+                  side: const BorderSide(color: Color(0xFF6B7280)),
+                ),
+                const Text(
+                  'Remember me',
+                  style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 14),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const ForgotPasswordScreen(),
+                    ),
+                  );
+                },
+                child: const Text(
+                  'Forgot Password?',
+                  style: TextStyle(color: Color(0xFF6366F1), fontSize: 14),
+                ),
+              ),
+            ),
+          ],
+        );
   }
 
   Widget _buildLoginButton() {
@@ -367,10 +420,27 @@ class _OakwoodLoginScreenState extends State<OakwoodLoginScreen> {
       width: double.infinity,
       height: 52,
       child: ElevatedButton(
-        onPressed: () {
+        onPressed: () async {
           if (_formKey.currentState!.validate()) {
             // Handle login
-            _handleLogin();
+            Map<String, String> body = {
+              'email': _emailController.text,
+
+              'password': _passwordController.text,
+            };
+
+            // Save credentials if remember me is checked
+            await _saveCredentials();
+
+            // Role will be set by the authentication provider after successful login
+
+            ref
+                .read(RiverpodProvider.authProvider)
+                .login(
+                  context,
+                  ref.read(RiverpodProvider.profileProvider),
+                  body: body,
+                );
           }
         },
         style: ElevatedButton.styleFrom(
@@ -388,43 +458,46 @@ class _OakwoodLoginScreenState extends State<OakwoodLoginScreen> {
   }
 
   Widget _buildSupportLink() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Text(
-          'Need help? ',
-          style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 14),
-        ),
-        TextButton(
-          onPressed: () {
-            // Handle contact support
-          },
-          child: const Text(
-            'Contact Support',
-            style: TextStyle(color: Color(0xFF6366F1), fontSize: 14),
-          ),
-        ),
-      ],
-    );
+    return MediaQuery.of(context).size.width > 300
+        ? Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text(
+              'Need help? ',
+              style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 14),
+            ),
+            TextButton(
+              onPressed: () {
+                // Handle contact support
+              },
+              child: const Text(
+                'Contact Support',
+                style: TextStyle(color: Color(0xFF6366F1), fontSize: 14),
+              ),
+            ),
+          ],
+        )
+        : Column(
+          children: [
+            const Text(
+              'Need help?',
+              style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 14),
+            ),
+            const SizedBox(height: 4),
+            TextButton(
+              onPressed: () {
+                // Handle contact support
+              },
+              child: const Text(
+                'Contact Support',
+                style: TextStyle(color: Color(0xFF6366F1), fontSize: 14),
+              ),
+            ),
+          ],
+        );
   }
 
-  void _handleLogin() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => SchoolAdminDashboard3()),
-    );
-    // Implement login logic here
-    print('Login attempt:');
-    print('Role: $_selectedRole');
-    print('Email: ${_emailController.text}');
-    print('Remember me: $_rememberMe');
-    Provider.of<UserProvider>(
-      listen: false,
-      context,
-    ).setUserRole(_selectedRole);
-    // You would typically call an authentication service here
-    showSnackbar(context, 'Logging in as $_selectedRole...');
-  }
+  // You would typically call an authentication service here
 }
 
 // Example usage in main.dart
@@ -434,12 +507,12 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Oakwood Academy',
+      title: 'Academy',
       theme: ThemeData(
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: const OakwoodLoginScreen(),
+      home: const LoginScreen(),
       debugShowCheckedModeBanner: false,
     );
   }

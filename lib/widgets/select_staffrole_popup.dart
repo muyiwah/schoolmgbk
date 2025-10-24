@@ -315,6 +315,7 @@ class _StaffRoleAssignmentPopupState extends State<StaffRoleAssignmentPopup>
 
           // Staff dropdown
           DropdownButtonFormField<Map<String, dynamic>>(
+            dropdownColor: Colors.white,
             isExpanded: true,
             decoration: InputDecoration(
               border: OutlineInputBorder(
@@ -432,13 +433,14 @@ class _StaffRoleAssignmentPopupState extends State<StaffRoleAssignmentPopup>
           const SizedBox(height: 12),
 
           DropdownButtonFormField<Map<String, dynamic>>(
+            dropdownColor: Colors.white,
             isExpanded: true,
             decoration: InputDecoration(
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
               filled: true,
-              fillColor: Colors.grey.shade50,
+              fillColor: Colors.white,
               contentPadding: const EdgeInsets.symmetric(horizontal: 12),
             ),
             hint: const Text('Choose role to assign'),
@@ -475,14 +477,15 @@ class _StaffRoleAssignmentPopupState extends State<StaffRoleAssignmentPopup>
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
-                          if(showSelectRoleFull)    Text(
-                                role['description'],
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey.shade600,
+                              if (showSelectRoleFull)
+                                Text(
+                                  role['description'],
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
                             ],
                           ),
                         ),
@@ -692,6 +695,7 @@ class _StaffRoleAssignmentPopupState extends State<StaffRoleAssignmentPopup>
       context: context,
       builder:
           (context) => AlertDialog(
+            backgroundColor: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
@@ -812,7 +816,7 @@ class StaffRoleExample extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('School Management System'),
+        title: const Text('LoveSpring Dashboard'),
         backgroundColor: Colors.indigo.shade600,
         foregroundColor: Colors.white,
       ),

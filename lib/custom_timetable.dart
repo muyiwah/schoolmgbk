@@ -13,7 +13,7 @@ class TimeTableApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'School Timetable',
+      title: 'School Timetable (Grade 3)',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.blue, fontFamily: 'Roboto'),
       home: const TimeTableScreen(),
@@ -249,9 +249,9 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Scaffold(backgroundColor: Colors.white,
       key: _globalKey,
-      appBar: AppBar(
+      appBar: AppBar(backgroundColor: Colors.white,
         title: const Text('School Timetable'),
         actions: [
           IconButton(

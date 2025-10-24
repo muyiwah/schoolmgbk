@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:schmgtsystem/utils/helpers.dart';
 
 class CustomDropdown extends StatefulWidget {
   final void Function(String?)? onChanged;
@@ -29,7 +30,7 @@ class _CustomDropdownState extends State<CustomDropdown> {
 
     return SizedBox(
       width: 200,
-      child: DropdownButtonFormField<String>(
+      child: DropdownButtonFormField<String>(dropdownColor: Colors.white,
         value: _localSelectedValue,
         decoration: InputDecoration(
           filled: true,
@@ -55,7 +56,7 @@ class _CustomDropdownState extends State<CustomDropdown> {
                 .map(
                   (item) => DropdownMenuItem<String>(
                     value: item,
-                    child: Text(item, style: const TextStyle(fontSize: 12)),
+                    child: Text(item.capitalize(), style: const TextStyle(fontSize: 12)),
                   ),
                 )
                 .toList(),

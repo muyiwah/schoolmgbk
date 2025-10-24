@@ -6,7 +6,7 @@ void showSnackbar(BuildContext context, String text) {
     alignment: Alignment.topLeft,
 type: ToastificationType.success,
     context: context, // optional if you use ToastificationWrapper
-    title: (text),
+    title: text,
     autoCloseDuration: const Duration(seconds: 5),
   );
 }

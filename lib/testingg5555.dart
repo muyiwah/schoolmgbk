@@ -7,8 +7,8 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:collection/collection.dart';
 import 'package:schmgtsystem/color_pallete.dart';
 
-class Edit5 extends StatelessWidget {
-  const Edit5({super.key});
+class CreateTimetable extends StatelessWidget {
+  const CreateTimetable({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +16,6 @@ class Edit5 extends StatelessWidget {
       title: 'School Timetable Creator',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.blue,
         fontFamily: 'Roboto',
         inputDecorationTheme: const InputDecorationTheme(
           border: OutlineInputBorder(),
@@ -544,8 +543,10 @@ class _TimeTableCreatorScreenState extends State<TimeTableCreatorScreen> {
 
     return DefaultTabController(
       length: 2,
-      child: Scaffold(backgroundColor: Colors.white,
-        appBar: AppBar(backgroundColor: Colors.white,
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          backgroundColor: Colors.white,
           title: Text(_timetableName),
           actions: [
             IconButton(
@@ -583,6 +584,7 @@ class _TimeTableCreatorScreenState extends State<TimeTableCreatorScreen> {
               context: context,
               builder:
                   (context) => AlertDialog(
+                    backgroundColor: Colors.white,
                     title: const Text('Name your timetable'),
                     content: TextField(
                       autofocus: true,
@@ -735,14 +737,36 @@ class _TimeTableCreatorScreenState extends State<TimeTableCreatorScreen> {
                       child: SizedBox(
                         width: 180,
                         height: isSpecial ? 60 : 80,
-                        child: Card(
-                          color:
-                              isSpecial
-                                  ? Colors.grey[100]
-                                  : entry.subject != null
-                                  ? Color(entry.subject!.color).withOpacity(0.2)
-                                  : null,
-                          elevation: 2,
+                        child: Container(
+                          margin: EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            color:
+                                isSpecial
+                                    ? Colors.grey.withOpacity(.3)
+                                    : entry.subject != null
+                                    ? Color(
+                                      entry.subject!.color,
+                                    ).withOpacity(0.2)
+                                    : Colors.blue.withOpacity(.2),
+                            border: Border.all(
+                              color:
+                                  isSpecial
+                                      ? Colors.grey.withOpacity(.3)
+                                      : entry.subject != null
+                                      ? Color(
+                                        entry.subject!.color,
+                                      ).withOpacity(0.9)
+                                      : Colors.white,
+                            ),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          // color:
+                          //     isSpecial
+                          //         ? Colors.grey[100]
+                          //         // : entry.subject != null
+                          //         // ? Color(entry.subject!.color).withOpacity(0.2)
+                          // : Colors.white,
+                          // elevation: 2,
                           child: Padding(
                             padding: const EdgeInsets.all(8.0),
                             child: Column(
@@ -809,7 +833,8 @@ class _TimeTableCreatorScreenState extends State<TimeTableCreatorScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildSectionHeader('Period Presets'),
-            Card(color: Colors.white,
+            Card(
+              color: Colors.white,
               elevation: 2,
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -1002,6 +1027,7 @@ class _TimeTableCreatorScreenState extends State<TimeTableCreatorScreen> {
                                         context: context,
                                         builder:
                                             (context) => AlertDialog(
+                                              backgroundColor: Colors.white,
                                               title: Text(
                                                 'Edit period for $day',
                                               ),
@@ -1110,7 +1136,8 @@ class _TimeTableCreatorScreenState extends State<TimeTableCreatorScreen> {
                 .toList(),
 
             _buildSectionHeader('Subjects'),
-            Wrap(runSpacing: 10,
+            Wrap(
+              runSpacing: 10,
               spacing: 8,
               children:
                   _subjects.map((subject) {
@@ -1189,6 +1216,7 @@ class _TimeTableCreatorScreenState extends State<TimeTableCreatorScreen> {
                           context: context,
                           builder:
                               (context) => AlertDialog(
+                                backgroundColor: Colors.white,
                                 title: const Text('Enter teacher abbreviation'),
                                 content: TextFormField(
                                   decoration: const InputDecoration(
@@ -1250,14 +1278,15 @@ class _TimeTableCreatorScreenState extends State<TimeTableCreatorScreen> {
             _buildSectionHeader('Danger Zone'),
             Center(
               child: ElevatedButton.icon(
-                icon: const Icon(Icons.warning),
-                label: const Text('Reset Timetable'),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                icon: const Icon(Icons.warning,color: Colors.white,),
+                label: const Text('Reset Timetable',style: TextStyle(color: Colors.white),),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
                 onPressed: () {
                   showDialog(
                     context: context,
                     builder:
                         (context) => AlertDialog(
+                          backgroundColor: Colors.white,
                           title: const Text('Reset Timetable?'),
                           content: const Text(
                             'This will clear all your entries but keep your structure.',
@@ -1345,12 +1374,14 @@ class _EditEntryDialogState extends State<EditEntryDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      backgroundColor: const Color.fromARGB(255, 246, 251, 255),
       title: const Text('Edit Timetable Entry'),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             DropdownButtonFormField<Subject>(
+              dropdownColor: Colors.white,
               value: _selectedSubject,
               decoration: const InputDecoration(labelText: 'Subject'),
               items:
@@ -1377,6 +1408,7 @@ class _EditEntryDialogState extends State<EditEntryDialog> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<Teacher>(
+              dropdownColor: Colors.white,
               value: _selectedTeacher,
               decoration: const InputDecoration(
                 labelText: 'Teacher (optional)',
@@ -1397,6 +1429,7 @@ class _EditEntryDialogState extends State<EditEntryDialog> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<Classroom>(
+              dropdownColor: Colors.white,
               value: _selectedClassroom,
               decoration: const InputDecoration(
                 labelText: 'Classroom (optional)',
@@ -1492,6 +1525,7 @@ class ColorPickerDialog extends StatelessWidget {
     ];
 
     return AlertDialog(
+      backgroundColor: Colors.white,
       title: Text(title),
       content: SizedBox(
         width: double.maxFinite,

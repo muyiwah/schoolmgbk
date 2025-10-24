@@ -1,13 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:schmgtsystem/models/communication_model.dart';
+import 'package:schmgtsystem/models/single_class_model.dart';
+import 'package:schmgtsystem/providers/provider.dart';
+import 'package:schmgtsystem/widgets/custom_toast_notification.dart';
 
-class MessagePopup extends StatefulWidget {
-  const MessagePopup({super.key,required this.title});
+class MessagePopup extends ConsumerStatefulWidget {
   final String title;
+  final String classId;
+  final Data? classData;
+  final List<String>? parentIds;
+  final CommunicationType communicationType;
+
+  const MessagePopup({
+    super.key,
+    required this.title,
+    required this.classId,
+    this.classData,
+    this.parentIds,
+    required this.communicationType,
+  });
+
   @override
-  State<MessagePopup> createState() => _MessagePopupState();
+  ConsumerState<MessagePopup> createState() => _MessagePopupState();
 }
 
-class _MessagePopupState extends State<MessagePopup>
+class _MessagePopupState extends ConsumerState<MessagePopup>
     with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
@@ -24,7 +42,25 @@ class _MessagePopupState extends State<MessagePopup>
   bool _emailFocused = false;
   bool _subjectFocused = false;
   bool _messageFocused = false;
+  bool _parentDropdownFocused = false;
 
+  // List of parents from the class data
+  List<Map<String, String>> get _parentsList {
+    if (widget.classData?.students == null) return [];
+
+    return widget.classData!.students!.map((student) {
+      return {
+        'name': student.parentName ?? 'Unknown Parent',
+        'email':
+            '${student.name?.toLowerCase().replaceAll(' ', '.')}@parent.com', // Placeholder email
+        'studentId': student.id ?? '',
+      };
+    }).toList();
+  }
+
+  String? _selectedParent;
+  String? _selectedParentEmail;
+  String? _selectedStudentId;
   @override
   void initState() {
     super.initState();
@@ -140,7 +176,7 @@ class _MessagePopupState extends State<MessagePopup>
             ),
           ),
           const SizedBox(width: 16),
-           Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -187,8 +223,10 @@ class _MessagePopupState extends State<MessagePopup>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildEmailField(),
+            _buildParentDropdown(),
             const SizedBox(height: 20),
+            // _buildEmailField(),
+            // const SizedBox(height: 20),
             _buildSubjectField(),
             const SizedBox(height: 20),
             _buildMessageField(),
@@ -197,6 +235,223 @@ class _MessagePopupState extends State<MessagePopup>
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildParentDropdown() {
+    // Handle different communication types
+    if (widget.communicationType == CommunicationType.adminTeacher) {
+      // For class teacher communication, show class teacher info
+      return _buildClassTeacherRecipient();
+    } else if (widget.communicationType == CommunicationType.adminParent) {
+      if (widget.parentIds != null && widget.parentIds!.isNotEmpty) {
+        // For "all parents" communication
+        return _buildAllParentsRecipient();
+      } else {
+        // For single parent communication
+        return _buildSingleParentDropdown();
+      }
+    }
+
+    return const SizedBox.shrink();
+  }
+
+  Widget _buildClassTeacherRecipient() {
+    final classTeacher = widget.classData?.dataClass?.classTeacher;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Recipient',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF374151),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.blue[50],
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.blue[200]!),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.person, color: Colors.blue[700]),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      classTeacher?.name ?? 'Class Teacher',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      'Class Teacher',
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAllParentsRecipient() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Recipients',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF374151),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.green[50],
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.green[200]!),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.people, color: Colors.green[700]),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'All Parents (${_parentsList.length})',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      'All parents in this class will receive this message',
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSingleParentDropdown() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Recipient',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF374151),
+          ),
+        ),
+        const SizedBox(height: 8),
+        AnimatedContainer(
+          alignment: Alignment.center,
+          duration: const Duration(milliseconds: 200),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color:
+                  _parentDropdownFocused
+                      ? const Color(0xFF6366F1)
+                      : const Color(0xFFE5E7EB),
+              width: _parentDropdownFocused ? 2 : 1,
+            ),
+            boxShadow:
+                _parentDropdownFocused
+                    ? [
+                      BoxShadow(
+                        color: const Color(0xFF6366F1).withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                    : null,
+          ),
+          child: DropdownButtonFormField<String>(
+            dropdownColor: Colors.white,
+            value: _selectedParent,
+            hint: const Text('Select a parent'),
+            icon: Icon(
+              Icons.arrow_drop_down,
+              color:
+                  _parentDropdownFocused
+                      ? const Color(0xFF6366F1)
+                      : const Color(0xFF9CA3AF),
+            ),
+            decoration: InputDecoration(
+              prefixIcon: Icon(
+                Icons.person_outline,
+                color:
+                    _parentDropdownFocused
+                        ? const Color(0xFF6366F1)
+                        : const Color(0xFF9CA3AF),
+              ),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
+              isDense: true,
+            ),
+            items:
+                _parentsList.map((parent) {
+                  return DropdownMenuItem<String>(
+                    value: parent['name'],
+                    child: Text(parent['name']!),
+                    onTap: () {
+                      _selectedParentEmail = parent['email'];
+                      _selectedStudentId = parent['studentId'];
+                    },
+                  );
+                }).toList(),
+            onChanged: (value) {
+              setState(() {
+                _selectedParent = value;
+              });
+            },
+            onTap: () {
+              setState(() => _parentDropdownFocused = true);
+            },
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please select a parent';
+              }
+              return null;
+            },
+          ),
+        ),
+        if (_selectedParentEmail != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            'Email: $_selectedParentEmail',
+            style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+          ),
+        ],
+      ],
     );
   }
 
@@ -482,34 +737,89 @@ class _MessagePopupState extends State<MessagePopup>
 
     setState(() => _isLoading = true);
 
-    // Add haptic feedback
+    try {
+      // Get current user (admin) from profile provider
+      final profileProvider = ref.read(RiverpodProvider.profileProvider);
+      final currentUser = profileProvider.user;
 
-    // Simulate sending message
-    await Future.delayed(const Duration(seconds: 2));
+      if (currentUser == null) {
+        CustomToastNotification.show(
+          'User not found. Please login again.',
+          type: ToastType.error,
+        );
+        return;
+      }
 
-    setState(() => _isLoading = false);
+      // Prepare recipients based on communication type
+      List<String> recipients = [];
 
-    if (mounted) {
-      // Show success feedback
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Row(
-            children: [
-              Icon(Icons.check_circle, color: Colors.white),
-              SizedBox(width: 12),
-              Text('Message sent successfully!'),
-            ],
-          ),
-          backgroundColor: const Color(0xFF10B981),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          margin: const EdgeInsets.all(16),
-        ),
+      if (widget.communicationType == CommunicationType.adminTeacher) {
+        // For class teacher communication - use class teacher's staffId
+        final classTeacher = widget.classData?.dataClass?.classTeacher;
+        if (classTeacher?.id != null) {
+          recipients = [classTeacher!.id!];
+        }
+      } else if (widget.communicationType == CommunicationType.adminParent) {
+        if (widget.parentIds != null && widget.parentIds!.isNotEmpty) {
+          // For "all parents" communication - use provided parent IDs
+          recipients = widget.parentIds!;
+        } else if (_selectedStudentId != null) {
+          // For single parent communication - use selected student ID
+          recipients = [_selectedStudentId!];
+        }
+      }
+
+      if (recipients.isEmpty) {
+        CustomToastNotification.show(
+          'No recipients selected',
+          type: ToastType.error,
+        );
+        return;
+      }
+
+      // Create communication request
+      final request = CreateCommunicationRequest(
+        title:
+            _subjectController.text.trim().isNotEmpty
+                ? _subjectController.text.trim()
+                : null,
+        message: _messageController.text.trim(),
+        recipients: recipients,
+        communicationType: widget.communicationType.value,
+        classId: widget.classId,
+        attachments: const [],
+        isAnnouncement: false,
       );
+      print(request.toJson());
+      // Send communication
+      final success = await ref
+          .read(RiverpodProvider.communicationProvider.notifier)
+          .createCommunication(request: request);
 
-      Navigator.of(context).pop();
+      if (success) {
+        CustomToastNotification.show(
+          'Message sent successfully!',
+          type: ToastType.success,
+        );
+
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
+      } else {
+        CustomToastNotification.show(
+          'Failed to send message. Please try again.',
+          type: ToastType.error,
+        );
+      }
+    } catch (e) {
+      CustomToastNotification.show(
+        'Error sending message: $e',
+        type: ToastType.error,
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 }

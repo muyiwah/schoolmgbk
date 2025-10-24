@@ -378,6 +378,7 @@ class _ExamSetupScreenState extends State<ExamSetupScreen> {
     required String validatorMsg,
   }) {
     return DropdownButtonFormField<String>(
+      dropdownColor: Colors.white,
       decoration: InputDecoration(
         labelText: label,
         border: const OutlineInputBorder(),
