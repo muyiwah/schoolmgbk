@@ -649,19 +649,130 @@ class _StaffManagementScreenState extends ConsumerState<StaffManagementScreen> {
     );
   }
 
+  // Helper function to normalize gender values
+  String _normalizeGender(String? gender) {
+    if (gender == null) return 'N/A';
+    switch (gender.toLowerCase()) {
+      case 'male':
+        return 'Male';
+      case 'female':
+        return 'Female';
+      case 'other':
+        return 'Other';
+      default:
+        return 'N/A';
+    }
+  }
+
+  // Helper function to normalize marital status values
+  String _normalizeMaritalStatus(String? status) {
+    if (status == null) return 'N/A';
+    switch (status.toLowerCase()) {
+      case 'single':
+        return 'Single';
+      case 'married':
+        return 'Married';
+      case 'divorced':
+        return 'Divorced';
+      case 'widowed':
+        return 'Widowed';
+      default:
+        return 'N/A';
+    }
+  }
+
+  // Helper function to convert Staff model to Map for StaffDialog
+  Map<String, dynamic> _convertStaffToMap(Staff staff) {
+    // Build full name from first, middle, and last name
+    String fullName = '';
+    if (staff.personalInfo?.firstName != null) {
+      fullName += staff.personalInfo!.firstName!;
+    }
+    if (staff.personalInfo?.middleName != null) {
+      fullName += ' ${staff.personalInfo!.middleName!}';
+    }
+    if (staff.personalInfo?.lastName != null) {
+      fullName += ' ${staff.personalInfo!.lastName!}';
+    }
+    fullName = fullName.trim().isEmpty ? 'N/A' : fullName.trim();
+
+    // Build address from address object
+    String address = 'N/A';
+    if (staff.contactInfo?.address != null) {
+      final addr = staff.contactInfo!.address!;
+      List<String> addressParts = [];
+      if (addr.street != null) addressParts.add(addr.street!);
+      if (addr.city != null) addressParts.add(addr.city!);
+      if (addr.state != null) addressParts.add(addr.state!);
+      if (addr.country != null) addressParts.add(addr.country!);
+      address = addressParts.join(', ');
+    }
+
+    // Build qualifications string
+    String qualifications = 'N/A';
+    if (staff.qualifications != null && staff.qualifications!.isNotEmpty) {
+      qualifications = staff.qualifications!
+          .map((q) => '${q.degree ?? ''} - ${q.institution ?? ''}')
+          .join('\n');
+    }
+
+    return {
+      'name': fullName,
+      'phone': staff.contactInfo?.primaryPhone ?? 'N/A',
+      'email': staff.contactInfo?.email ?? 'N/A',
+      'address': address,
+      'gender': _normalizeGender(staff.personalInfo?.gender),
+      'dateOfBirth': staff.personalInfo?.dateOfBirth,
+      'role': staff.employmentInfo?.position,
+      'maritalStatus': _normalizeMaritalStatus(
+        staff.personalInfo?.maritalStatus,
+      ),
+      'dateOfJoining': staff.employmentInfo?.joinDate,
+      'qualifications': qualifications,
+      'staffId': staff.staffId ?? staff.id ?? 'N/A',
+      'status': staff.status ?? 'N/A',
+      'yearsOfService': staff.yearsOfService ?? 0,
+      // Additional contact info
+      'secondaryPhone': staff.contactInfo?.secondaryPhone ?? 'N/A',
+      'nationality': staff.personalInfo?.nationality,
+      'title': staff.personalInfo?.title,
+      'stateOfOrigin': staff.personalInfo?.stateOfOrigin,
+      // Emergency contact
+      'emergencyName': staff.emergencyContact?.name ?? 'N/A',
+      'emergencyPhone': staff.emergencyContact?.phone ?? 'N/A',
+      'emergencyRelationship': staff.emergencyContact?.relationship ?? 'N/A',
+      // Financial info
+      'bankName': staff.employmentInfo?.bankDetails?.bankName ?? 'N/A',
+      'accountNumber':
+          staff.employmentInfo?.bankDetails?.accountNumber ?? 'N/A',
+      'accountName': staff.employmentInfo?.bankDetails?.accountName ?? 'N/A',
+      'salary': staff.employmentInfo?.salary?.toString() ?? 'N/A',
+      'employeeType': staff.employmentInfo?.employeeType,
+      'department': staff.employmentInfo?.department,
+      'contractEndDate': staff.employmentInfo?.contractEndDate,
+      // User account info
+      'profileImage': staff.user?.profileImage ?? 'N/A',
+      'isActive': staff.user?.isActive ?? false,
+      'lastLogin': staff.user?.lastLogin,
+      'createdAt': staff.createdAt,
+      'updatedAt': staff.updatedAt,
+    };
+  }
+
   Widget _buildActionButtons(Staff staff) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         IconButton(
           padding: EdgeInsets.all(0),
-
           onPressed: () {
             showDialog(
               context: context,
               barrierDismissible: true,
               barrierColor: Colors.black.withOpacity(0.5),
-              builder: (context) => StaffDialog(),
+              builder:
+                  (context) =>
+                      StaffDialog(staffData: _convertStaffToMap(staff)),
             );
           },
           icon: const Icon(Icons.visibility, color: Color(0xFF4F46E5)),
