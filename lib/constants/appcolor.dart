@@ -43,7 +43,7 @@ class AppColors {
 
   static const Color lightWhiteBg = Color(0xFFF0F7FF);
 
-  static const Color gridGrey = Color(0xFF414345);
+  // static const Color gridGrey = Color(0xFF414345);
 
   // Status Chips
   static const Color greenStatusText = Color(0xFF065F46);
