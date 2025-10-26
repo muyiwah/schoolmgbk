@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:schmgtsystem/providers/staff_provider.dart';
 
 class StaffDialog extends StatefulWidget {
   final Map<String, dynamic>? staffData;
@@ -24,13 +26,27 @@ class _StaffDialogState extends State<StaffDialog>
   final _emailController = TextEditingController();
   final _addressController = TextEditingController();
   final _qualificationsController = TextEditingController();
+  final _secondaryPhoneController = TextEditingController();
+  final _emergencyNameController = TextEditingController();
+  final _emergencyPhoneController = TextEditingController();
+  final _emergencyRelationshipController = TextEditingController();
+  final _bankNameController = TextEditingController();
+  final _accountNumberController = TextEditingController();
+  final _accountNameController = TextEditingController();
+  final _salaryController = TextEditingController();
+  final _stateOfOriginController = TextEditingController();
+  final _nationalityController = TextEditingController();
 
   // Dropdown values
   String? selectedGender;
   String? selectedRole;
   String? selectedMaritalStatus;
+  String? selectedTitle;
+  String? selectedEmployeeType;
+  String? selectedDepartment;
   DateTime? dateOfBirth;
   DateTime? dateOfJoining;
+  DateTime? contractEndDate;
 
   // Dropdown options
   final List<String> genderOptions = ['Male', 'Female', 'Other'];
@@ -56,31 +72,144 @@ class _StaffDialogState extends State<StaffDialog>
     'Divorced',
     'Widowed',
   ];
+  final List<String> nationalityOptions = [
+    'Nigerian',
+    'Ghanaian',
+    'Kenyan',
+    'South African',
+    'Other',
+  ];
+  final List<String> titleOptions = [
+    'Mr.',
+    'Mrs.',
+    'Miss',
+    'Dr.',
+    'Prof.',
+    'Rev.',
+    'Engr.',
+  ];
+  final List<String> employeeTypeOptions = [
+    'Full-time',
+    'Part-time',
+    'Contract',
+    'Temporary',
+    'Intern',
+  ];
+  final List<String> departmentOptions = [
+    'Administration',
+    'Academic',
+    'Finance',
+    'Human Resources',
+    'IT',
+    'Maintenance',
+    'Security',
+    'Library',
+    'Sports',
+  ];
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
     _isEditing = widget.isEditMode;
     _loadStaffData();
   }
 
   void _loadStaffData() {
-    if (widget.staffData != null) {
-      final data = widget.staffData!;
-      _nameController.text = data['name'] ?? '';
-      _phoneController.text = data['phone'] ?? '';
-      _emailController.text = data['email'] ?? '';
-      _addressController.text = data['address'] ?? '';
-      _qualificationsController.text = data['qualifications'] ?? '';
-      selectedGender = data['gender'];
-      selectedRole = data['role'];
-      selectedMaritalStatus = data['maritalStatus'];
-      dateOfBirth = data['dateOfBirth'];
-      dateOfJoining = data['dateOfJoining'];
-    } else {
-      // Load dummy data for demonstration
+    try {
+      if (widget.staffData != null) {
+        final data = widget.staffData!;
+        _nameController.text = data['name']?.toString() ?? '';
+        _phoneController.text = data['phone']?.toString() ?? '';
+        _emailController.text = data['email']?.toString() ?? '';
+        _addressController.text = data['address']?.toString() ?? '';
+        _qualificationsController.text =
+            data['qualifications']?.toString() ?? '';
+        _secondaryPhoneController.text =
+            data['secondaryPhone']?.toString() ?? '';
+        _emergencyNameController.text = data['emergencyName']?.toString() ?? '';
+        _emergencyPhoneController.text =
+            data['emergencyPhone']?.toString() ?? '';
+        _emergencyRelationshipController.text =
+            data['emergencyRelationship']?.toString() ?? '';
+        _bankNameController.text = data['bankName']?.toString() ?? '';
+        _accountNumberController.text = data['accountNumber']?.toString() ?? '';
+        _accountNameController.text = data['accountName']?.toString() ?? '';
+        _salaryController.text = data['salary']?.toString() ?? '';
+        _stateOfOriginController.text = data['stateOfOrigin']?.toString() ?? '';
+        _nationalityController.text = data['nationality']?.toString() ?? '';
+
+        // Safely handle dropdown values - convert empty strings to null
+        selectedGender = _safeDropdownValue(data['gender']?.toString());
+        selectedRole = _safeDropdownValue(data['role']?.toString());
+        selectedMaritalStatus = _safeDropdownValue(
+          data['maritalStatus']?.toString(),
+        );
+        selectedTitle = _safeDropdownValue(data['title']?.toString());
+        selectedEmployeeType = _safeDropdownValue(
+          data['employeeType']?.toString(),
+        );
+        selectedDepartment = _safeDropdownValue(data['department']?.toString());
+        dateOfBirth =
+            data['dateOfBirth'] is DateTime ? data['dateOfBirth'] : null;
+        dateOfJoining =
+            data['dateOfJoining'] is DateTime ? data['dateOfJoining'] : null;
+        contractEndDate =
+            data['contractEndDate'] is DateTime
+                ? data['contractEndDate']
+                : null;
+      } else {
+        // Load dummy data for demonstration
+        _loadDummyData();
+      }
+    } catch (e) {
+      print('Error loading staff data: $e');
+      // Load dummy data as fallback
       _loadDummyData();
+    }
+  }
+
+  // Helper function to safely handle dropdown values
+  String? _safeDropdownValue(String? value) {
+    if (value == null || value.isEmpty || value == 'N/A') {
+      return null;
+    }
+    return value;
+  }
+
+  // Helper function to reset invalid dropdown values
+  void _resetInvalidDropdownValues() {
+    // Reset gender if not in valid options
+    if (selectedGender != null && !genderOptions.contains(selectedGender)) {
+      selectedGender = null;
+    }
+
+    // Reset role if not in valid options
+    if (selectedRole != null && !roleOptions.contains(selectedRole)) {
+      selectedRole = null;
+    }
+
+    // Reset marital status if not in valid options
+    if (selectedMaritalStatus != null &&
+        !maritalStatusOptions.contains(selectedMaritalStatus)) {
+      selectedMaritalStatus = null;
+    }
+
+    // Reset title if not in valid options
+    if (selectedTitle != null && !titleOptions.contains(selectedTitle)) {
+      selectedTitle = null;
+    }
+
+    // Reset employee type if not in valid options
+    if (selectedEmployeeType != null &&
+        !employeeTypeOptions.contains(selectedEmployeeType)) {
+      selectedEmployeeType = null;
+    }
+
+    // Reset department if not in valid options
+    if (selectedDepartment != null &&
+        !departmentOptions.contains(selectedDepartment)) {
+      selectedDepartment = null;
     }
   }
 
@@ -97,6 +226,8 @@ class _StaffDialogState extends State<StaffDialog>
     selectedMaritalStatus = 'Married';
     dateOfBirth = DateTime(1988, 5, 15);
     dateOfJoining = DateTime(2019, 9, 1);
+    _stateOfOriginController.text = 'Rivers State';
+    _nationalityController.text = 'Nigerian';
   }
 
   @override
@@ -107,6 +238,16 @@ class _StaffDialogState extends State<StaffDialog>
     _emailController.dispose();
     _addressController.dispose();
     _qualificationsController.dispose();
+    _secondaryPhoneController.dispose();
+    _emergencyNameController.dispose();
+    _emergencyPhoneController.dispose();
+    _emergencyRelationshipController.dispose();
+    _bankNameController.dispose();
+    _accountNumberController.dispose();
+    _accountNameController.dispose();
+    _salaryController.dispose();
+    _stateOfOriginController.dispose();
+    _nationalityController.dispose();
     super.dispose();
   }
 
@@ -115,7 +256,8 @@ class _StaffDialogState extends State<StaffDialog>
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       elevation: 8,
-      child: Container(color: Colors.white,
+      child: Container(
+        color: Colors.white,
         width: MediaQuery.of(context).size.width * 0.95,
         height: MediaQuery.of(context).size.height * 0.9,
         constraints: const BoxConstraints(maxWidth: 600, maxHeight: 800),
@@ -129,6 +271,9 @@ class _StaffDialogState extends State<StaffDialog>
                 children: [
                   _buildPersonalInfoTab(),
                   _buildProfessionalInfoTab(),
+                  _buildContactInfoTab(),
+                  _buildEmergencyContactTab(),
+                  _buildFinancialInfoTab(),
                 ],
               ),
             ),
@@ -163,7 +308,7 @@ class _StaffDialogState extends State<StaffDialog>
               children: [
                 Text(
                   widget.staffData != null
-                      ? 'Staff Information'
+                      ? widget.staffData!['name'] ?? 'Staff Information'
                       : 'Staff',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
@@ -181,7 +326,21 @@ class _StaffDialogState extends State<StaffDialog>
           ),
           if (widget.staffData != null && !_isEditing)
             IconButton(
-              onPressed: () => setState(() => _isEditing = true),
+              onPressed: () {
+                try {
+                  // Reset any invalid dropdown values before switching to edit mode
+                  _resetInvalidDropdownValues();
+                  setState(() => _isEditing = true);
+                } catch (e) {
+                  print('Error switching to edit mode: $e');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error switching to edit mode: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
               icon: const Icon(Icons.edit),
               style: IconButton.styleFrom(
                 backgroundColor: Colors.blue.shade100,
@@ -212,8 +371,11 @@ class _StaffDialogState extends State<StaffDialog>
         indicatorColor: Colors.blue.shade600,
         indicatorWeight: 3,
         tabs: const [
-          Tab(icon: Icon(Icons.person_outline), text: 'Personal Info'),
-          Tab(icon: Icon(Icons.work_outline), text: 'Professional Info'),
+          Tab(icon: Icon(Icons.person_outline), text: 'Personal'),
+          Tab(icon: Icon(Icons.work_outline), text: 'Professional'),
+          Tab(icon: Icon(Icons.contact_phone), text: 'Contact'),
+          Tab(icon: Icon(Icons.emergency), text: 'Emergency'),
+          Tab(icon: Icon(Icons.account_balance), text: 'Financial'),
         ],
       ),
     );
@@ -385,6 +547,189 @@ class _StaffDialogState extends State<StaffDialog>
     );
   }
 
+  Widget _buildContactInfoTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionTitle('Contact Information'),
+          const SizedBox(height: 16),
+          _buildTextFormField(
+            controller: _phoneController,
+            label: 'Primary Phone',
+            icon: Icons.phone,
+            keyboardType: TextInputType.phone,
+            enabled: _isEditing,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          ),
+          const SizedBox(height: 16),
+          _buildTextFormField(
+            controller: _secondaryPhoneController,
+            label: 'Secondary Phone',
+            icon: Icons.phone_android,
+            keyboardType: TextInputType.phone,
+            enabled: _isEditing,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          ),
+          const SizedBox(height: 16),
+          _buildTextFormField(
+            controller: _emailController,
+            label: 'Email Address',
+            icon: Icons.email,
+            keyboardType: TextInputType.emailAddress,
+            enabled: _isEditing,
+          ),
+          const SizedBox(height: 16),
+          _buildTextFormField(
+            controller: _addressController,
+            label: 'Address',
+            icon: Icons.home,
+            maxLines: 3,
+            enabled: _isEditing,
+          ),
+          const SizedBox(height: 24),
+          _buildSectionTitle('Additional Information'),
+          const SizedBox(height: 16),
+          _buildTextFormField(
+            controller: _nationalityController,
+            label: 'Nationality',
+            icon: Icons.flag,
+            enabled: _isEditing,
+            hintText: 'Enter nationality',
+          ),
+          const SizedBox(height: 16),
+          _buildDropdownField(
+            label: 'Title',
+            value: selectedTitle,
+            items: titleOptions,
+            icon: Icons.title,
+            enabled: _isEditing,
+            onChanged: (value) => setState(() => selectedTitle = value),
+          ),
+          const SizedBox(height: 16),
+          _buildTextFormField(
+            controller: _stateOfOriginController,
+            label: 'State of Origin',
+            icon: Icons.location_on,
+            enabled: _isEditing,
+            hintText: 'Enter state of origin',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmergencyContactTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionTitle('Emergency Contact Information'),
+          const SizedBox(height: 16),
+          _buildTextFormField(
+            controller: _emergencyNameController,
+            label: 'Emergency Contact Name',
+            icon: Icons.person,
+            enabled: _isEditing,
+          ),
+          const SizedBox(height: 16),
+          _buildTextFormField(
+            controller: _emergencyPhoneController,
+            label: 'Emergency Contact Phone',
+            icon: Icons.phone,
+            keyboardType: TextInputType.phone,
+            enabled: _isEditing,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          ),
+          const SizedBox(height: 16),
+          _buildTextFormField(
+            controller: _emergencyRelationshipController,
+            label: 'Relationship',
+            icon: Icons.family_restroom,
+            enabled: _isEditing,
+            hintText: 'e.g., Spouse, Parent, Sibling',
+          ),
+          const SizedBox(height: 24),
+          _buildInfoCard(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFinancialInfoTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionTitle('Bank Details'),
+          const SizedBox(height: 16),
+          _buildTextFormField(
+            controller: _bankNameController,
+            label: 'Bank Name',
+            icon: Icons.account_balance,
+            enabled: _isEditing,
+          ),
+          const SizedBox(height: 16),
+          _buildTextFormField(
+            controller: _accountNumberController,
+            label: 'Account Number',
+            icon: Icons.credit_card,
+            keyboardType: TextInputType.number,
+            enabled: _isEditing,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          ),
+          const SizedBox(height: 16),
+          _buildTextFormField(
+            controller: _accountNameController,
+            label: 'Account Name',
+            icon: Icons.person,
+            enabled: _isEditing,
+          ),
+          const SizedBox(height: 24),
+          _buildSectionTitle('Employment Details'),
+          const SizedBox(height: 16),
+          _buildTextFormField(
+            controller: _salaryController,
+            label: 'Salary',
+            icon: Icons.attach_money,
+            keyboardType: TextInputType.number,
+            enabled: _isEditing,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          ),
+          const SizedBox(height: 16),
+          _buildDropdownField(
+            label: 'Employee Type',
+            value: selectedEmployeeType,
+            items: employeeTypeOptions,
+            icon: Icons.badge,
+            enabled: _isEditing,
+            onChanged: (value) => setState(() => selectedEmployeeType = value),
+          ),
+          const SizedBox(height: 16),
+          _buildDropdownField(
+            label: 'Department',
+            value: selectedDepartment,
+            items: departmentOptions,
+            icon: Icons.business,
+            enabled: _isEditing,
+            onChanged: (value) => setState(() => selectedDepartment = value),
+          ),
+          const SizedBox(height: 16),
+          _buildDateField(
+            label: 'Contract End Date',
+            value: contractEndDate,
+            icon: Icons.event,
+            enabled: _isEditing,
+            onTap: () => _selectDate(context, false, isContractEnd: true),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildInfoCard() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -413,7 +758,7 @@ class _StaffDialogState extends State<StaffDialog>
           const SizedBox(height: 12),
           _buildSummaryRow('Years of Service', _calculateYearsOfService()),
           _buildSummaryRow('Department', selectedRole ?? 'Not specified'),
-          _buildSummaryRow('Status', 'Active'),
+          _buildSummaryRow('Status', widget.staffData?['status'] ?? 'Active'),
         ],
       ),
     );
@@ -538,6 +883,13 @@ class _StaffDialogState extends State<StaffDialog>
     required ValueChanged<String?> onChanged,
     bool enabled = true,
   }) {
+    // Debug print to identify problematic dropdowns
+    if (value != null && value.isNotEmpty && !items.contains(value)) {
+      print(
+        'WARNING: Dropdown "$label" has value "$value" not in items: $items',
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -552,7 +904,13 @@ class _StaffDialogState extends State<StaffDialog>
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
           dropdownColor: Colors.white,
-          value: value,
+          value:
+              enabled &&
+                      value != null &&
+                      value.isNotEmpty &&
+                      items.contains(value)
+                  ? value
+                  : null,
           decoration: InputDecoration(
             prefixIcon: Icon(
               icon,
@@ -583,18 +941,25 @@ class _StaffDialogState extends State<StaffDialog>
             ),
           ),
           hint: Text(
-            'Select $label',
+            enabled ? 'Select $label' : (value ?? 'Not specified'),
             style: TextStyle(color: Colors.grey.shade600),
           ),
           items:
               enabled
-                  ? items.map((String item) {
+                  ? items.toSet().map((String item) {
                     return DropdownMenuItem<String>(
                       value: item,
                       child: Text(item),
                     );
                   }).toList()
-                  : [],
+                  : [
+                    // When disabled, show the current value as a single item
+                    if (value != null && value.isNotEmpty)
+                      DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      ),
+                  ],
           onChanged: enabled ? onChanged : null,
           validator: (value) {
             if (enabled && _isEditing && (value == null || value.isEmpty)) {
@@ -759,15 +1124,25 @@ class _StaffDialogState extends State<StaffDialog>
     );
   }
 
-  Future<void> _selectDate(BuildContext context, bool isDateOfBirth) async {
+  Future<void> _selectDate(
+    BuildContext context,
+    bool isDateOfBirth, {
+    bool isContractEnd = false,
+  }) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate:
           isDateOfBirth
               ? (dateOfBirth ?? DateTime(1990))
+              : isContractEnd
+              ? (contractEndDate ??
+                  DateTime.now().add(const Duration(days: 365)))
               : (dateOfJoining ?? DateTime.now()),
-      firstDate: DateTime(1950),
-      lastDate: DateTime.now(),
+      firstDate: isContractEnd ? DateTime.now() : DateTime(1950),
+      lastDate:
+          isContractEnd
+              ? DateTime.now().add(const Duration(days: 3650))
+              : DateTime.now(),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -786,6 +1161,8 @@ class _StaffDialogState extends State<StaffDialog>
       setState(() {
         if (isDateOfBirth) {
           dateOfBirth = picked;
+        } else if (isContractEnd) {
+          contractEndDate = picked;
         } else {
           dateOfJoining = picked;
         }
@@ -795,45 +1172,196 @@ class _StaffDialogState extends State<StaffDialog>
 
   void _saveStaffData() {
     if (_formKey.currentState!.validate()) {
-      final staffData = {
-        'name': _nameController.text,
-        'phone': _phoneController.text,
+      // Convert form data to the format expected by the backend
+      final staffData = _convertFormDataToBackendFormat();
+
+      // Get staff ID from the widget data
+      final staffId = widget.staffData?['staffId'];
+
+      if (staffId != null && staffId != 'N/A') {
+        // Call the update API through the provider
+        _updateStaffMember(staffId, staffData);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.error, color: Colors.white),
+                SizedBox(width: 8),
+                Text('Staff ID not found. Cannot update.'),
+              ],
+            ),
+            backgroundColor: Colors.red.shade600,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  Map<String, dynamic> _convertFormDataToBackendFormat() {
+    // Split full name into components
+    final nameParts = _nameController.text.trim().split(' ');
+    final firstName = nameParts.isNotEmpty ? nameParts.first : '';
+    final lastName = nameParts.length > 1 ? nameParts.last : '';
+    final middleName =
+        nameParts.length > 2
+            ? nameParts.sublist(1, nameParts.length - 1).join(' ')
+            : '';
+
+    // Build address object
+    final addressParts = _addressController.text.split(',');
+    final address = {
+      'street': addressParts.isNotEmpty ? addressParts.first.trim() : '',
+      'city': addressParts.length > 1 ? addressParts[1].trim() : '',
+      'state': addressParts.length > 2 ? addressParts[2].trim() : '',
+      'country': addressParts.length > 3 ? addressParts[3].trim() : 'Nigeria',
+      'postalCode': '',
+    };
+
+    return {
+      'personalInfo': {
+        'firstName': firstName,
+        'lastName': lastName,
+        'middleName': middleName,
+        'gender': selectedGender?.toLowerCase(),
+        'nationality': _nationalityController.text,
+        'title': selectedTitle,
+        'dateOfBirth': dateOfBirth?.toIso8601String(),
+        'maritalStatus': selectedMaritalStatus?.toLowerCase(),
+        'stateOfOrigin': _stateOfOriginController.text,
+      },
+      'contactInfo': {
+        'primaryPhone': _phoneController.text,
+        'secondaryPhone': _secondaryPhoneController.text,
         'email': _emailController.text,
-        'address': _addressController.text,
-        'gender': selectedGender,
-        'dateOfBirth': dateOfBirth,
-        'role': selectedRole,
-        'maritalStatus': selectedMaritalStatus,
-        'dateOfJoining': dateOfJoining,
-        'qualifications': _qualificationsController.text,
-        'lastModified': DateTime.now(),
-      };
+        'address': address,
+      },
+      'employmentInfo': {
+        'position': selectedRole,
+        'department': selectedDepartment,
+        'employeeType': selectedEmployeeType,
+        'joinDate': dateOfJoining?.toIso8601String(),
+        'contractEndDate': contractEndDate?.toIso8601String(),
+        'salary':
+            _salaryController.text.isNotEmpty
+                ? int.tryParse(_salaryController.text)
+                : null,
+        'bankDetails': {
+          'bankName': _bankNameController.text,
+          'accountNumber': _accountNumberController.text,
+          'accountName': _accountNameController.text,
+        },
+      },
+      'emergencyContact': {
+        'name': _emergencyNameController.text,
+        'phone': _emergencyPhoneController.text,
+        'relationship': _emergencyRelationshipController.text,
+      },
+      'qualifications':
+          _qualificationsController.text.isNotEmpty
+              ? _qualificationsController.text
+                  .split('\n')
+                  .map(
+                    (q) => {
+                      'degree':
+                          q.split(' - ').isNotEmpty ? q.split(' - ')[0] : '',
+                      'institution':
+                          q.split(' - ').length > 1 ? q.split(' - ')[1] : '',
+                    },
+                  )
+                  .toList()
+              : [],
+    };
+  }
 
-      // TODO: Save to database or state management
-      print('Staff Data: $staffData');
+  Future<void> _updateStaffMember(
+    String staffId,
+    Map<String, dynamic> staffData,
+  ) async {
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
 
+      // Call the actual update API through the provider
+      final container = ProviderScope.containerOf(context);
+      final staffNotifier = container.read(staffNotifierProvider.notifier);
+
+      await staffNotifier.updateStaff(staffId, staffData);
+
+      // Close loading dialog
+      Navigator.of(context).pop();
+
+      // Check if there was an error
+      final staffState = container.read(staffNotifierProvider);
+      if (staffState.errorMessage != null) {
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error, color: Colors.white),
+                const SizedBox(width: 8),
+                Text('Error: ${staffState.errorMessage}'),
+              ],
+            ),
+            backgroundColor: Colors.red.shade600,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      } else {
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 8),
+                Text('Staff information updated successfully!'),
+              ],
+            ),
+            backgroundColor: Colors.green.shade600,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+
+        // Close the dialog
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      // Close loading dialog if it's open
+      Navigator.of(context).pop();
+
+      // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Row(
+          content: Row(
             children: [
-              Icon(Icons.check_circle, color: Colors.white),
-              SizedBox(width: 8),
-              Text('Staff information saved successfully!'),
+              const Icon(Icons.error, color: Colors.white),
+              const SizedBox(width: 8),
+              Text('Error updating staff: $e'),
             ],
           ),
-          backgroundColor: Colors.green.shade600,
+          backgroundColor: Colors.red.shade600,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),
         ),
       );
-
-      if (widget.staffData == null) {
-        Navigator.of(context).pop(staffData);
-      } else {
-        setState(() => _isEditing = false);
-      }
     }
   }
 }

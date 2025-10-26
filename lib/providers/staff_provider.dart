@@ -106,6 +106,30 @@ class StaffNotifier extends StateNotifier<StaffState> {
       setLoading(false);
     }
   }
+
+  // Method to update staff member
+  Future<void> updateStaff(
+    String staffId,
+    Map<String, dynamic> staffData,
+  ) async {
+    try {
+      setLoading(true);
+      setError(null);
+
+      final response = await _staffRepo.updateStaff(staffId, staffData);
+
+      if (HTTPResponseModel.isApiCallSuccess(response)) {
+        // Refresh the staff list after successful update
+        await getAllStaff();
+      } else {
+        setError(response.message ?? 'Failed to update staff member');
+      }
+    } catch (e) {
+      setError('Error updating staff member: $e');
+    } finally {
+      setLoading(false);
+    }
+  }
 }
 
 // Provider definition

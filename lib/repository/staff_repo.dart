@@ -21,4 +21,15 @@ class StaffRepo {
       body: body,
     );
   }
+
+  Future<HTTPResponseModel> updateStaff(
+    String staffId,
+    Map<String, dynamic> body,
+  ) async {
+    return await _httpService.runApi(
+      type: ApiRequestType.put,
+      url: "/staff/$staffId",
+      body: body,
+    );
+  }
 }
