@@ -435,7 +435,8 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
                               Padding(
                                 padding: const EdgeInsets.all(16.0),
                                 child: Center(
-                                  child: Column(
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       // Student count info
                                       Container(
@@ -586,15 +587,7 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
             color: const Color(0xFF059669),
           ),
         ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: _buildStatCard(
-            title: 'Filtered Students',
-            value: students.length.toString(),
-            icon: Icons.groups,
-            color: const Color(0xFF6366F1),
-          ),
-        ),
+     
         const SizedBox(width: 16),
         Expanded(
           child: _buildStatCard(

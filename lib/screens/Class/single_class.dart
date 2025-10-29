@@ -14,6 +14,7 @@ import 'package:schmgtsystem/widgets/success_snack.dart';
 import 'package:schmgtsystem/utils/academic_year_helper.dart';
 import 'package:schmgtsystem/repository/class_repo.dart';
 import 'package:schmgtsystem/repository/payment_repo.dart';
+import 'package:schmgtsystem/repository/attendance_repo.dart';
 import 'package:schmgtsystem/utils/locator.dart';
 import 'package:schmgtsystem/utils/response_model.dart';
 
@@ -36,6 +37,10 @@ class _ClassDetailsScreenState extends ConsumerState<ClassDetailsScreen> {
   DateTime _selectedDate = DateTime.now();
   final Map<String, String> _attendanceStatus = {};
   final Map<String, String> _attendanceRemarks = {};
+  // Controls per-student visibility of the remarks editor
+  final Map<String, bool> _remarksEditorVisible = {};
+  // Controls visibility of the attendance summary footer card
+  bool _showAttendanceSummary = false;
   bool _isSubmittingAttendance = false;
   bool _hasUnsavedChanges = false;
 
@@ -49,10 +54,33 @@ class _ClassDetailsScreenState extends ConsumerState<ClassDetailsScreen> {
   bool _isLoadingFeeBreakdown = false;
   String? _feeBreakdownErrorMessage;
 
+  // Attendance history state
+  DateTime _historySelectedDate = DateTime.now();
+  bool _isLoadingHistoryAttendance = false;
+  String? _historyAttendanceErrorMessage;
+
+  // Attendance summary state
+  AttendanceSummaryData? _attendanceSummary;
+  bool _isLoadingAttendanceSummary = false;
+  String? _attendanceSummaryErrorMessage;
+
   @override
   void initState() {
     super.initState();
     _loadClassData();
+  }
+
+  void _toggleRemarksEditor(String studentId) {
+    setState(() {
+      _remarksEditorVisible[studentId] =
+          !(_remarksEditorVisible[studentId] ?? false);
+    });
+  }
+
+  void _toggleAttendanceSummary() {
+    setState(() {
+      _showAttendanceSummary = !_showAttendanceSummary;
+    });
   }
 
   @override
@@ -144,6 +172,90 @@ class _ClassDetailsScreenState extends ConsumerState<ClassDetailsScreen> {
     }
 
     setState(() {});
+  }
+
+  Future<void> _loadHistoryAttendance() async {
+    setState(() {
+      _isLoadingHistoryAttendance = true;
+      _historyAttendanceErrorMessage = null;
+    });
+
+    try {
+      final attendanceProvider = ref.read(RiverpodProvider.attendanceProvider);
+      final dateString = DateFormat('yyyy-MM-dd').format(_historySelectedDate);
+
+      await attendanceProvider.getAttendanceByDate(
+        classId: widget.classId,
+        date: dateString,
+      );
+
+      if (mounted) {
+        setState(() {
+          _isLoadingHistoryAttendance = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingHistoryAttendance = false;
+          _historyAttendanceErrorMessage =
+              'Failed to load attendance: ${e.toString()}';
+        });
+      }
+    }
+  }
+
+  Future<void> _loadAttendanceSummary() async {
+    setState(() {
+      _isLoadingAttendanceSummary = true;
+      _attendanceSummaryErrorMessage = null;
+    });
+
+    try {
+      final attendanceRepo = locator<AttendanceRepo>();
+      final response = await attendanceRepo.getClassAttendanceSummary(
+        classId: widget.classId,
+      );
+
+      if (HTTPResponseModel.isApiCallSuccess(response)) {
+        final responseData = response.data as Map<String, dynamic>;
+
+        if (responseData['success'] == true && responseData['data'] != null) {
+          final data = responseData['data'] as Map<String, dynamic>;
+          _attendanceSummary = AttendanceSummaryData.fromJson(data);
+
+          if (mounted) {
+            setState(() {
+              _isLoadingAttendanceSummary = false;
+            });
+          }
+        } else {
+          if (mounted) {
+            setState(() {
+              _isLoadingAttendanceSummary = false;
+              _attendanceSummaryErrorMessage =
+                  'Invalid response format from server';
+            });
+          }
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _isLoadingAttendanceSummary = false;
+            _attendanceSummaryErrorMessage =
+                response.message ?? 'Failed to load attendance summary';
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingAttendanceSummary = false;
+          _attendanceSummaryErrorMessage =
+              'Error loading attendance summary: ${e.toString()}';
+        });
+      }
+    }
   }
 
   double _parseToDouble(dynamic value) {
@@ -381,8 +493,7 @@ class _ClassDetailsScreenState extends ConsumerState<ClassDetailsScreen> {
   }
 
   Future<void> _submitAttendance() async {
-    final classProvider = ref.read(RiverpodProvider.classProvider);
-    final students = classProvider.singlgeClassData.data?.students ?? [];
+    final students = _localClassData.data?.students ?? [];
     final attendanceProvider = ref.read(RiverpodProvider.attendanceProvider);
 
     if (students.isEmpty) {
@@ -700,31 +811,31 @@ class _ClassDetailsScreenState extends ConsumerState<ClassDetailsScreen> {
                 ),
               ),
               const SizedBox(width: 16),
-              Column(
-                children: [
-                  _buildActionButton(
-                    '📧 Message Class Teacher',
-                    Colors.white,
-                    const Color(0xFF6366F1),
-                    data,
-                  ),
-                  const SizedBox(height: 8),
+              // Column(
+              //   children: [
+              //     _buildActionButton(
+              //       '📧 Message Class Teacher',
+              //       Colors.white,
+              //       const Color(0xFF6366F1),
+              //       data,
+              //     ),
+              //     const SizedBox(height: 8),
 
-                  _buildActionButton(
-                    '✏️ Message Single Parent',
-                    AppColors.tertiary3,
-                    Colors.white,
-                    data,
-                  ),
-                  const SizedBox(height: 8),
-                  _buildActionButton(
-                    '👤 Message All Parents',
-                    const Color(0xFF06B6D4),
-                    Colors.white,
-                    data,
-                  ),
-                ],
-              ),
+              //     _buildActionButton(
+              //       '✏️ Message Single Parent',
+              //       AppColors.tertiary3,
+              //       Colors.white,
+              //       data,
+              //     ),
+              //     const SizedBox(height: 8),
+              //     _buildActionButton(
+              //       '👤 Message All Parents',
+              //       const Color(0xFF06B6D4),
+              //       Colors.white,
+              //       data,
+              //     ),
+              //   ],
+              // ),
             ],
           ),
         ),
@@ -868,61 +979,70 @@ class _ClassDetailsScreenState extends ConsumerState<ClassDetailsScreen> {
     final tabs = [
       'Students List',
       'Attendance',
+      'Attendance History',
+      'Summary',
       'Payment Data',
       'Fee Breakdown',
     ];
 
     return Container(
       padding: const EdgeInsets.all(16),
-      child: Row(
-        children:
-            tabs.asMap().entries.map((entry) {
-              final index = entry.key;
-              final tab = entry.value;
-              final isSelected = index == selectedTabIndex;
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children:
+              tabs.asMap().entries.map((entry) {
+                final index = entry.key;
+                final tab = entry.value;
+                final isSelected = index == selectedTabIndex;
 
-              return GestureDetector(
-                onTap: () {
-                  setState(() => selectedTabIndex = index);
-                  if (index == 1) {
-                    _loadAttendanceForDate();
-                  } else if (index == 2) {
-                    _loadPaymentData();
-                  } else if (index == 3) {
-                    _loadFeeBreakdown();
-                  }
-                },
-                child: Container(
-                  margin: const EdgeInsets.only(right: 16),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(
+                return GestureDetector(
+                  onTap: () {
+                    setState(() => selectedTabIndex = index);
+                    if (index == 1) {
+                      _loadAttendanceForDate();
+                    } else if (index == 2) {
+                      _loadHistoryAttendance();
+                    } else if (index == 3) {
+                      _loadAttendanceSummary();
+                    } else if (index == 4) {
+                      _loadPaymentData();
+                    } else if (index == 5) {
+                      _loadFeeBreakdown();
+                    }
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.only(right: 16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color:
+                              isSelected
+                                  ? const Color(0xFF6366F1)
+                                  : Colors.transparent,
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                    child: Text(
+                      tab,
+                      style: TextStyle(
                         color:
                             isSelected
                                 ? const Color(0xFF6366F1)
-                                : Colors.transparent,
-                        width: 2,
+                                : Colors.grey[600],
+                        fontWeight:
+                            isSelected ? FontWeight.w600 : FontWeight.normal,
                       ),
                     ),
                   ),
-                  child: Text(
-                    tab,
-                    style: TextStyle(
-                      color:
-                          isSelected
-                              ? const Color(0xFF6366F1)
-                              : Colors.grey[600],
-                      fontWeight:
-                          isSelected ? FontWeight.w600 : FontWeight.normal,
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
+                );
+              }).toList(),
+        ),
       ),
     );
   }
@@ -934,8 +1054,12 @@ class _ClassDetailsScreenState extends ConsumerState<ClassDetailsScreen> {
       case 1:
         return _buildStudentsListAttendance(data.students ?? []);
       case 2:
-        return _buildPaymentData();
+        return _buildAttendanceHistory(data.students ?? []);
       case 3:
+        return _buildAttendanceSummaryView();
+      case 4:
+        return _buildPaymentData();
+      case 5:
         return _buildFeeBreakdown();
       default:
         return _buildStudentsList(data.students ?? []);
@@ -1996,7 +2120,7 @@ class _ClassDetailsScreenState extends ConsumerState<ClassDetailsScreen> {
         if (students.isNotEmpty)
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: Colors.white,
               boxShadow: [
@@ -2009,56 +2133,81 @@ class _ClassDetailsScreenState extends ConsumerState<ClassDetailsScreen> {
             ),
             child: Column(
               children: [
-                // Summary of what will be submitted
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.blue[50],
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.blue[200]!),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.info_outline,
-                            size: 20,
-                            color: Colors.blue[700],
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Attendance Summary',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.blue[700],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'All ${students.length} students will be marked for ${DateFormat('MMM dd, yyyy').format(_selectedDate)}',
-                        style: TextStyle(fontSize: 13, color: Colors.blue[600]),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        isSubmitted
-                            ? 'Click "Resubmit" to update attendance records'
-                            : 'All students default to "Absent" until marked',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.blue[500],
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                    ],
+                // Toggle for summary visibility
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(0, 0),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      foregroundColor: const Color(0xFF2563EB),
+                    ),
+                    onPressed: _toggleAttendanceSummary,
+                    icon: Icon(
+                      _showAttendanceSummary
+                          ? Icons.expand_less
+                          : Icons.expand_more,
+                      size: 18,
+                    ),
+                    label: Text(
+                      _showAttendanceSummary ? 'Hide summary' : 'View summary',
+                    ),
                   ),
                 ),
+                if (_showAttendanceSummary)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(15),
+                    margin: const EdgeInsets.only(bottom: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.blue[50],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.blue[200]!),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.info_outline,
+                              size: 20,
+                              color: Colors.blue[700],
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Attendance Summary',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.blue[700],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'All ${students.length} students will be marked for ${DateFormat('MMM dd, yyyy').format(_selectedDate)}',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.blue[600],
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          isSubmitted
+                              ? 'Click "Resubmit" to update attendance records'
+                              : 'All students default to "Absent" until marked',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.blue[500],
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
 
                 // Submit button
                 ElevatedButton(
@@ -2225,6 +2374,19 @@ class _ClassDetailsScreenState extends ConsumerState<ClassDetailsScreen> {
             children: [
               Row(
                 children: [
+                  // Serial number (1-based)
+                  SizedBox(
+                    width: 28,
+                    child: Text(
+                      '${index + 1}.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[700],
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                   CircleAvatar(
                     radius: 20,
                     backgroundColor: _getStatusColor(
@@ -2326,24 +2488,52 @@ class _ClassDetailsScreenState extends ConsumerState<ClassDetailsScreen> {
 
                 const SizedBox(height: 12),
 
-                // Remarks field
-                TextFormField(
-                  initialValue: currentRemarks,
-                  decoration: InputDecoration(
-                    labelText: 'Remarks (Optional)',
-                    hintText: 'Add any notes...',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
+                // Remarks toggle and field (hidden by default)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextButton.icon(
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: const Size(0, 0),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        foregroundColor: const Color(0xFF6366F1),
+                      ),
+                      onPressed: () => _toggleRemarksEditor(studentId),
+                      icon: Icon(
+                        (_remarksEditorVisible[studentId] ?? false)
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                        size: 18,
+                      ),
+                      label: Text(
+                        (_remarksEditorVisible[studentId] ?? false)
+                            ? 'Hide review'
+                            : 'View review',
+                      ),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    prefixIcon: const Icon(Icons.note_add, size: 20),
-                  ),
-                  onChanged: (value) {
-                    _updateStudentRemarks(studentId, value);
-                  },
+                    if (_remarksEditorVisible[studentId] ?? false) ...[
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        initialValue: currentRemarks,
+                        decoration: InputDecoration(
+                          labelText: 'Remarks (Optional)',
+                          hintText: 'Add any notes...',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          prefixIcon: const Icon(Icons.note_add, size: 20),
+                        ),
+                        onChanged: (value) {
+                          _updateStudentRemarks(studentId, value);
+                        },
+                      ),
+                    ],
+                  ],
                 ),
               ] else if (currentRemarks.isNotEmpty) ...[
                 const SizedBox(height: 12),
@@ -2440,6 +2630,867 @@ class _ClassDetailsScreenState extends ConsumerState<ClassDetailsScreen> {
             'Attendance records will appear here once marked',
             style: TextStyle(fontSize: 14, color: Colors.grey[500]),
             textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAttendanceHistory(List<Student> students) {
+    final attendanceProvider = ref.watch(RiverpodProvider.attendanceProvider);
+    final attendanceData = attendanceProvider.attendanceByDate;
+
+    return Column(
+      children: [
+        // Header with date picker
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.indigo[50],
+            border: Border(bottom: BorderSide(color: Colors.indigo[200]!)),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.calendar_month,
+                      size: 20,
+                      color: Colors.indigo[700],
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Date: ${DateFormat('MMM dd, yyyy').format(_historySelectedDate)}',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.indigo[700],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  final pickedDate = await showDatePicker(
+                    context: context,
+                    initialDate: _historySelectedDate,
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime.now(),
+                  );
+                  if (pickedDate != null) {
+                    setState(() {
+                      _historySelectedDate = pickedDate;
+                    });
+                    await _loadHistoryAttendance();
+                  }
+                },
+                icon: const Icon(Icons.calendar_today, size: 18),
+                label: const Text('Select Date'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.indigo[600],
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Attendance list
+        Expanded(
+          child:
+              _isLoadingHistoryAttendance
+                  ? const Center(child: CircularProgressIndicator())
+                  : _historyAttendanceErrorMessage != null
+                  ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: 64,
+                          color: Colors.red[300],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          _historyAttendanceErrorMessage!,
+                          style: const TextStyle(fontSize: 16),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: _loadHistoryAttendance,
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  )
+                  : attendanceData == null || attendanceData.records.isEmpty
+                  ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.event_busy,
+                          size: 80,
+                          color: Colors.grey[400],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No Attendance Recorded',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'No attendance data found for ${DateFormat('MMM dd, yyyy').format(_historySelectedDate)}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[500],
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  )
+                  : _buildHistoryAttendanceList(students, attendanceData),
+        ),
+
+        // Summary card
+        if (attendanceData != null && attendanceData.records.isNotEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, -2),
+                ),
+              ],
+            ),
+            child: _buildHistorySummary(attendanceData),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildHistoryAttendanceList(
+    List<Student> students,
+    AttendanceByDate attendanceData,
+  ) {
+    // Create a map of student ID to attendance record for quick lookup
+    final attendanceMap = <String, AttendanceRecordDetail>{};
+    for (final record in attendanceData.records) {
+      final studentId =
+          record.student.id ?? record.student.admissionNumber ?? '';
+      if (studentId.isNotEmpty) {
+        attendanceMap[studentId] = record;
+      }
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: students.length,
+      itemBuilder: (context, index) {
+        final student = students[index];
+        final studentId = student.id ?? student.admissionNumber ?? 'N/A';
+        final attendanceRecord = attendanceMap[studentId];
+        final status = attendanceRecord?.status ?? 'Not Marked';
+        final remarks = attendanceRecord?.remarks ?? '';
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: _getStatusColor(status).withOpacity(0.3),
+              width: 2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              // Serial number
+              SizedBox(
+                width: 28,
+                child: Text(
+                  '${index + 1}.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[700],
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: _getStatusColor(status).withOpacity(0.1),
+                child: Text(
+                  (student.name ?? 'Unknown')[0].toUpperCase(),
+                  style: TextStyle(
+                    color: _getStatusColor(status),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      student.name ?? 'Unknown Student',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    Text(
+                      student.admissionNumber ?? 'N/A',
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    ),
+                    if (remarks.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        remarks,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              // Status indicator
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: _getStatusColor(status).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: _getStatusColor(status).withOpacity(0.3),
+                  ),
+                ),
+                child: Text(
+                  status.toUpperCase(),
+                  style: TextStyle(
+                    color: _getStatusColor(status),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildHistorySummary(AttendanceByDate attendanceData) {
+    final records = attendanceData.records;
+    final present =
+        records.where((r) => r.status.toLowerCase() == 'present').length;
+    final absent =
+        records.where((r) => r.status.toLowerCase() == 'absent').length;
+    final late = records.where((r) => r.status.toLowerCase() == 'late').length;
+    final total = records.length;
+    final attendanceRate = total > 0 ? (present / total * 100) : 0.0;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.indigo[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.indigo[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.summarize, size: 20, color: Colors.indigo[700]),
+              const SizedBox(width: 8),
+              Text(
+                'Attendance Summary for ${DateFormat('MMM dd, yyyy').format(_historySelectedDate)}',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.indigo[700],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildSummaryCard('Total', '$total', Colors.blue),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildSummaryCard('Present', '$present', Colors.green),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildSummaryCard('Absent', '$absent', Colors.red),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildSummaryCard('Late', '$late', Colors.orange),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.indigo[100],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              'Attendance Rate: ${attendanceRate.toStringAsFixed(1)}%',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.indigo[700],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          if (attendanceData.isSubmitted)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.check_circle, size: 16, color: Colors.green[600]),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Submitted',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.green[600],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryCard(String label, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAttendanceSummaryView() {
+    if (_isLoadingAttendanceSummary) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Loading attendance summary...'),
+          ],
+        ),
+      );
+    }
+
+    if (_attendanceSummaryErrorMessage != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+            const SizedBox(height: 16),
+            Text(
+              _attendanceSummaryErrorMessage!,
+              style: const TextStyle(fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _loadAttendanceSummary,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_attendanceSummary == null) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.summarize, size: 64, color: Colors.grey),
+            SizedBox(height: 16),
+            Text(
+              'No attendance summary available',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSummaryHeader(),
+          const SizedBox(height: 24),
+          _buildOverallStats(),
+          const SizedBox(height: 24),
+          _buildStudentSummariesList(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryHeader() {
+    final classInfo = _attendanceSummary!.classInfo;
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.purple.shade50, Colors.indigo.shade50],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.purple.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.purple.shade600,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.summarize, color: Colors.white, size: 28),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Attendance Summary - ${classInfo.name}',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1F2937),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Level: ${classInfo.level} • Total Days: ${_attendanceSummary!.totalAttendanceDays}',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOverallStats() {
+    final summaries = _attendanceSummary!.summary;
+    if (summaries.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final totalStudents = summaries.length;
+    final avgRate =
+        summaries.fold<double>(0.0, (sum, s) => sum + s.attendanceRate) /
+        totalStudents;
+
+    final totalPresent = summaries.fold<int>(
+      0,
+      (sum, s) => sum + s.presentCount,
+    );
+
+    final totalAbsent = summaries.fold<int>(0, (sum, s) => sum + s.absentCount);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Overall Statistics',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1F2937),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: _buildSummaryStatCard(
+                'Average Rate',
+                '${avgRate.toStringAsFixed(1)}%',
+                Icons.trending_up,
+                Colors.purple,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildSummaryStatCard(
+                'Total Present',
+                '$totalPresent',
+                Icons.check_circle,
+                Colors.green,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildSummaryStatCard(
+                'Total Absent',
+                '$totalAbsent',
+                Icons.cancel,
+                Colors.red,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSummaryStatCard(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: color, size: 24),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF1F2937),
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStudentSummariesList() {
+    final summaries = _attendanceSummary!.summary;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Student Attendance Details',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1F2937),
+          ),
+        ),
+        const SizedBox(height: 16),
+        ...summaries.asMap().entries.map((entry) {
+          final index = entry.key;
+          final summary = entry.value;
+          return _buildStudentSummaryCard(index + 1, summary);
+        }),
+      ],
+    );
+  }
+
+  Widget _buildStudentSummaryCard(int index, StudentAttendanceSummary summary) {
+    final rate = summary.attendanceRate;
+    final rateColor =
+        rate >= 80
+            ? Colors.green
+            : rate >= 60
+            ? Colors.orange
+            : Colors.red;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: rateColor.withOpacity(0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          ListTile(
+            leading: CircleAvatar(
+              backgroundColor: rateColor.withOpacity(0.1),
+              child: Text(
+                '$index',
+                style: TextStyle(color: rateColor, fontWeight: FontWeight.bold),
+              ),
+            ),
+            title: Text(
+              summary.student.name,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+            subtitle: Text('Admission: ${summary.student.admissionNumber}'),
+            trailing: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: rateColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: rateColor.withOpacity(0.3)),
+              ),
+              child: Text(
+                '${rate.toStringAsFixed(1)}%',
+                style: TextStyle(
+                  color: rateColor,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _buildMiniStat(
+                    'Days',
+                    '${summary.totalDays}',
+                    Colors.blue,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildMiniStat(
+                    'Present',
+                    '${summary.presentCount}',
+                    Colors.green,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildMiniStat(
+                    'Absent',
+                    '${summary.absentCount}',
+                    Colors.red,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (summary.records.isNotEmpty)
+            ExpansionTile(
+              title: const Text('View Records', style: TextStyle(fontSize: 14)),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children:
+                        summary.records.map((record) {
+                          return _buildRecordItem(record);
+                        }).toList(),
+                  ),
+                ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMiniStat(String label, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              color: color,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecordItem(AttendanceRecordSummary record) {
+    final statusColor = _getStatusColor(record.status);
+    final date = DateTime.tryParse(record.date);
+    final formattedDate =
+        date != null ? DateFormat('MMM dd, yyyy').format(date) : record.date;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: statusColor.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: statusColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              record.status.toUpperCase(),
+              style: TextStyle(
+                color: statusColor,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  formattedDate,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                if (record.remarks.isNotEmpty)
+                  Text(
+                    record.remarks,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+              ],
+            ),
           ),
         ],
       ),

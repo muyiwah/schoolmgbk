@@ -13,7 +13,6 @@ class AttendanceRepo {
     required MarkAttendanceRequest request,
   }) async {
     try {
-
       // print(request.toJson());
       final response = await _httpService.runApi(
         type: ApiRequestType.post,
@@ -60,7 +59,7 @@ class AttendanceRepo {
         type: ApiRequestType.get,
         url: "/attendance/class/$classId/summary",
       );
-
+   
       return response;
     } catch (e) {
       return HTTPResponseModel.jsonToMap({
