@@ -693,7 +693,7 @@ class _CurriculumManagementScreenState
                     size: 18,
                   ),
                   label: Text(
-                     'Upload to Cloud',
+                     'Upload to Cloud ',
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor:
