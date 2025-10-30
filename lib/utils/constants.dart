@@ -26,7 +26,7 @@ class AppConstants {
   // static String dojahWidgetId   = '681e5664b52cf9b2598f5dc9';
   // static String dojahAppId = "6815f136e6f0f1492e449481";
   // static String dojahPublicKey = "test_pk_faF1cixbN2JDQs7eWHQflkPfh";
-  ///
+  ////
   static const String biometricMsgoff = "Biometrics is turned off";
   static const String activateBiometricMsg =
       'Kindly activate biometrics to use this feature.';
