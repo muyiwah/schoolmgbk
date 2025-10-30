@@ -693,9 +693,7 @@ class _CurriculumManagementScreenState
                     size: 18,
                   ),
                   label: Text(
-                    _selectedStorage == StorageType.cloudinary
-                        ? 'Upload to Cloudinary'
-                        : 'Upload to ImageKit',
+                     'Upload to Cloud',
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor:

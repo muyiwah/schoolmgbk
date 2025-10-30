@@ -14,6 +14,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:country_picker/country_picker.dart';
+import 'package:flutter/foundation.dart';
 
 class AdmissionManagementScreen extends ConsumerStatefulWidget {
   const AdmissionManagementScreen({super.key});
@@ -1626,8 +1627,6 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
   String? _selectedCountry;
   String? _selectedState;
 
-
-
   @override
   void initState() {
     super.initState();
@@ -2514,7 +2513,7 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
           const SizedBox(height: 16),
           Row(
             children: [
-                 Expanded(
+              Expanded(
                 child: _buildTextField(
                   controller: _studentCountryController,
                   label: 'Student\'s Country',
@@ -3213,8 +3212,8 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
                       : _selectedImageFile != null
                       ? ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: Image.file(
-                          File(_selectedImageFile!.path),
+                        child: Image.network(
+                          _selectedImageFile!.path,
                           fit: BoxFit.cover,
                         ),
                       )
@@ -3304,8 +3303,8 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
                       : _selectedPassportPhoto != null
                       ? ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: Image.file(
-                          File(_selectedPassportPhoto!.path),
+                        child: Image.network(
+                          _selectedPassportPhoto!.path,
                           fit: BoxFit.cover,
                         ),
                       )

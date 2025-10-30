@@ -10,7 +10,7 @@ import 'package:schmgtsystem/utils/constants.dart';
 import 'package:schmgtsystem/widgets/success_snack.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image/image.dart' as img;
-import 'dart:io';
+import 'dart:typed_data';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:country_picker/country_picker.dart';
@@ -36,12 +36,14 @@ class _StudentRegistrationPageState
 
   // Image upload variables
   XFile? _selectedImageFile; // Use XFile instead of File for web compatibility
+  Uint8List? _selectedImageBytes;
   String? _imageUrl;
   bool _isUploadingImage = false;
   final ImagePicker _imagePicker = ImagePicker();
 
   // ID Photo upload variables
   XFile? _selectedIdPhotoFile;
+  Uint8List? _selectedIdPhotoBytes;
   String? _idPhotoUrl;
   bool _isUploadingIdPhoto = false;
 
@@ -4458,29 +4460,21 @@ class _StudentRegistrationPageState
       return ClipRRect(
         borderRadius: BorderRadius.circular(8),
         child:
-            kIsWeb
-                ? Image.network(
-                  _selectedIdPhotoFile!.path,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Icon(
-                      Icons.badge,
-                      size: 40,
-                      color: Colors.grey,
-                    );
-                  },
-                )
-                : Image.file(
-                  File(_selectedIdPhotoFile!.path),
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Icon(
-                      Icons.badge,
-                      size: 40,
-                      color: Colors.grey,
-                    );
-                  },
-                ),
+            (_selectedIdPhotoBytes != null)
+                ? Image.memory(_selectedIdPhotoBytes!, fit: BoxFit.cover)
+                : (kIsWeb
+                    ? Image.network(
+                      _selectedIdPhotoFile!.path,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Icon(
+                          Icons.badge,
+                          size: 40,
+                          color: Colors.grey,
+                        );
+                      },
+                    )
+                    : const SizedBox.shrink()),
       );
     } else {
       // Show placeholder
@@ -4506,29 +4500,21 @@ class _StudentRegistrationPageState
       return ClipRRect(
         borderRadius: BorderRadius.circular(8),
         child:
-            kIsWeb
-                ? Image.network(
-                  _selectedImageFile!.path,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Icon(
-                      Icons.person,
-                      size: 40,
-                      color: Colors.grey,
-                    );
-                  },
-                )
-                : Image.file(
-                  File(_selectedImageFile!.path),
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Icon(
-                      Icons.person,
-                      size: 40,
-                      color: Colors.grey,
-                    );
-                  },
-                ),
+            (_selectedImageBytes != null)
+                ? Image.memory(_selectedImageBytes!, fit: BoxFit.cover)
+                : (kIsWeb
+                    ? Image.network(
+                      _selectedImageFile!.path,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Icon(
+                          Icons.person,
+                          size: 40,
+                          color: Colors.grey,
+                        );
+                      },
+                    )
+                    : const SizedBox.shrink()),
       );
     } else {
       // Show placeholder

@@ -8,7 +8,7 @@ import 'package:schmgtsystem/providers/admission_provider.dart';
 import 'package:schmgtsystem/providers/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image/image.dart' as img;
-import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
@@ -1079,8 +1079,8 @@ class _StudentAdmissionFormState extends ConsumerState<StudentAdmissionForm> {
                             );
                           },
                         )
-                        : Image.file(
-                          File(_selectedImageFile!.path),
+                        : Image.network(
+                          _selectedImageFile!.path,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
                             return const Icon(
