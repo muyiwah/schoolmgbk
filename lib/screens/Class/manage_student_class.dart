@@ -745,8 +745,9 @@ class _ManageStudentClassState extends ConsumerState<ManageStudentClass> {
             // Load More Button Section
             if (!isLoading && students.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
+                padding: const EdgeInsets.all(4.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     // Show current count
                     Container(
@@ -867,15 +868,15 @@ class _ManageStudentClassState extends ConsumerState<ManageStudentClass> {
             color: const Color(0xFF6366F1),
           ),
         ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: _buildStatCard(
-            title: 'Filtered Students',
-            value: students.length.toString(),
-            icon: Icons.filter_list,
-            color: const Color(0xFF8B5CF6),
-          ),
-        ),
+        // const SizedBox(width: 16),
+        // Expanded(
+        //   child: _buildStatCard(
+        //     title: 'Filtered Students',
+        //     value: students.length.toString(),
+        //     icon: Icons.filter_list,
+        //     color: const Color(0xFF8B5CF6),
+        //   ),
+        // ),
         const SizedBox(width: 16),
         Expanded(
           child: _buildStatCard(
@@ -903,7 +904,7 @@ class _ManageStudentClassState extends ConsumerState<ManageStudentClass> {
   }
 
   Widget _buildSearchAndFilters(List<String> classOptions) {
-    return Container(
+    return Container(width: double.infinity,
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1038,89 +1039,89 @@ class _ManageStudentClassState extends ConsumerState<ManageStudentClass> {
               ],
             ),
           ),
-          SizedBox(height: 16),
+          // SizedBox(height: 16),
           // Second Row - Sort Options
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 200,
-                  child: _buildFilterDropdown(
-                    value: _selectedSortBy,
-                    items: [
-                      DropdownMenuItem(
-                        value: 'name',
-                        child: Text('Sort by Name'),
-                      ),
-                      DropdownMenuItem(
-                        value: 'admissionNumber',
-                        child: Text('Sort by ID'),
-                      ),
-                      DropdownMenuItem(
-                        value: 'classLevel',
-                        child: Text('Sort by Class'),
-                      ),
-                      DropdownMenuItem(
-                        value: 'gender',
-                        child: Text('Sort by Gender'),
-                      ),
-                    ],
-                    onChanged: (value) {
-                      setState(() => _selectedSortBy = value!);
-                      _onSortChanged();
-                    },
-                  ),
-                ),
-                SizedBox(width: 12),
-                Container(
-                  height: 40,
-                  padding: EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Color(0xFFE2E8F0)),
-                    borderRadius: BorderRadius.circular(8),
-                    color: Colors.white,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.sort, color: Color(0xFF94A3B8), size: 16),
-                      SizedBox(width: 8),
-                      GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _selectedSortOrder =
-                                _selectedSortOrder == 'asc' ? 'desc' : 'asc';
-                          });
-                          _onSortChanged();
-                        },
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              _selectedSortOrder == 'asc' ? 'A-Z' : 'Z-A',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Color(0xFF475569),
-                              ),
-                            ),
-                            SizedBox(width: 4),
-                            Icon(
-                              _selectedSortOrder == 'asc'
-                                  ? Icons.arrow_upward
-                                  : Icons.arrow_downward,
-                              color: Color(0xFF94A3B8),
-                              size: 16,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
+          // SingleChildScrollView(
+          //   scrollDirection: Axis.horizontal,
+          //   child: Row(
+          //     children: [
+          //       SizedBox(
+          //         width: 200,
+          //         child: _buildFilterDropdown(
+          //           value: _selectedSortBy,
+          //           items: [
+          //             DropdownMenuItem(
+          //               value: 'name',
+          //               child: Text('Sort by Name'),
+          //             ),
+          //             DropdownMenuItem(
+          //               value: 'admissionNumber',
+          //               child: Text('Sort by ID'),
+          //             ),
+          //             DropdownMenuItem(
+          //               value: 'classLevel',
+          //               child: Text('Sort by Class'),
+          //             ),
+          //             DropdownMenuItem(
+          //               value: 'gender',
+          //               child: Text('Sort by Gender'),
+          //             ),
+          //           ],
+          //           onChanged: (value) {
+          //             setState(() => _selectedSortBy = value!);
+          //             _onSortChanged();
+          //           },
+          //         ),
+          //       ),
+          //       SizedBox(width: 12),
+          //       Container(
+          //         height: 40,
+          //         padding: EdgeInsets.symmetric(horizontal: 12),
+          //         decoration: BoxDecoration(
+          //           border: Border.all(color: Color(0xFFE2E8F0)),
+          //           borderRadius: BorderRadius.circular(8),
+          //           color: Colors.white,
+          //         ),
+          //         child: Row(
+          //           mainAxisSize: MainAxisSize.min,
+          //           children: [
+          //             Icon(Icons.sort, color: Color(0xFF94A3B8), size: 16),
+          //             SizedBox(width: 8),
+          //             GestureDetector(
+          //               onTap: () {
+          //                 setState(() {
+          //                   _selectedSortOrder =
+          //                       _selectedSortOrder == 'asc' ? 'desc' : 'asc';
+          //                 });
+          //                 _onSortChanged();
+          //               },
+          //               child: Row(
+          //                 mainAxisSize: MainAxisSize.min,
+          //                 children: [
+          //                   Text(
+          //                     _selectedSortOrder == 'asc' ? 'A-Z' : 'Z-A',
+          //                     style: TextStyle(
+          //                       fontSize: 14,
+          //                       color: Color(0xFF475569),
+          //                     ),
+          //                   ),
+          //                   SizedBox(width: 4),
+          //                   Icon(
+          //                     _selectedSortOrder == 'asc'
+          //                         ? Icons.arrow_upward
+          //                         : Icons.arrow_downward,
+          //                     color: Color(0xFF94A3B8),
+          //                     size: 16,
+          //                   ),
+          //                 ],
+          //               ),
+          //             ),
+          //           ],
+          //         ),
+          //       ),
+          //     ],
+          //   ),
+          // ),
         ],
       ),
     );

@@ -30,10 +30,10 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
   final int _itemsPerPage = 50; // Load 50 students per page
   bool _isLoadingMore = false;
   //
-//
+  //
   // Flag to track if we need to reload when returning to screen
   bool _shouldReloadOnReturn = false;
-// 
+  //
   // Toggle for showing/hiding statistics and filters
   bool _showStatisticsAndFilters = true;
 
@@ -128,43 +128,11 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
     List<StudentModel> filteredStudents,
     ClassProvider classProvider,
   ) {
-    // Get pagination info from the current state
-    final studentState = ref.read(studentProvider);
-    final pagination = studentState.pagination;
-
-    // If no pagination info, return false
+    // Always defer to server pagination; client-side filters can hide items
+    // but shouldn't disable the load more button while the server has more.
+    final pagination = ref.read(studentProvider).pagination;
     if (pagination == null) return false;
-
-    // Check if we have reached the total number of students
-    if (filteredStudents.length >= pagination.totalStudents) {
-      return false;
-    }
-
-    // Check if there are more pages available
-    if (!pagination.hasNext) {
-      return false;
-    }
-
-    // If no class filter is applied, check if we have more students from API
-    if (_selectedClass == 'All Classes') {
-      return pagination.hasNext;
-    }
-
-    // For class level filtering, we need to check if there might be more students
-    // with this class level in the remaining data
-    final allStudents = studentState.students;
-    final classIds = _getClassIdsFromLevel(_selectedClass, classProvider);
-
-    // Count how many students with this class level we currently have
-    final currentCount =
-        allStudents.where((student) {
-          return classIds.contains(student.academicInfo.currentClass?.id);
-        }).length;
-
-    // If we have fewer students than expected, there might be more
-    // This is a simple heuristic - if we have loaded students but fewer than expected
-    // for this class level, there might be more to load
-    return pagination.hasNext && currentCount > 0;
+    return pagination.hasNext;
   }
 
   @override
@@ -435,7 +403,8 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
                               Padding(
                                 padding: const EdgeInsets.all(16.0),
                                 child: Center(
-                                  child: Column(
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       // Student count info
                                       Container(
@@ -586,15 +555,7 @@ class _AllStudentsScreenState extends ConsumerState<AllStudentsScreen> {
             color: const Color(0xFF059669),
           ),
         ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: _buildStatCard(
-            title: 'Filtered Students',
-            value: students.length.toString(),
-            icon: Icons.groups,
-            color: const Color(0xFF6366F1),
-          ),
-        ),
+
         const SizedBox(width: 16),
         Expanded(
           child: _buildStatCard(

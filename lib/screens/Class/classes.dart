@@ -234,6 +234,10 @@ class _SchoolClassesState extends ConsumerState<SchoolClasses> {
                                         builder:
                                             (context) => RemoveTeacherDialog(
                                               classData: singleClass,
+                                              onTeacherRemoved: () async {
+                                                // Reload classes data to reflect the update
+                                                await loadClassesData();
+                                              },
                                             ),
                                       );
                                     }
@@ -759,7 +763,6 @@ class _SchoolClassesState extends ConsumerState<SchoolClasses> {
             isWarning: true,
           ),
         ),
-       
       ],
     );
   }

@@ -185,7 +185,6 @@ class _AddClassDialogState extends ConsumerState<AddClassDialog>
 
         if (mounted) {
           Navigator.pop(context);
-          showSnackbar(context, 'Class created successfully!');
           // Call the callback to refresh the parent screen
           if (widget.onClassCreated != null) {
             widget.onClassCreated!();
@@ -193,7 +192,7 @@ class _AddClassDialogState extends ConsumerState<AddClassDialog>
         }
       } catch (e) {
         if (mounted) {
-          showSnackbar(context, 'Error creating class: $e');
+          // showSnackbar(context, 'Error creating class: $e');
         }
       } finally {
         if (mounted) {

@@ -243,47 +243,55 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
   final List<String> statuses = ['All Status', 'Active', 'Inactive'];
 
   Color getSubjectColor(String subject) {
-    switch (subject) {
-      case 'MATHEMATICS':
-        return Colors.blue.shade100;
-      case 'SCIENCE':
-        return Colors.green.shade100;
-      case 'ENGLISH':
-        return Colors.purple.shade100;
-      case 'HISTORY':
-        return Colors.orange.shade100;
-      case 'ART':
-        return Colors.red.shade100;
-      case 'MUSIC':
-        return Colors.indigo.shade100;
-      case 'HISTORY2':
-        return Colors.orange.shade100;
-      case 'ART2':
-        return Colors.red.shade100;
-      case 'MUSIC2':
-        return Colors.indigo.shade100;
-      default:
-        return Colors.grey.shade100;
-    }
+    // List of light colors for subject column backgrounds
+    final colors = [
+      Colors.blue.shade100,
+      Colors.green.shade100,
+      Colors.purple.shade100,
+      Colors.orange.shade100,
+      Colors.red.shade100,
+      Colors.indigo.shade100,
+      Colors.amber.shade100,
+      Colors.teal.shade100,
+      Colors.pink.shade100,
+      Colors.cyan.shade100,
+      Colors.lime.shade100,
+      Colors.brown.shade100,
+      Colors.deepPurple.shade100,
+      Colors.deepOrange.shade100,
+      Colors.lightBlue.shade100,
+      Colors.lightGreen.shade100,
+    ];
+
+    // Use hash code to consistently assign colors
+    final hash = subject.hashCode;
+    return colors[hash.abs() % colors.length];
   }
 
   Color getSubjectTextColor(String subject) {
-    switch (subject) {
-      case 'MATHEMATICS':
-        return Colors.blue.shade700;
-      case 'SCIENCE':
-        return Colors.green.shade700;
-      case 'ENGLISH':
-        return Colors.purple.shade700;
-      case 'HISTORY':
-        return Colors.orange.shade700;
-      case 'ART':
-        return Colors.red.shade700;
-      case 'MUSIC':
-        return Colors.indigo.shade700;
-      default:
-        return Colors.grey.shade700;
-    }
+    // List of darker colors for text (matching the background colors)
+    final colors = [
+      Colors.blue.shade700,
+      Colors.green.shade700,
+      Colors.purple.shade700,
+      Colors.orange.shade700,
+      Colors.red.shade700,
+      Colors.indigo.shade700,
+      Colors.amber.shade700,
+      Colors.teal.shade700,
+      Colors.pink.shade700,
+      Colors.cyan.shade700,
+      Colors.lime.shade700,
+      Colors.brown.shade700,
+      Colors.deepPurple.shade700,
+      Colors.deepOrange.shade700,
+      Colors.lightBlue.shade700,
+      Colors.lightGreen.shade700,
+    ];
+
+    // Use hash code to consistently assign colors (same index as background)
+    final hash = subject.hashCode;
+    return colors[hash.abs() % colors.length];
   }
 
   void _toggleSubject(String className, String subject, bool value) {
@@ -634,18 +642,18 @@ class _SubjectsManagementPageState extends State<SubjectsManagementPage> {
           // Action Buttons
           Row(
             children: [
-              _buildIconButton(
-                icon: Icons.file_download_outlined,
-                tooltip: 'Import CSV',
-                onPressed: () {},
-              ),
-              const SizedBox(width: 8),
-              _buildIconButton(
-                icon: Icons.file_upload_outlined,
-                tooltip: 'Export Data',
-                onPressed: () {},
-              ),
-              const SizedBox(width: 8),
+              // _buildIconButton(
+              //   icon: Icons.file_download_outlined,
+              //   tooltip: 'Import CSV',
+              //   onPressed: () {},
+              // ),
+              // const SizedBox(width: 8),
+              // _buildIconButton(
+              //   icon: Icons.file_upload_outlined,
+              //   tooltip: 'Export Data',
+              //   onPressed: () {},
+              // ),
+              // const SizedBox(width: 8),
               _buildIconButton(
                 icon: Icons.delete_outline,
                 tooltip: 'Bulk Delete Subjects',
@@ -1538,9 +1546,10 @@ class _AddSubjectDialogState extends State<AddSubjectDialog> {
                     // Subject Code Field
                     _buildModernFormField(
                       label: 'Subject Code',
+                      isRequired: true,
                       controller: _subjectCodeController,
                       hintText: 'e.g., MATH101',
-                      helperText: 'Optional short code for internal reference.',
+                      helperText: 'Enter a unique subject code.',
                     ),
                     const SizedBox(height: 20),
 
@@ -1585,14 +1594,14 @@ class _AddSubjectDialogState extends State<AddSubjectDialog> {
                     // Level Field
                     _buildDropdownField(
                       label: 'Level',
-                      isRequired: true,
+                      isRequired: false,
                       value: _selectedLevel,
                       items: Subject.levels,
                       onChanged:
                           (value) => setState(() => _selectedLevel = value),
-                      hintText: 'Select education level',
+                      hintText: 'Select education level (optional)',
                       helperText:
-                          'Choose the education level for this subject.',
+                          'Choose the education level for this subject (optional).',
                     ),
                     const SizedBox(height: 20),
 
@@ -1633,10 +1642,8 @@ class _AddSubjectDialogState extends State<AddSubjectDialog> {
                         const SizedBox(width: 12),
                         ElevatedButton.icon(
                           onPressed: () async {
-                            if (_subjectNameController.text.isNotEmpty &&
-                                _selectedCategory != null &&
-                                _selectedDepartment != null &&
-                                _selectedLevel != null) {
+                            if (_subjectNameController.text.trim().isNotEmpty &&
+                                _subjectCodeController.text.trim().isNotEmpty) {
                               final subjectData = {
                                 'name':
                                     _subjectNameController.text
@@ -1647,10 +1654,12 @@ class _AddSubjectDialogState extends State<AddSubjectDialog> {
                                         .trim()
                                         .toUpperCase(),
                                 'description':
-                                    _descriptionController.text.trim(),
-                                'category': _selectedCategory!,
-                                'department': _selectedDepartment!,
-                                'level': _selectedLevel!,
+                                    _descriptionController.text.trim().isEmpty
+                                        ? null
+                                        : _descriptionController.text.trim(),
+                                'category': _selectedCategory,
+                                'department': _selectedDepartment,
+                                'level': _selectedLevel,
                                 'isActive': _isActive,
                               };
 
@@ -1661,13 +1670,16 @@ class _AddSubjectDialogState extends State<AddSubjectDialog> {
                                 Navigator.of(context).pop();
                               }
                             } else {
-                              print(
-                                'Form validation failed - missing required fields',
-                              );
-                              showSnackbar(
-                                context,
-                                'Please fill in all required fields',
-                              );
+                              String errorMessage =
+                                  'Please fill in all required fields';
+                              if (_subjectNameController.text.trim().isEmpty) {
+                                errorMessage = 'Please enter a subject name';
+                              } else if (_subjectCodeController.text
+                                  .trim()
+                                  .isEmpty) {
+                                errorMessage = 'Please enter a subject code';
+                              }
+                              showSnackbar(context, errorMessage);
                             }
                           },
                           icon: const Icon(

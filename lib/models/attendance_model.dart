@@ -362,7 +362,7 @@ class StudentAttendanceSummary {
   final int totalDays;
   final int presentCount;
   final int absentCount;
-  final int attendanceRate;
+  final double attendanceRate;
   final List<AttendanceRecordSummary> records;
 
   StudentAttendanceSummary({
@@ -380,7 +380,10 @@ class StudentAttendanceSummary {
       totalDays: json['totalDays'] ?? 0,
       presentCount: json['presentCount'] ?? 0,
       absentCount: json['absentCount'] ?? 0,
-      attendanceRate: json['attendanceRate'] ?? 0,
+      attendanceRate:
+          (json['attendanceRate'] is num)
+              ? (json['attendanceRate'] as num).toDouble()
+              : (json['attendanceRate'] ?? 0).toDouble(),
       records:
           (json['records'] as List<dynamic>?)
               ?.map((record) => AttendanceRecordSummary.fromJson(record))

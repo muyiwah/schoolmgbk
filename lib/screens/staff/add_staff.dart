@@ -82,7 +82,7 @@ class _AddStaffState extends ConsumerState<AddStaff>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _nationalityController.text = 'Nigerian';
     _countryController.text = 'Nigeria';
   }
@@ -582,7 +582,6 @@ class _AddStaffState extends ConsumerState<AddStaff>
                         Tab(text: 'Contact Info'),
                         Tab(text: 'Employment Info'),
                         Tab(text: 'Qualifications'),
-                        Tab(text: 'Documents'),
                       ],
                     ),
                   ),
@@ -613,7 +612,6 @@ class _AddStaffState extends ConsumerState<AddStaff>
                       _buildContactInfoTab(),
                       _buildEmploymentInfoTab(),
                       _buildQualificationsTab(),
-                      _buildDocumentsTab(),
                     ],
                   ),
                 ),
@@ -824,7 +822,7 @@ class _AddStaffState extends ConsumerState<AddStaff>
           ),
           const SizedBox(height: 20),
           _buildStyledInput(
-            title: 'State of Origin',
+            title: 'Locality',
             controller: _stateOfOriginController,
             icon: Icons.location_city,
           ),
@@ -909,7 +907,11 @@ class _AddStaffState extends ConsumerState<AddStaff>
             ),
             child: Row(
               children: [
-                Icon(Icons.location_on, color: AppColors.secondaryColor, size: 18),
+                Icon(
+                  Icons.location_on,
+                  color: AppColors.secondaryColor,
+                  size: 18,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   'Address Information',
@@ -943,7 +945,7 @@ class _AddStaffState extends ConsumerState<AddStaff>
               const SizedBox(width: 16),
               Expanded(
                 child: _buildStyledInput(
-                  title: 'State *',
+                  title: 'Locality *',
                   controller: _stateController,
                   icon: Icons.map,
                 ),

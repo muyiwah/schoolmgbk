@@ -62,10 +62,10 @@ class SubjectProvider extends ChangeNotifier {
 
           setSubjects(subjectsList);
 
-          CustomToastNotification.show(
-            res.message ?? 'Subjects loaded successfully',
-            type: ToastType.success,
-          );
+          // CustomToastNotification.show(
+          //   res.message ?? 'Subjects loaded successfully',
+          //   type: ToastType.success,
+          // );
         } else {
           setSubjects([]);
           CustomToastNotification.show(

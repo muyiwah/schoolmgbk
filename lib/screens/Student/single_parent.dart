@@ -821,7 +821,7 @@ class _SingleParentState extends ConsumerState<SingleParent> {
               parentData.parent?.contactInfo?.address?.city,
             ),
             _buildDetailRow(
-              'State',
+                'Locality',
               parentData.parent?.contactInfo?.address?.state,
             ),
             _buildDetailRow(

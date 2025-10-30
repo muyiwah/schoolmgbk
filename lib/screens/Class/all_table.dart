@@ -4,6 +4,7 @@ import 'package:schmgtsystem/constants/appcolor.dart';
 import 'package:schmgtsystem/providers/provider.dart';
 import 'package:schmgtsystem/models/timetable_model.dart';
 import 'package:schmgtsystem/screens/Class/edit_timetable_screen.dart';
+import 'package:schmgtsystem/widgets/success_snack.dart';
 import 'package:flutter/foundation.dart';
 
 class AllTables extends ConsumerStatefulWidget {
@@ -741,11 +742,10 @@ class _AllTablesState extends ConsumerState<AllTables> {
 
   void _navigateToEditTimetable() {
     if (selectedClassId == null || selectedTimetable == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a class with an existing timetable'),
-          backgroundColor: Colors.red,
-        ),
+      showTopSnackBar(
+        context,
+        'Please select a class with an existing timetable',
+        Colors.red,
       );
       return;
     }
@@ -757,12 +757,7 @@ class _AllTablesState extends ConsumerState<AllTables> {
             .firstOrNull;
 
     if (selectedClass == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Selected class not found'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      showTopSnackBar(context, 'Selected class not found', Colors.red);
       return;
     }
 
