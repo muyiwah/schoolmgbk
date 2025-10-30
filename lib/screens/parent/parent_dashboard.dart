@@ -280,40 +280,52 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
     final availableYears = _getAvailableAcademicYears(children);
     final availableTerms = _getAvailableTerms(children);
 
-    // Auto-set academic year and term based on selected child
+    // Auto-set academic year and term based on selected child (deferred to avoid build-time mutation)
     if (children.isNotEmpty) {
-      // Ensure selected child index is within bounds
-      if (_selectedChildIndex >= children.length) {
-        _selectedChildIndex = 0;
-      }
-      final selectedChild = children[_selectedChildIndex];
-      final childAcademicYear =
+      final safeIndex =
+          (_selectedChildIndex >= children.length) ? 0 : _selectedChildIndex;
+      final selectedChild = children[safeIndex];
+      final computedAcademicYear =
           selectedChild.currentTerm?.academicYear ??
-          selectedChild.student?.academicInfo?.academicYear;
-      final childTerm = selectedChild.currentTerm?.term;
+          selectedChild.student?.academicInfo?.academicYear ??
+          (availableYears.isNotEmpty
+              ? availableYears.first
+              : _selectedAcademicYear);
+      final computedTerm =
+          selectedChild.currentTerm?.term ??
+          (availableTerms.isNotEmpty ? availableTerms.first : _selectedTerm);
 
-      if (childAcademicYear != null && childAcademicYear.isNotEmpty) {
-        _selectedAcademicYear = childAcademicYear;
-      } else if (availableYears.isNotEmpty) {
-        _selectedAcademicYear = availableYears.first;
-      }
+      final shouldUpdateIndex = safeIndex != _selectedChildIndex;
+      final shouldUpdateYear = computedAcademicYear != _selectedAcademicYear;
+      final shouldUpdateTerm = computedTerm != _selectedTerm;
 
-      if (childTerm != null && childTerm.isNotEmpty) {
-        _selectedTerm = childTerm;
-      } else if (availableTerms.isNotEmpty) {
-        _selectedTerm = availableTerms.first;
+      if (shouldUpdateIndex || shouldUpdateYear || shouldUpdateTerm) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          setState(() {
+            if (shouldUpdateIndex) _selectedChildIndex = safeIndex;
+            if (shouldUpdateYear) _selectedAcademicYear = computedAcademicYear;
+            if (shouldUpdateTerm) _selectedTerm = computedTerm;
+          });
+        });
       }
     } else {
-      // Fallback to available options with safety checks
-      if (availableYears.isNotEmpty) {
-        _selectedAcademicYear = availableYears.first;
-      } else {
-        _selectedAcademicYear = '2024/2025'; // Default fallback
-      }
-      if (availableTerms.isNotEmpty) {
-        _selectedTerm = availableTerms.first;
-      } else {
-        _selectedTerm = 'First'; // Default fallback
+      final fallbackYear =
+          availableYears.isNotEmpty ? availableYears.first : '2024/2025';
+      final fallbackTerm =
+          availableTerms.isNotEmpty ? availableTerms.first : 'First';
+
+      final shouldUpdateYear = fallbackYear != _selectedAcademicYear;
+      final shouldUpdateTerm = fallbackTerm != _selectedTerm;
+
+      if (shouldUpdateYear || shouldUpdateTerm) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          setState(() {
+            if (shouldUpdateYear) _selectedAcademicYear = fallbackYear;
+            if (shouldUpdateTerm) _selectedTerm = fallbackTerm;
+          });
+        });
       }
     }
 
@@ -376,6 +388,11 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
                 length: 3,
                 child: Column(
                   children: [
+                    // Global child selector visible across all tabs
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                      child: _buildGlobalChildSelector(children),
+                    ),
                     const TabBar(
                       tabs: [
                         Tab(icon: Icon(Icons.home), text: 'Overview'),
@@ -445,7 +462,7 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
     List<String> availableYears,
     List<String> availableTerms,
   ) {
-    // Check if fees are fully paid
+    // Check if fees are fully paid for the selected child only
     final isFullyPaid = _areFeesFullyPaid(children);
     print('🔍 DEBUG: Fees & Payments Tab - isFullyPaid: $isFullyPaid');
 
@@ -485,10 +502,6 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Child Selection for Attendance
-          _buildChildSelectionForAttendance(children),
-          const SizedBox(height: 20),
-
           // Attendance Summary
           _buildAttendanceSummary(children),
           const SizedBox(height: 20),
@@ -501,6 +514,85 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
           _buildAttendanceStatistics(children),
         ],
       ),
+    );
+  }
+
+  // Global child selector used across all tabs
+  Widget _buildGlobalChildSelector(List<Child> children) {
+    if (children.isEmpty) return const SizedBox.shrink();
+
+    return DropdownButtonFormField<int>(
+      value: (_selectedChildIndex < children.length) ? _selectedChildIndex : 0,
+      decoration: InputDecoration(
+        labelText: 'Select Child',
+        labelStyle: const TextStyle(fontWeight: FontWeight.w600),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.blue.shade400, width: 1.5),
+        ),
+      ),
+      icon: const Icon(Icons.arrow_drop_down),
+      items:
+          children.asMap().entries.map((entry) {
+            final index = entry.key;
+            final child = entry.value;
+            final firstName = child.student?.personalInfo?.firstName ?? '';
+            final lastName = child.student?.personalInfo?.lastName ?? '';
+            final name = ('$firstName $lastName').trim();
+            final className =
+                child.student?.academicInfo?.currentClass?.name ?? '';
+            return DropdownMenuItem<int>(
+              value: index,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircleAvatar(
+                    radius: 14,
+                    backgroundColor: Colors.blue.shade100,
+                    child: Text(
+                      name.isNotEmpty ? name[0].toUpperCase() : '?',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Flexible(
+                    child: Text(
+                      name.isEmpty
+                          ? 'Child ${index + 1}${className.isNotEmpty ? ' • $className' : ''}'
+                          : '${name}${className.isNotEmpty ? ' • $className' : ''}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      softWrap: false,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+      onChanged: (value) {
+        if (value == null) return;
+        setState(() {
+          _selectedChildIndex = value;
+        });
+      },
     );
   }
 
@@ -669,7 +761,9 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
     print('🔍 DEBUG: children.length: ${children.length}');
 
     if (children.isNotEmpty) {
-      final child = children[0];
+      final safeIndex =
+          (_selectedChildIndex < children.length) ? _selectedChildIndex : 0;
+      final child = children[safeIndex];
       print('🔍 DEBUG: child.student: ${child.student != null}');
       print('🔍 DEBUG: child.currentTerm: ${child.currentTerm != null}');
       print('🔍 DEBUG: child.paymentHistory: ${child.paymentHistory != null}');
@@ -854,7 +948,18 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
         children: [
           Row(
             children: [
-              CircleAvatar(radius: 30, backgroundImage: NetworkImage(imageUrl)),
+              CircleAvatar(
+                radius: 30,
+                backgroundColor: Colors.blue[100],
+                child: Text(
+                  (name.isNotEmpty ? name.trim()[0].toUpperCase() : '?'),
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+              ),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
@@ -1272,6 +1377,18 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
     final availableYears = _getAvailableAcademicYears(children);
     final availableTerms = _getAvailableTerms(children);
 
+    // De-duplicate and validate selections to avoid DropdownButton assertion
+    final yearsUnique = availableYears.toSet().toList();
+    final termsUnique = availableTerms.toSet().toList();
+    final selectedYear =
+        yearsUnique.contains(_selectedAcademicYear)
+            ? _selectedAcademicYear
+            : (yearsUnique.isNotEmpty ? yearsUnique.first : null);
+    final selectedTerm =
+        termsUnique.contains(_selectedTerm)
+            ? _selectedTerm
+            : (termsUnique.isNotEmpty ? termsUnique.first : null);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1322,18 +1439,19 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
                     const Text('Academic Year'),
                     const SizedBox(height: 8),
                     DropdownButton<String>(
-                      value: _selectedAcademicYear,
+                      value: selectedYear,
                       isExpanded: true,
                       items:
-                          availableYears.map((year) {
+                          yearsUnique.map((year) {
                             return DropdownMenuItem(
                               value: year,
                               child: Text(year),
                             );
                           }).toList(),
                       onChanged: (value) {
+                        if (value == null) return;
                         setState(() {
-                          _selectedAcademicYear = value!;
+                          _selectedAcademicYear = value;
                         });
                       },
                     ),
@@ -1348,18 +1466,19 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
                     const Text('Term'),
                     const SizedBox(height: 8),
                     DropdownButton<String>(
-                      value: _selectedTerm,
+                      value: selectedTerm,
                       isExpanded: true,
                       items:
-                          availableTerms.map((term) {
+                          termsUnique.map((term) {
                             return DropdownMenuItem(
                               value: term,
                               child: Text(term),
                             );
                           }).toList(),
                       onChanged: (value) {
+                        if (value == null) return;
                         setState(() {
-                          _selectedTerm = value!;
+                          _selectedTerm = value;
                         });
                       },
                     ),
@@ -2015,38 +2134,42 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
   }
 
   bool _areFeesFullyPaid(List<Child> children) {
-    print('🔍 DEBUG: _areFeesFullyPaid called');
-    return children.every((child) {
-      final currentTerm = child.currentTerm;
-      if (currentTerm == null) {
-        print('🔍 DEBUG: currentTerm is null, returning false');
-        return false;
-      }
+    print('🔍 DEBUG: _areFeesFullyPaid (selected child only) called');
+    if (children.isEmpty) return false;
+    final safeIndex =
+        (_selectedChildIndex >= 0 && _selectedChildIndex < children.length)
+            ? _selectedChildIndex
+            : 0;
+    final child = children[safeIndex];
+    final currentTerm = child.currentTerm;
+    if (currentTerm == null) {
+      print('🔍 DEBUG: currentTerm is null, returning false');
+      return false;
+    }
 
-      // Check if fee structure is not set - only check if feeDetails exists and has baseFee
-      final feeDetails =
-          currentTerm.feeDetails ?? currentTerm.feeRecord?.feeDetails;
-      final hasNoFeeStructure =
-          feeDetails == null ||
-          feeDetails.baseFee == null ||
-          feeDetails.baseFee == 0;
+    // Check if fee structure is not set - only check if feeDetails exists and has baseFee
+    final feeDetails =
+        currentTerm.feeDetails ?? currentTerm.feeRecord?.feeDetails;
+    final hasNoFeeStructure =
+        feeDetails == null ||
+        feeDetails.baseFee == null ||
+        feeDetails.baseFee == 0;
 
-      if (hasNoFeeStructure) {
-        print(
-          '🔍 DEBUG: No fee structure set (no feeDetails or baseFee), returning false',
-        );
-        return false;
-      }
+    if (hasNoFeeStructure) {
+      print(
+        '🔍 DEBUG: No fee structure set (no feeDetails or baseFee), returning false',
+      );
+      return false;
+    }
 
-      final isPaid =
-          currentTerm.status == 'Paid' || (currentTerm.amountOwed ?? 0) == 0;
-      print('🔍 DEBUG: currentTerm.status: ${currentTerm.status}');
-      print('🔍 DEBUG: currentTerm.amountOwed: ${currentTerm.amountOwed}');
-      print('🔍 DEBUG: isPaid: $isPaid');
-      print('🔍 DEBUG: feeRecord: ${currentTerm.feeRecord}');
+    final isPaid =
+        currentTerm.status == 'Paid' || (currentTerm.amountOwed ?? 0) == 0;
+    print('🔍 DEBUG: currentTerm.status: ${currentTerm.status}');
+    print('🔍 DEBUG: currentTerm.amountOwed: ${currentTerm.amountOwed}');
+    print('🔍 DEBUG: isPaid: $isPaid');
+    print('🔍 DEBUG: feeRecord: ${currentTerm.feeRecord}');
 
-      return isPaid;
-    });
+    return isPaid;
   }
 
   String _getCurrentTermStatus(CurrentTerm? currentTerm) {
@@ -2759,13 +2882,17 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
     // Pre-select required fees
     _preSelectRequiredFees(feeDetails);
 
+    // Store parent context before showing dialog
+    final parentDashboardContext = context;
+
     showDialog(
       context: context,
       builder:
-          (context) => SchoolFeesPaymentPopup(
+          (dialogContext) => SchoolFeesPaymentPopup(
             feeDetails: feeDetails,
             selectedFees: _selectedFees,
             partialPaymentAmounts: _partialPaymentAmounts,
+            selectedChildIndex: _selectedChildIndex,
             onFeesChanged: (newSelectedFees, newPartialAmounts) {
               setState(() {
                 _selectedFees = newSelectedFees;
@@ -2774,8 +2901,10 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
             },
             onPaymentProcessed: () {
               _processPayment();
+              _refreshParentData();
             },
             feeRecord: currentTerm?.feeRecord,
+            parentContext: parentDashboardContext, // Pass parent context
           ),
     );
   }
@@ -2960,18 +3089,22 @@ class SchoolFeesPaymentPopup extends StatefulWidget {
   final FeeDetails feeDetails;
   final Map<String, bool> selectedFees;
   final Map<String, int> partialPaymentAmounts;
+  final int selectedChildIndex;
   final Function(Map<String, bool>, Map<String, int>) onFeesChanged;
   final VoidCallback onPaymentProcessed;
   final FeeRecord? feeRecord;
+  final BuildContext? parentContext; // Add parent context parameter
 
   const SchoolFeesPaymentPopup({
     Key? key,
     required this.feeDetails,
     required this.selectedFees,
     required this.partialPaymentAmounts,
+    required this.selectedChildIndex,
     required this.onFeesChanged,
     required this.onPaymentProcessed,
     this.feeRecord,
+    this.parentContext, // Add parent context parameter
   }) : super(key: key);
 
   @override
@@ -3101,7 +3234,11 @@ class _SchoolFeesPaymentPopupState extends State<SchoolFeesPaymentPopup> {
         return;
       }
 
-      final selectedChild = children[0]; // Use first child for now
+      final safeIndex =
+          (widget.selectedChildIndex < children.length)
+              ? widget.selectedChildIndex
+              : 0;
+      final selectedChild = children[safeIndex];
       final studentId = selectedChild.student?.id ?? '';
       final parentId = parentLoginProvider.currentParent?.id ?? '';
       final classId =
@@ -3196,11 +3333,30 @@ class _SchoolFeesPaymentPopupState extends State<SchoolFeesPaymentPopup> {
             'Payment initialized successfully! Redirecting to payment gateway...',
           );
 
+          // Get parent context from widget parameter
+          final parentContext = widget.parentContext ?? context;
+          print('🔍 DEBUG: Parent context available: ${parentContext != null}');
+          print(
+            '🔍 DEBUG: Parent context from widget: ${widget.parentContext != null}',
+          );
+
           // Close the payment popup
           Navigator.of(context).pop();
 
-          // Schedule refresh after 25 seconds to fetch updated data
-          _scheduleDataRefresh();
+          // Show payment confirmation dialog after payment popup closes
+          // Use a delay to ensure dialog is fully closed
+          Future.delayed(const Duration(milliseconds: 500), () {
+            print('🔍 DEBUG: Checking parent context after delay');
+            print('🔍 DEBUG: Parent context mounted: ${parentContext.mounted}');
+            if (parentContext.mounted) {
+              print('🔍 DEBUG: Calling _showPaymentConfirmationDialog');
+              _showPaymentConfirmationDialog(parentContext);
+            } else {
+              print(
+                '⚠️ Parent context not mounted, cannot show confirmation dialog',
+              );
+            }
+          });
         } else {
           _showErrorDialog(
             'Payment initialization failed: No payment URL received',
@@ -3277,6 +3433,102 @@ class _SchoolFeesPaymentPopupState extends State<SchoolFeesPaymentPopup> {
             ],
           ),
     );
+  }
+
+  // Method to show payment confirmation dialog
+  void _showPaymentConfirmationDialog(BuildContext parentContext) {
+    print('🔍 DEBUG: _showPaymentConfirmationDialog called');
+    print('🔍 DEBUG: Parent context mounted: ${parentContext.mounted}');
+
+    showDialog(
+      context: parentContext,
+      barrierDismissible: false,
+      builder: (context) {
+        print('🔍 DEBUG: Building payment confirmation dialog widget');
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.payment, color: Colors.blue[600]),
+              const SizedBox(width: 8),
+              const Text('Payment Status'),
+            ],
+          ),
+          content: const Text(
+            'Was the payment successfully processed? Please click the refresh data button to refresh the data.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Dismiss'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await _refreshDataFromParentContext(parentContext);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue[600],
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Refresh Data'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Method to refresh data from parent context
+  Future<void> _refreshDataFromParentContext(BuildContext parentContext) async {
+    try {
+      // Show loading indicator
+      showSnackbar(parentContext, 'Refreshing data...');
+
+      // Get the parent login provider from the parent context
+      final container = ProviderScope.containerOf(parentContext);
+      final parentLoginProvider = container.read(
+        RiverpodProvider.parentLoginProvider.notifier,
+      );
+
+      // Call refreshDataFromDashboard to get latest data
+      print(
+        '🔍 DEBUG: ===== CALLING PARENT DASHBOARD ENDPOINT FOR PAYMENT REFRESH =====',
+      );
+      print('🔍 DEBUG: Method: parentLoginProvider.refreshDataFromDashboard()');
+      print('🔍 DEBUG: This will call: GET /api/parents/{parentId}');
+      final success = await parentLoginProvider.refreshDataFromDashboard();
+
+      if (success) {
+        // Show success notification
+        showSnackbar(parentContext, 'Data refreshed successfully!');
+        print(
+          '🔄 SchoolFeesPaymentPopup: Data refreshed after payment - Success',
+        );
+
+        // Trigger setState in parent widget if possible
+        if (parentContext.mounted) {
+          // Try to find and update the parent state
+          final parentState =
+              parentContext
+                  .findAncestorStateOfType<_ParentDashboardScreenState>();
+          if (parentState != null && parentState.mounted) {
+            parentState.setState(() {});
+          }
+        }
+      } else {
+        // Show error notification
+        showSnackbar(
+          parentContext,
+          'Failed to refresh data. Please try again.',
+        );
+        print('❌ SchoolFeesPaymentPopup: Data refresh failed');
+      }
+    } catch (e) {
+      print('❌ Error refreshing parent data: $e');
+      showSnackbar(parentContext, 'Error refreshing data. Please try again.');
+    }
   }
 
   /// Schedules a data refresh after 25 seconds to fetch updated data from backend

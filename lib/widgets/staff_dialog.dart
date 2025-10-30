@@ -610,10 +610,10 @@ class _StaffDialogState extends State<StaffDialog>
           const SizedBox(height: 16),
           _buildTextFormField(
             controller: _stateOfOriginController,
-            label: 'State of Origin',
+            label: 'Locality',
             icon: Icons.location_on,
             enabled: _isEditing,
-            hintText: 'Enter state of origin',
+            hintText: 'Enter Locality',
           ),
         ],
       ),

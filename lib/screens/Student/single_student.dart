@@ -1849,7 +1849,7 @@ class _SingleStudentState extends ConsumerState<SingleStudent> {
               fieldKey: 'nationality',
             ),
             _buildDetailRow(
-              'State of Origin',
+              'Locality',
               student.personalInfo?.stateOfOrigin,
               fieldKey: 'stateOfOrigin',
             ),
@@ -1926,9 +1926,9 @@ class _SingleStudentState extends ConsumerState<SingleStudent> {
               fieldKey: 'city',
             ),
             _buildDetailRow(
-              'State',
+              'Locality',
               student.contactInfo?.address?.state ?? "",
-              fieldKey: 'state',
+              fieldKey: 'locality',
             ),
             _buildDetailRow(
               'Country',

@@ -2396,7 +2396,7 @@ class _AdmissionDetailsModalState extends ConsumerState<AdmissionDetailsModal>
               Expanded(
                 child: _buildTextField(
                   controller: _stateOfOriginController,
-                  label: 'State of Origin',
+                  label: 'Locality',
                 ),
               ),
             ],

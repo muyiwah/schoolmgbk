@@ -1230,7 +1230,7 @@ class _StudentRegistrationPageState
             children: [
               Expanded(
                 child: _buildStateDropdown(
-                  label: 'State of Origin',
+                  label: 'Locality',
                   value: _selectedStateOfOrigin,
                   country: _selectedPersonalCountry,
                   onChanged: (value) {
@@ -3087,7 +3087,7 @@ class _StudentRegistrationPageState
       errors.add('Nationality of Origin is required');
     }
     if (_selectedStateOfOrigin == null) {
-      errors.add('State of Origin is required');
+      errors.add('Locality is required');
     }
     if (_localGovernmentController.text.trim().isEmpty) {
       errors.add('Local Government is required');
