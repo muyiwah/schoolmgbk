@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'package:flutter/foundation.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart' hide Text;
@@ -28,11 +28,12 @@ class _QuillEditorExampleState extends State<QuillEditorExample> {
       appBar: AppBar(title: const Text('Quill Editor Example')),
       body: Column(
         children: [
-         Expanded(
+          Expanded(
             child: QuillSimpleToolbar(
               config: QuillSimpleToolbarConfig(
                 embedButtons: FlutterQuillEmbeds.toolbarButtons(),
-              ), controller: _controller,
+              ),
+              controller: _controller,
             ),
           ),
           Expanded(
@@ -48,18 +49,21 @@ class _QuillEditorExampleState extends State<QuillEditorExample> {
   }
 
   /// Pick image
-  Future<String> _onImagePickCallback(File file) async {
+  Future<String> _onImagePickCallback(dynamic file) async {
     // In production, upload the file to a server and return the URL
+    if (kIsWeb) return '';
     return file.path;
   }
 
   /// Pick video
-  Future<String> _onVideoPickCallback(File file) async {
+  Future<String> _onVideoPickCallback(dynamic file) async {
+    if (kIsWeb) return '';
     return file.path;
   }
 
   /// Pick file (PDF, DOC, etc.)
-  Future<String> _onFilePickCallback(File file) async {
+  Future<String> _onFilePickCallback(dynamic file) async {
+    if (kIsWeb) return '';
     return file.path;
   }
 
